@@ -9,7 +9,12 @@ INCLUDE=inc/
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 
-all: TI73 TI83p TI83pSE TI84p TI84pSE
+all:
+	make TI73
+	make TI83p
+	make TI83pSE
+	make TI84p
+	make TI84pSE
 
 # Platforms:
 # Variables (all in hex):
@@ -48,8 +53,8 @@ TI84pSE: directories kernel
 
 # Build kernel
 kernel: page00 pageBoot pagePrivledged
-	$(PREFIX)build/MakeROM.exe bin/kernel.rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
-	$(PREFIX)build/CreateJumpTable.exe src/jumptable.config bin/00.sym bin/kernel.rom inc/kernel.inc bin/inc/kernel.inc
+	$(PREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
+	$(PREFIX)build/CreateJumpTable.exe src/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom inc/kernel.inc bin/kernel.inc
 	rm bin/00.bin
 	rm bin/boot.bin
 	rm bin/privileged.bin
@@ -66,7 +71,6 @@ pagePrivledged:
 
 directories:
 	mkdir -p bin
-	mkdir -p bin/inc/
 
 clean:
 	rm -r bin
