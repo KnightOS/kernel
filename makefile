@@ -53,8 +53,8 @@ TI84pSE: directories kernel
 
 # Build kernel
 kernel: page00 pageBoot pagePrivledged
-	$(PREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
-	$(PREFIX)build/CreateJumpTable.exe src/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom inc/kernel.inc bin/kernel.inc
+	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
+	$(ASPREFIX)build/CreateJumpTable.exe src/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom inc/kernel.inc bin/kernel.inc
 	rm bin/00.bin
 	rm bin/boot.bin
 	rm bin/privileged.bin
