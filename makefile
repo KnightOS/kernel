@@ -1,8 +1,10 @@
 # makefile for KnightSoft kernel
 ifeq ($(OS),Windows_NT)
 ASPREFIX=
+EMPREFIX=
 else
 ASPREFIX=mono 
+EMPREFIX=wine 
 endif
 AS=$(ASPREFIX)build/sass.exe
 INCLUDE=inc/
@@ -55,6 +57,7 @@ DEFINES=$(PLATFORM)
 
 test: DEFINES=TI84pSE,TEST
 test: TI84pSE
+	$(EMPREFIX)build/Wabbitemu.exe bin/kernel-TI84pSE.rom
 
 # Build kernel
 kernel: page00 pageBoot pagePrivledged

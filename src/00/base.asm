@@ -25,4 +25,8 @@
 
 #include "util.asm"
 
+#ifdef TEST
+#include "testrunner.asm"
+#endif
+
 .echo "Bytes remaining on page 00: " 0x4000-$ ; TODO: Fix this problem in sass

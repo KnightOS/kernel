@@ -252,6 +252,23 @@ dhlet:
    add a, 55
 dispdh:
    jp drawChar
+
+;; drawHexHL [Text]
+;;  Draws the contents of HL in hexadecimal to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  D, E: X, Y
+;;  HL: Value
+;; Outputs:
+;;  D, E: Advanced to position of next character
+drawHexHL:
+    push af
+        ld a, h
+        call drawHexA
+        ld a, l
+        call drawHexA
+    pop af
+    ret
    
 ;; measureChar [Text]
 ;;  Measures the width of a character in pixels.

@@ -33,7 +33,9 @@ _:  di
 
     ld sp, userMemory ; end of kernel garbage
 
+#ifndef TEST
     call suspendDevice
+#endif
 ;; reboot [System]
 ;;  Restarts the device.
 ;; Notes:
@@ -157,12 +159,10 @@ reboot:
     xor a
     ld (nextThreadId), a
     
-    ; Good place to test kernel routines
-    
-    ; ...
-    
-    ; /Good place to test kernel routines
-    
+#ifdef TEST
+    jp testrunner
+#endif
+
     ld de, bootFile
     call fileExists
     ld a, 0b011001100
@@ -175,4 +175,3 @@ reboot:
     
 bootFile:
     .db "/bin/init", 0
-    
