@@ -12,15 +12,15 @@
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
 test_collection:
-	.dw test_hexToA    ; 0x0000 test_hexToA
-	.dw 0xFFFF         ; 0x0002 n/a
+    .dw test_hexToA    ; 0x0000 test_hexToA
+    .dw 0xFFFF         ; 0x0002 n/a
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
 test_collection_end:
 
 testrunner:
-	call getLcdLock
-	call allocScreenBuffer
+    call getLcdLock
+    call allocScreenBuffer
 #ifdef defaultTest
     call clearBuffer
     ld hl, defaultTest
@@ -37,11 +37,11 @@ testrunner:
 #endif
 testrunner_continue:
     call clearBuffer
-	ld hl, test_welcometext
-	ld b, 0
-	ld de, 0
-	call drawStr
-	call fastCopy
+    ld hl, test_welcometext
+    ld b, 0
+    ld de, 0
+    call drawStr
+    call fastCopy
     ld bc, 6
     call malloc
     xor a
@@ -146,9 +146,9 @@ testrunner_runall:
     jr $ ; TODO
 
 test_welcometext:
-	.db "# Kernel unit test runner\n"
-	.db "Press [Enter] to run all tests\n"
-	.db "Or type a test number:\n", 0
+    .db "# Kernel unit test runner\n"
+    .db "Press [Enter] to run all tests\n"
+    .db "Or type a test number:\n", 0
 
 test_nosuchtesttext:
     .db "Test not found\n"
