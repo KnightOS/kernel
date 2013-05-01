@@ -1,11 +1,17 @@
 ; Text functions for kernel
-; Inputs:    A: Character to print
-;            D,E: X,Y
-;            B: Left X (used for \n)
-;            IY: Buffer
-; Outputs:    Updates DE
+
+;; drawChar [Text]
+;;  Draws a character to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  A: Character to print
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Moved to next character position
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawChar:
-drawCharOR:
     push af
     push hl
     push ix
@@ -37,7 +43,18 @@ _:  pop bc
     pop hl
     pop af
     ret
-    
+
+;; drawCharAND [Text]
+;;  Draws a character to the screen buffer using AND logic (turns pixels OFF).
+;; Inputs:
+;;  IY: Screen buffer
+;;  A: Character to print
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Moved to next character position
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawCharAND:
     push af
     push hl
@@ -71,6 +88,17 @@ _:  pop bc
     pop af
     ret
 
+;; drawCharXOR [Text]
+;;  Draws a character to the screen buffer using XOR logic (inverts pixels).
+;; Inputs:
+;;  IY: Screen buffer
+;;  A: Character to print
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Moved to next character position
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawCharXOR:
     push af
     push hl
@@ -104,10 +132,17 @@ _:  pop bc
     pop af
     ret
 
-; Inputs:    HL: String
-;            DE: Location
-;            B (Optional): Left X (Used for \n)
-;            IY: Buffer
+;; drawStr [Text]
+;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  HL: String
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Advanced to position of next character
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawStr:
     push hl
     push af
@@ -121,6 +156,17 @@ _:  pop af
     pop hl
     ret
 
+;; drawStrAND [Text]
+;;  Draws a zero-delimited string to the screen buffer using AND logic (turns pixels OFF).
+;; Inputs:
+;;  IY: Screen buffer
+;;  HL: String
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Advanced to position of next character
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawStrAND:
     push hl
     push af
@@ -133,7 +179,18 @@ _:      ld a, (hl)
 _:  pop af
     pop hl
     ret
-    
+
+;; drawStrXOR [Text]
+;;  Draws a zero-delimited string to the screen buffer using XOR logic (inverts pixels).
+;; Inputs:
+;;  IY: Screen buffer
+;;  HL: String
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Advanced to position of next character
+;; Notes:
+;;  The left margin is only required if your string contains newlines.
 drawStrXOR:
     push hl
     push af
@@ -148,8 +205,14 @@ _:  pop af
     ret
     ret
 
-; Inputs:    B: Stream ID
-; Prints a string from a stream
+;; drawStrFromStream [Text]
+;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  B: Stream ID
+;;  D, E: X, Y
+;; Outputs:
+;;  Stream is advanced to byte after 0.
 drawStrFromStream:
     push af
 _:      call streamReadByte
@@ -160,7 +223,15 @@ _:      call streamReadByte
         jr -_
 _:  pop af
     ret
-    
+
+;; drawHexA [Text]
+;;  Draws the contents of A in hexadecimal to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  D, E: X, Y
+;;  A: Value
+;; Outputs:
+;;  D, E: Advanced to position of next character
 drawHexA:
    push af
    rrca
@@ -180,12 +251,16 @@ dispha:
 dhlet:
    add a, 55
 dispdh:
-   jp drawCharOR
+   jp drawChar
    
-; Inputs:    A: Character to measure
-; Outputs:    A: Width of character (height is always 5)
-; Note: The width of most characters include a column of
-; whitespace on the right side.
+;; measureChar [Text]
+;;  Measures the width of a character in pixels.
+;; Inputs:
+;;  A: Character to measure
+;; Outputs:
+;;  A: Width of character
+;; Notes:
+;;  The height of each character is always 5 pixels. The width also often includes a column of empty pixels on the right (exceptions include '_').
 measureChar:
     push hl
     push de
@@ -200,8 +275,14 @@ measureChar:
     pop hl
     ret
 
-; Inputs:    HL: String to measure
-; Outputs:    A: Width of string
+;; measureStr [Text]
+;;  Measures the width of a string in pixels.
+;; Inputs:
+;;  HL: String to measure
+;; Outputs:
+;;  A: Width of string
+;; Notes:
+;;  The height of any string is always 5 pixels. This function does not support newlines.
 measureStr:
     push hl
     push bc
