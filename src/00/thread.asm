@@ -86,8 +86,8 @@ _:      di
     ld a, (activeThreads)
     inc a \ ld (activeThreads), a
     ld a, (nextThreadId) \ inc a
-    ; Prevent >0x3F from being assigned as thread IDs
-    and 0x3F
+    ; Wrap the thread counter
+    and threadRangeMask
     ld (nextThreadId), a
     ld a, (hl)
     cp a

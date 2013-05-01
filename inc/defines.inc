@@ -85,6 +85,8 @@ maxFileStreams .equ 5
 maxLibraries .equ 10
 maxSignals .equ 5 ; Consider increasing this
 
+threadRangeMask .equ 0x3F
+
 ; Filesystem stuff
 fsEndOfTable .equ 0xFF
 fsFile .equ 0x7F
