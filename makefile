@@ -51,6 +51,11 @@ TI84pSE: BOOT := 1FC000
 TI84pSE: LENGTH := 200000
 TI84pSE: directories kernel
 
+DEFINES=$(PLATFORM)
+
+test: DEFINES=TI84pSE,TEST
+test: TI84pSE
+
 # Build kernel
 kernel: page00 pageBoot pagePrivledged
 	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
@@ -61,13 +66,13 @@ kernel: page00 pageBoot pagePrivledged
 	rm bin/00.sym
 
 page00:
-	$(AS) $(ASFLAGS) --define "$(PLATFORM)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin
 
 pageBoot:
-	$(AS) $(ASFLAGS) --define "$(PLATFORM)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin
 
 pagePrivledged:
-	$(AS) $(ASFLAGS) --define "$(PLATFORM)" --include "$(INCLUDE);src/privileged/" src/privileged/base.asm bin/privileged.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" src/privileged/base.asm bin/privileged.bin
 
 directories:
 	mkdir -p bin
