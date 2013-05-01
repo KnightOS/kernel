@@ -57,6 +57,8 @@ DEFINES=$(PLATFORM)
 
 test: DEFINES=TI84pSE,TEST
 test: TI84pSE
+
+runtest: test
 	$(EMPREFIX)build/Wabbitemu.exe bin/kernel-TI84pSE.rom
 
 # Build kernel

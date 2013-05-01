@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;#define defaultTest 0x1234
+;.equ defaultTest 0x0000
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -21,7 +21,22 @@ test_collection_end:
 testrunner:
 	call getLcdLock
 	call allocScreenBuffer
-	call clearBuffer
+#ifdef defaultTest
+    call clearBuffer
+    ld hl, defaultTest
+    ld bc, test_collection
+    or a
+    adc hl, bc
+    ld bc, defaultTest
+    ld e, (hl)
+    inc hl
+    ld d, (hl)
+    dec hl
+    ex de, hl
+    jp testrunner_runtest
+#endif
+testrunner_continue:
+    call clearBuffer
 	ld hl, test_welcometext
 	ld b, 0
 	ld de, 0
@@ -44,17 +59,17 @@ testrunner:
     or a ; cp 0
     jr z, .loop
     cp '\n'
-    jr z, .runtest
+    jr z, .runselectedtest
     call drawChar
     call fastCopy
     ld (ix), a
     inc ix
     ld a, 0xFF
     cp (ix + 1)
-    jr z, .runtest
+    jr z, .runselectedtest
     jr .loop
 
-.runtest:
+.runselectedtest:
     call clearBuffer
     call memSeekToStart
     xor a
@@ -68,7 +83,7 @@ testrunner:
         adc hl, bc
         ld de, test_collection_end
         call cpHLDE
-        jr nc, .nosuchtest
+        jr nc, testrunner_nosuchtest
         ld e, (hl)
         inc hl
         ld d, (hl)
@@ -76,8 +91,9 @@ testrunner:
         ex de, hl
         ld bc, 0xFFFF
         call cpHLBC
-        jr z, .nosuchtest
+        jr z, testrunner_nosuchtest
     pop bc
+testrunner_runtest:
     ; Test exists, run it
     push hl
         ld de, 0
@@ -92,6 +108,9 @@ testrunner:
     call fastCopy
     ld de, .return
     push de
+#ifdef BREAK_BEFORE_TEST
+    jr $
+#endif
     jp (hl)
 .return:
     or a
@@ -111,9 +130,9 @@ testrunner:
     call fastCopy
     call flushKeys
     call waitKey
-    jp testrunner
+    jp testrunner_continue
 
-.nosuchtest:
+testrunner_nosuchtest:
     ld de, 0
     ld hl, test_nosuchtesttext
     ld b, 0
@@ -121,7 +140,7 @@ testrunner:
     call fastCopy
     call flushKeys
     call waitKey
-    jp testrunner
+    jp testrunner_continue
 
 testrunner_runall:
     jr $ ; TODO
