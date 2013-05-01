@@ -19,7 +19,10 @@
 #include "locks.asm"
 
 #include "display.asm"
+#include "text.asm"
 #include "keyboard.asm"
 #include "time.asm"
 
 #include "util.asm"
+
+.echo "Bytes remaining on page 00: " 0x4000-$ ; TODO: Fix this problem in sass
