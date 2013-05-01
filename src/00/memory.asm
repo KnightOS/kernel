@@ -160,7 +160,7 @@ _:      ; Check for dead pockets
 _:          ex de, hl
         pop de
         
-        call cpDEBC
+        call cpBCDE
         jr z, .skipNewMeta
         
 .doAllocNormal: ; Not accounting for dead pockets

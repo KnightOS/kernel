@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x0000
+;.equ defaultTest 0x0008
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -12,8 +12,14 @@
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
 test_collection:
-    .dw test_hexToA    ; 0x0000 test_hexToA
-    .dw 0xFFFF         ; 0x0002 n/a
+    .dw test_hexToA         ; 0000 test_hexToA
+    .dw test_cpHLDE         ; 0001 test_cpHLDE
+    .dw test_cpHLBC         ; 0002 test_cpHLBC
+    .dw test_cpBCDE         ; 0003 test_cpBCDE
+    .dw test_stringLength   ; 0004 test_stringLength
+    .dw test_DEMulA         ; 0005 test_DEMulA
+    .dw test_compareStrings ; 0006 test_compareStrings
+    .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
 test_collection_end:
@@ -23,11 +29,11 @@ testrunner:
     call allocScreenBuffer
 #ifdef defaultTest
     call clearBuffer
-    ld hl, defaultTest
+    ld hl, defaultTest * 2
     ld bc, test_collection
     or a
     adc hl, bc
-    ld bc, defaultTest
+    ld bc, defaultTest * 2
     ld e, (hl)
     inc hl
     ld d, (hl)
@@ -77,6 +83,7 @@ testrunner_continue:
     jr z, testrunner_runall
     push ix \ pop hl
     call hexToHL
+    add hl, hl
     push hl
         ld bc, test_collection
         or a
@@ -101,6 +108,7 @@ testrunner_runtest:
         ld b, 0
         call drawStr
         push bc \ pop hl
+        srl h \ rr l
         call drawHexHL
         ld a, '\n'
         call drawChar

@@ -112,10 +112,9 @@ _:    in a,(0x10)
 ;; Output:
 ;;  Same as z80 CP instruction.
 cpHLDE:
-cpDEHL:
     push hl
     or a
-    sbc hl,de
+    sbc hl, de
     pop hl
     ret
 ;; cpHLBC [Miscellaneous]
@@ -123,23 +122,21 @@ cpDEHL:
 ;; Output:
 ;;  Same as z80 CP instruction.
 cpHLBC:
-cpBCHL:
     push hl
     or a
-    sbc hl,bc
+    sbc hl, bc
     pop hl
     ret
-;; cpDEBC [Miscellaneous]
+;; cpBCDE [Miscellaneous]
 ;;  Compares DE to BC.
 ;; Output:
 ;;  Same as z80 CP instruction.
 cpBCDE:
-cpDEBC:
     push hl
-    ld h,b
-    ld l,c 
+    ld h, b
+    ld l, c 
     or a
-    sbc hl,de
+    sbc hl, de
     pop hl
     ret
 
@@ -157,6 +154,7 @@ stringLength:
         cpir
         ; bc = -bc
         ld a, b \ xor $FF \ ld b, a \ ld a, c \ xor $FF \ add a, 1 \ jr nc, $+3 \ inc b \ ld c, a
+        dec bc
     pop hl
     pop af
     ret
