@@ -379,6 +379,7 @@ _:      inc hl \ inc hl \ inc hl
 setInitialDE:
     push hl
         push bc
+            ex de, hl
             call getThreadEntry
             jr z, _
         pop bc
