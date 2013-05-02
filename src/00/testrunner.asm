@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x0007
+;.equ defaultTest 0x0007
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -29,6 +29,7 @@ test_collection_end:
 
 testrunner:
     call getLcdLock
+    call getKeypadLock
     call allocScreenBuffer
 #ifdef defaultTest
     call clearBuffer
