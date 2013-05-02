@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x0007
+.equ defaultTest 0x0008
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -21,6 +21,7 @@ test_collection:
     .dw test_compareStrings ; 0006 test_compareStrings
 
     .dw test_openFileRead   ; 0007 test_openFileRead
+    .dw test_closeStream    ; 0008 test_closeStream
 
     .dw 0xFFFF
 explicit_only:

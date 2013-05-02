@@ -120,6 +120,29 @@ populateStreamBuffer:
     pop af
     ret
 
+;; getStreamBuffer [File Streams]
+;;  Gets the address of a stream's memory buffer.
+;; Inputs:
+;;  D: Stream ID
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+;;  IX: Stream buffer (on success)
+;; Notes:
+;;  For read-only streams, modifying this buffer could have unforseen consequences and it will not be copied back to the file.
+;;  For writable streams, make sure you call flushStream if you modify this buffer and want to make the changes persist to the file.
+getStreamBuffer:
+    push ix
+        call getStreamEntry
+        jr nz, .fail
+        ld l, (ix + 1)
+        ld h, (ix + 2)
+    pop ix
+    ret
+.fail:
+    pop ix
+    ret
+
 ;; getStreamEntry [File Stream]
 ;;  Gets the address of a stream entry in the kernel file stream table.
 ;; Inputs:
@@ -127,7 +150,7 @@ populateStreamBuffer:
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
-;;  HL: File stream entry poitner (on success)
+;;  IX: File stream entry poitner (on success)
 getStreamEntry:
     push af
     push hl
@@ -136,9 +159,9 @@ getStreamEntry:
         cp maxFileStreams
         jr nc, .notFound
         or a \ rla \ rla \ rla ; A *= 8
-        ld hl, fileHandleTable
-        add l \ ld l, a
-        ld a, (hl)
+        ld ix, fileHandleTable
+        add ixl \ ld ixl, a
+        ld a, (ix)
         cp 0xFF
         jr z, .notFound
     pop bc
@@ -162,20 +185,22 @@ getStreamEntry:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
 closeStream:
-    push hl
+    push ix
         call getStreamEntry
         jr z, .doClose
-    pop hl
+    pop ix
     ret
 .doClose:
         push af
-            ld a, (hl)
-            bit 7, a
-            jr nz, .closeWritableStream
-            ; Close readable stream (just remove the entry)
-            ld (hl), 0xFF
+        push hl
+            ld (ix), 0xFF
+            ld l, (ix + 1)
+            ld h, (ix + 2)
+            push hl \ pop ix
+            call free
             ld hl, activeFileStreams
             dec (hl)
+        pop hl
         pop af
     pop hl
     cp a
