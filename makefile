@@ -57,6 +57,7 @@ DEFINES=$(PLATFORM)
 
 test: DEFINES=TI84pSE,TEST
 test: TI84pSE
+	$(ASPREFIX)build/BuildFS.exe 77 bin/kernel-TI84pSE.rom src/00/tests/testfs
 
 runtest: test
 	$(EMPREFIX)build/Wabbitemu.exe bin/kernel-TI84pSE.rom
