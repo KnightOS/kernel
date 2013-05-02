@@ -331,23 +331,20 @@ _:  ld a, b
 ; Input:  A: Thread ID
 ; Output: HL: Thread entry
 getThreadEntry:
-    push af ; Keep in case of success
-        push bc
-            ld c, a
-            ld b, maxThreads
-            ld hl, threadTable
-_:          ld a, (hl)
-            cp c
-            jr nz, _
+    push bc
+        ld c, a
+        ld b, maxThreads
+        ld hl, threadTable
+_:      ld a, (hl)
+        cp c
+        jr nz, _
         pop bc
-    pop af ; Need A here
-    ret
-_:          ld a, 8
-            add a, l
-            ld l, a
-            djnz --_
-        pop bc
-    pop af ; We don't actually need A here, just want it off the stack
+        ret
+_:      ld a, 8
+        add a, l
+        ld l, a
+        djnz --_
+    pop bc
     or 1
     ld a, errNoSuchThread
     ret
