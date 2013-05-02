@@ -1,5 +1,8 @@
 ; openFileRead 0007
 test_openFileRead:
+    xor a
+    ld (currentThreadIndex), a
+    ld (threadTable), a
     ; Test does not exist
     ld de, .testPath1
     call openFileRead
@@ -9,10 +12,25 @@ test_openFileRead:
     cp b
     jr nz, .fail
 
-    ; Test stream creation
     ld de, .testPath2
     call openFileRead
-    
+    jr nz, .fail
+    xor a
+    ld ix, fileHandleTable
+    cp (ix)
+    jr nz, .fail
+    call closeStream
+    dec a
+    cp (ix)
+    jr nz, .fail
+
+    ld de, .testPath3
+    call openFileRead
+    jr nz, .fail
+    xor a
+    cp (ix)
+    jr nz, .fail
+    call closeStream
 
     assert_pass()
 .fail:
