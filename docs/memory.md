@@ -77,22 +77,25 @@ All pending signals are stored in the signal table. Each entry is 4 bytes long.
 
 ### File Stream Table
 
-All active file streams are stored in this table. The buffer is only used for writable streams, and is garbage for read-only streams.
+All active file streams are stored in this table.
 
 <table>
     <th>Offset</th><th>Length</th><th>Description</th>
     <tr><td>0000</td><td>1</td><td>Flags/Owner</td></tr>
     <tr><td>0001</td><td>2</td><td>Buffer address</td></tr>
-    <tr><td>0003</td><td>2</td><td>Block address</td></tr>
-    <tr><td>0005</td><td>1</td><td>Flash address</td></tr>
-    <tr><td>0006</td><td>1</td><td>Block size</td></tr>
-    <tr><td>0007</td><td>1</td><td>Final block size</td></tr>
+    <tr><td>0003</td><td>1</td><td>Stream pointer</td></tr>
+    <tr><td>0004</td><td>2</td><td>Section identifier</td></tr>
+    <tr><td>0006</td><td>1</td><td>Length of final block</td></tr>
+    <tr><td>0007</td><td>1</td><td>Reserved for future use</td></tr>
 </table>
 
-The buffer address refers to the in-memory buffer for writable streams. The block address is a "section identifier", as described in the
-filesystem specification, referring to the current block. The Flash address is the offset within the block address, these two fields combined
-describe the stream's current position. The block size refers to the size of the block - 256 execpt for the last block. This allows us to
-avoid looking up the file entry every time we do a read. Instead, we just look up the entry when we seek out of the current block.
+Flags/owner is the following 8 bit format: FTxxxxxx, where xxxxxx is the thread ID of the owner. F is set if the stream is currently on the
+final block of the file. T is set if thread is writable.
 
-The most significant bit of `Flags/Owner` indicates if the stream is writable: 1 for writable, 0 for read-only. The remaining bits are the
-thread ID of the owner.
+The buffer address is the location of the buffer in memory (the first byte). This 256-byte buffer contains the contents of the current DAT
+block. The stream pointer is the offset within this buffer that the stream is currently poitned to. When this offset overflows or underflows,
+the system copies the next or prior block (respectively) into the buffer. For writable streams, the stream is first flushed.
+
+The section identifer refers to the current DAT block, and is a section identifier as described by the filesystem specification.
+
+The length of the final block is used in read-only streams to determine when the end of the stream has been reached.
