@@ -187,11 +187,7 @@ getStreamEntry:
 closeStream:
     push ix
         call getStreamEntry
-        jr z, .doClose
-    pop ix
-    ret
-.doClose:
-        push af
+        jr nz, .fail
         push hl
             ld (ix), 0xFF
             ld l, (ix + 1)
@@ -201,12 +197,12 @@ closeStream:
             ld hl, activeFileStreams
             dec (hl)
         pop hl
-        pop af
-    pop hl
+    pop ix
     cp a
     ret
-.closeWritableStream:
-    ; TODO
+.fail:
+    pop ix
+    ret
 
 ;; streamReadByte [File Stream]
 ;;  Reads a single byte from a file stream and advances the stream.

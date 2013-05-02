@@ -41,16 +41,16 @@ test_closeStream:
     ld d, 0xFF
     call closeStream
     jr z, .fail
-
+    
     ld de, .testPath1
     call openFileRead
     call getStreamBuffer
-    push ix \ pop hl
     call closeStream
     jr nz, .fail
     ; Confirm that memory has been freed
     ld a, 0xFF
-    cp (ix + -3)
+    dec hl \ dec hl \ dec hl
+    cp (hl)
     jr nz, .fail
     assert_pass()
 .fail:
