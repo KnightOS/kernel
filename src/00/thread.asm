@@ -372,7 +372,35 @@ _:      inc hl \ inc hl \ inc hl
     pop bc
     pop de
     ret
-    
+
+
+; Sets the initial value of BC on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialBC:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -6), e
+            ld (ix + -5), d
+        pop de
+    pop hl
+    ret
+
 ; Sets the initial value of DE on start up.
 ; Input: HL: Start value
 ;        A: Thread Id
