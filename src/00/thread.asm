@@ -378,22 +378,22 @@ _:      inc hl \ inc hl \ inc hl
 ;        A: Thread Id
 setInitialDE:
     push hl
-    push bc
-        call getThreadEntry
-        jr z, _
+        push bc
+            call getThreadEntry
+            jr z, _
         pop bc
-        pop hl
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -8), e
-        ld (ix + -7), d
-    pop bc
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            ld c, (hl) \ inc hl \ ld b, (hl)
+            push bc \ pop ix
+            call memSeekToStart
+            dec ix \ dec ix
+            ld c, (ix) \ ld b, (ix + 1)
+            add ix, bc
+            ld (ix + -8), e
+            ld (ix + -7), d
+        pop bc
     pop hl
     ret
     
@@ -402,23 +402,23 @@ _:      inc hl \ inc hl \ inc hl
 ;        A: Thread Id
 setInitialHL:
     push de
-    push bc
-        ex de, hl
-        call getThreadEntry
-        jr z, _
+        push bc
+            ex de, hl
+            call getThreadEntry
+            jr z, _
         pop bc
-        pop de
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -10), e
-        ld (ix + -9), d
-    pop bc
+    pop de
+    ret
+_:          inc hl \ inc hl \ inc hl
+            ld c, (hl) \ inc hl \ ld b, (hl)
+            push bc \ pop ix
+            call memSeekToStart
+            dec ix \ dec ix
+            ld c, (ix) \ ld b, (ix + 1)
+            add ix, bc
+            ld (ix + -10), e
+            ld (ix + -9), d
+        pop bc
     pop de
     ret
     
@@ -427,22 +427,22 @@ _:      inc hl \ inc hl \ inc hl
 ;        A: Thread Id
 setInitialA:
     push de
-    push bc
-        ex de, hl
-        call getThreadEntry
-        jr z, _
+        push bc
+            ex de, hl
+            call getThreadEntry
+            jr z, _
         pop bc
-        pop de
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -3), d
-    pop bc
+    pop de
+    ret
+_:          inc hl \ inc hl \ inc hl
+            ld c, (hl) \ inc hl \ ld b, (hl)
+            push bc \ pop ix
+            call memSeekToStart
+            dec ix \ dec ix
+            ld c, (ix) \ ld b, (ix + 1)
+            add ix, bc
+            ld (ix + -3), d
+        pop bc
     pop de
     ret
     
