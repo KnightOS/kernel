@@ -64,7 +64,7 @@ activeThreads .equ 0x80B5
 loadedLibraries .equ 0x80B6
 activeSignals .equ 0x80B7
 activeFileStreams .equ 0x80B8
-nextThreadId .equ 0x80B9
+lastThreadId .equ 0x80B9
 
 hwLockIO .equ 0x80BA
 hwLockLCD .equ 0x80BB
@@ -84,6 +84,8 @@ maxThreads .equ 10
 maxFileStreams .equ 5
 maxLibraries .equ 10
 maxSignals .equ 5 ; Consider increasing this
+
+threadRangeMask .equ 0x3F
 
 ; Filesystem stuff
 fsEndOfTable .equ 0xFF
