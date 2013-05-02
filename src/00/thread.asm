@@ -480,6 +480,60 @@ _:          inc hl \ inc hl \ inc hl
         pop de
     pop hl
     ret
+
+; Sets the initial value of IX on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialIX:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -12), e
+            ld (ix + -11), d
+        pop de
+    pop hl
+    ret
+
+; Sets the initial value of IY on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialIY:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -14), e
+            ld (ix + -13), d
+        pop de
+    pop hl
+    ret
     
 suspendCurrentThread:
     push hl
