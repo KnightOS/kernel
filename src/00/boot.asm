@@ -154,8 +154,8 @@ reboot:
     ld bc, 8 * maxFileStreams
     ldir
     
-    xor a
-    ld (nextThreadId), a
+    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
+    ld (lastThreadId), a
     
     ; Good place to test kernel routines
     

@@ -1,3 +1,18 @@
+; Returns the ID of the thread that will launch next
+getNextThreadID:
+    push hl ; Don't care about the data getThreadEntry provides
+        push bc
+            ld a, (lastThreadId)
+_:          inc a
+            and threadRangeMask
+            ld b, a ; Don't want the error getThreadEntry provides
+            call getThreadEntry
+            ld a, b
+            jr z, -_
+        pop bc
+    pop hl
+    ret
+
 getCurrentThreadID:
     push hl
         ld a, (currentThreadIndex)
@@ -14,8 +29,7 @@ getCurrentThreadID:
     pop hl
     ret
 _:  pop hl
-    ld a, (nextThreadId)
-    ret
+    jp getNextThreadID ; call \ ret
 _:  pop hl
     ld a, 0xFE ; TODO: Dynamic library deallocation
     ret
@@ -45,7 +59,8 @@ _:      di
             ld hl, threadTable
             add a, l
             ld l, a
-            ld a, (nextThreadId)
+            call getNextThreadID
+            ld (lastThreadId), a
             ; A is now a valid thread id, and hl points to the next-to-last entry
             ; DE is address of code, B is stack size / 2
             ld (hl), a \ inc hl ; *hl++ = a
@@ -85,10 +100,6 @@ _:      di
     ld l, a
     ld a, (activeThreads)
     inc a \ ld (activeThreads), a
-    ld a, (nextThreadId) \ inc a
-    ; Wrap the thread counter
-    and threadRangeMask
-    ld (nextThreadId), a
     ld a, (hl)
     cp a
     ret
