@@ -382,6 +382,7 @@ setInitialDE:
             ex de, hl
             call getThreadEntry
             jr z, _
+            ex de, hl
         pop bc
     pop hl
     ret
@@ -407,6 +408,7 @@ setInitialHL:
             ex de, hl
             call getThreadEntry
             jr z, _
+            ex de, hl
         pop bc
     pop de
     ret
@@ -432,6 +434,7 @@ setInitialA:
             ex de, hl
             call getThreadEntry
             jr z, _
+            ex de, hl
         pop bc
     pop de
     ret
