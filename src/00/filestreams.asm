@@ -9,92 +9,115 @@
 ;;  E: Garbage (on success)
 openFileRead:
     push hl
-    push de
     push bc
-    push af
-    ld a, i
-    push af
-        di
         call findFileEntry
-        ex de, hl
-        jr nz, .notFound
-        ; Create stream based on file entry
-        out (6), a
-        ld a, (activeFileStreams)
-        cp maxFileStreams
-        jr nc, .tooManyStreams
-        inc a \ ld (activeFileStreams), a
-        ld hl, fileHandleTable
-        ; Sear0xc for open slot
-        ld b, 0
-_:      ld a, (hl)
-        cp 0xFF
-        jr z, _
+        jr nz, .fileNotFound
+        ld b, a
+        push af
+        ld a, i
+        push af
+        di
+        push iy
         push bc
+            ld iy, fileHandleTable
             ld bc, 8
-            add hl, bc
+            ld d, 0
+.findEntryLoop:
+            ld a, (iy)
+            cp 0xFF
+            jr z, .entryFound
+            add iy, bc
+            inc d
+            ld a, maxFileStreams - 1
+            cp d
+            jr nc, .findEntryLoop
+            ; Too many active streams
+            ; We could check (activeFileStreams) instead, but since we have to iterate through the table
+            ; anyway, we may as well do it here and save some space.
         pop bc
-        inc b
-        jr -_
-_:      push bc
-            ; HL points to next entry in table
-            call getCurrentThreadId
-            ld (hl), a ; Flags/owner (no need to set readable flag, it should be zero)
-            inc hl \ inc hl \ inc hl ; Skip buffer address
-            ex de, hl
-            ; Seek HL to file size in file entry
-            ld bc, 7
-            or a \ sbc hl, bc
-            ; Do some logic with the file size and save it for later
-            ld a, (hl) \ inc hl \ or a \ ld a, (hl)
-            push af
-                dec hl \ dec hl \ dec hl ; Seek HL to block address
-                ; Write block address to table
-                ld c, (hl) \ dec hl \ ld b, (hl)
-                ex de, hl
-                ld (hl), c \ inc hl \ ld (hl), b \ inc hl
-                ; Flash address always starts as zero
-                ld (hl), 0 \ inc hl
-            pop af
-            ; Write the size of the final block
-            inc hl \ ld (hl), a \ dec hl
-            ; Get the size of this block in A
-            jr z, _
-            xor a
-_:          ; A is block size
-            ld (hl), a
-        pop bc
-        ld d, b
-    pop af
+        pop iy
+        pop af
     jp po, _
     ei
 _:  pop af
     pop bc
-    inc sp \ inc sp ; Don't pop de
     pop hl
-    cp a
-    ret
-.tooManyStreams:
-    pop af
-    jp po, _
-    ei
-_:  pop af
-    pop bc
-    pop de
-    pop hl
-    or 1
+    or a
     ld a, errTooManyStreams
     ret
-.notFound:
-    pop af
+
+.entryFound:
+            ; We can put the stream entry at (iy) and use d as the ID
+            pop bc
+            ld a, b
+            push de
+            push ix
+                call getCurrentThreadId
+                and 0b111111
+                ld (iy), a ; Flags & owner
+                ; Create a buffer
+                ld bc, 256
+                call malloc ; TODO: Out of memory
+                push ix \ pop bc
+                ld (iy + 1), c ; Buffer
+                ld (iy + 2), b
+                dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to least significant file size byte
+                ld a, (hl)
+                ld (iy + 6), a ; Length of final block
+                dec hl \ dec hl ; Move to section ID
+                ld b, (hl)
+                ld (iy + 5), b
+                dec hl \ ld c, (hl)
+                ld (iy + 4), c
+                ; Section ID in BC
+                call populateStreamBuffer
+                xor a
+                ld (iy + 3), a ; Stream pointer
+            pop ix
+            pop de
+        pop iy
+        pop af
     jp po, _
     ei
 _:  pop af
     pop bc
-    pop de
     pop hl
-    or 1
-    ld a, errFileNotFound
+    ret
+
+.fileNotFound:
+    pop bc
+    pop hl
+    ret
+
+; Section ID in BC, block in IX
+populateStreamBuffer:
+    push af
+        in a, (6)
+        push af
+        push de
+        push hl
+            ld a, c
+            rra \ rra \ rra \ rra \ rra
+            and 0b11111
+            push bc
+                or a
+                rl b \ rl b \ rl b
+                or b
+            pop bc
+            out (6), a
+            ld a, c
+            and 0b11111
+            add a, 0x40
+            ld h, a
+            ld l, 0
+            ld bc, 256
+            push ix \ pop de
+            ldir
+        pop hl
+        pop de
+        pop af
+        out (6), a
+    pop af
     ret
 
 ;; getStreamEntry [File Stream]

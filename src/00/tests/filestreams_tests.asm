@@ -16,22 +16,6 @@ test_openFileRead:
     cp (ix)
     jr nz, .fail
 
-    ld de, .testPath2
-    call openFileRead
-    jr nz, .fail
-    xor a
-    cp (ix)
-    jr nz, .fail
-    call closeStream
-
-    ld de, .testPath3
-    call openFileRead
-    jr z, .fail
-    ld b, a
-    ld a, errFileNotFound
-    cp b
-    jr nz, .fail
-
     assert_pass()
 .fail:
     assert_fail()

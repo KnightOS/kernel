@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x0007
+.equ defaultTest 0x0007
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -119,12 +119,16 @@ testrunner_runtest:
     pop hl
     call fastCopy
     ld de, .return
+    push iy
     push de
 #ifdef BREAK_BEFORE_TEST
     jr $
 #endif
     jp (hl)
 .return:
+    pop iy
+    call getKeypadLock
+    call getLcdLock
     or a
     jr nz, .failure
     ; Pass
