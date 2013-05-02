@@ -197,7 +197,7 @@ _:  pop af
 #endif
 
 ;; DEMulA [Miscellaneous]
-;;  Performs `HL = DE * A"
+;;  Performs `HL = DE * A`
 DEMulA:
     push bc
     ld hl, 0 ; Use HL to store the product
@@ -208,7 +208,7 @@ DEMulA:
     add hl, de
 .skip:
     sla e ; Shift DE one bit left
-    rl D
+    rl d
     djnz .loop
     pop bc
     ret

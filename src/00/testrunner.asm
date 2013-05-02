@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x0008
+.equ defaultTest 0x0007
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -19,6 +19,9 @@ test_collection:
     .dw test_stringLength   ; 0004 test_stringLength
     .dw test_DEMulA         ; 0005 test_DEMulA
     .dw test_compareStrings ; 0006 test_compareStrings
+
+    .dw test_openFileRead   ; 0007 test_openFileRead
+
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
@@ -189,6 +192,7 @@ characterMap:
     ret
 .endmacro
 
-#include "tests/util.asm"
+#include "tests/util_tests.asm"
+#include "tests/filestreams_tests.asm"
 
 .undefine assert_pass assert_fail
