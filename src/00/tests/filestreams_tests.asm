@@ -57,3 +57,40 @@ test_closeStream:
     assert_fail()
 .testPath1:
     .db "/test.txt", 0
+
+; streamReadByte 0009
+test_streamReadByte:
+    jr $
+    ld d, 0xFF
+    call streamReadByte
+    jr z, .fail
+
+    ld de, .testPath1
+    call openFileRead
+    call streamReadByte
+    jr nz, .fail
+    cp 'T'
+    jr nz, .fail
+    call streamReadByte
+    jr nz, .fail
+    cp 'e'
+    jr nz, .fail
+
+    call closeStream
+    
+    ; Test with file that is greater than one block in length
+    ld b, 0xFF
+    jr $
+    ld de, .testPath2
+    call openFileRead
+_:  call streamReadByte
+    djnz -_
+    jr $
+    
+    assert_pass()
+.fail:
+    assert_fail()
+.testPath1:
+    .db "/test.txt", 0
+.testPath2:
+    .db "/large.txt", 0

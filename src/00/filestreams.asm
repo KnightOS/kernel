@@ -57,7 +57,8 @@ _:  pop af
                 ld (iy), a ; Flags & owner
                 ; Create a buffer
                 ld bc, 256
-                call malloc ; TODO: Out of memory
+                call malloc
+                jr nz, .outOfMemory
                 push ix \ pop bc
                 ld (iy + 1), c ; Buffer
                 ld (iy + 2), b
@@ -89,6 +90,20 @@ _:  pop af
     pop hl
     ret
 
+.outOfMemory:
+            pop ix
+            pop de
+        pop iy
+        pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop hl
+    ld a, errOutOfMem
+    or a
+    ret
+
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af
@@ -97,8 +112,8 @@ populateStreamBuffer:
         push de
         push hl
             ld a, c
-            rra \ rra \ rra \ rra \ rra
-            and 0b11111
+            or a \ rra \ rra \ rra \ rra \ rra
+            and 0b1111
             push bc
                 or a
                 rl b \ rl b \ rl b
@@ -212,118 +227,29 @@ closeStream:
 ;;  Z: Set on success, reset on failure
 ;;  A: Data read (on success); Error code (on failure)
 streamReadByte:
-    push hl
+    push ix
         call getStreamEntry
-        jr z, .doRead
-    pop hl
-    ret
-.doRead:
-        push af
-        ld a, i
-        push af
-        push de
-        push bc
-            di
-            ld a, (hl) \ inc hl
-            bit 7, a
-            jr nz, .readFromWritableStream
-            ; Read from read-only stream
-            inc hl \ inc hl
-            ld e, (hl) \ inc hl \ ld d, (hl)
-            ; If DE is 0xFFFF, we've r0xeaced the end of this file (and the "next" block is an empty one)
-            ld a, 0xFF
-            cp e \ jr nz, +_
-            cp d \ jr nz, +_
-            ; End of stream
-            jr .endOfStream_early
-_:          ; Set A to the flash page and DE to the address (relative to 0x4000)
-            ld a, e \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-            sla d \ sla d \ sla d \ or d
-            out (6), a
-            ; Now get the address of the entry on the page
-            ld a, e \ and 0b011111 \ ld d, a
-            inc hl \ ld a, (hl) \ ld e, a
-            push de
-                ld bc, 0x4000 \ ex de, hl \ add hl, bc
-                ; Read the byte into A
-                ld a, (hl)
-                ex de, hl
-            pop de
-            push af
-                xor a
-                inc e
-                cp e
-                jr nz, ++_
-                ; Handle block overflow
-                dec hl \ dec hl \ ld a, (hl)
-                and 0b011111
-                rla \ rla ; A *= 4
-                ld d, 0x40 \ ld e, a
-                ; DE points to header entry, whi0xc tells us where the next block is
-                inc de \ inc de
-                ex de, hl
-                ld c, (hl) \ inc hl \ ld b, (hl)
-                ex de, hl
-                ; Determine if this is the final block
-                push bc
-                    ld a, c \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-                    sla b \ sla b \ sla b \ or b
-                    out (6), a
-                    ld a, c \ and 0b011111 \ rla \ rla \ ld d, 0x40 \ ld e, a
-                    ; DE points to header entry of next block
-                    inc de \ inc de
-                    ex de, hl
-                        ld a, 0xFF
-                        cp (hl) \ jr nz, _
-                        inc hl \ cp (hl) \ jr nz, _
-                        ; It is the final block, copy the block size from the final size
-                        ex de, hl
-                            inc hl \ inc hl \ inc hl \ inc hl \ ld a, (hl) \ dec hl \ ld (hl), a
-                            dec hl \ dec hl \ dec hl
-                        ex de, hl
-_:                  ex de, hl
-                pop bc
-                ; Update block address in stream entry
-                ld (hl), c \ inc hl \ ld (hl), b \ inc hl
-                ld e, 0
-_:              ; Update flash address
-                ld (hl), e
-                inc hl
-                ld a, (hl) ; Block size
-                or a ; Handle 0x100 size
-                jr z, _
-                cp e
-                jr c, .endOfStream
-_:          pop af
-            ; Return A
-.success:
-        ld h, a
-        pop bc
-        pop de
-        pop af
-        jp po, _
-        ei
-_:      pop af
-        ld a, h
-    pop hl
+        jr nz, .fail
+        push hl
+            ld l, (ix + 1)
+            ld h, (ix + 2)
+            ld a, (ix + 3)
+            add l
+            ld l, a
+            jr nc, _
+            inc h
+_:          ld a, (hl)
+            inc (ix + 3)
+            jr nc, _
+            ; We need to get the next block (or end of stream)
+            jr $
+_:      pop hl
+    pop ix
     cp a
     ret
-.endOfStream:
-            dec hl \ dec hl \ dec (hl)
-            pop af
-.endOfStream_early:
-        pop bc
-        pop de
-        pop af
-        jp po, _
-        ei
-_:      pop af
-    pop hl
-    or 1
-    ld a, errEndOfStream
+.fail:
+    pop ix
     ret
-.readFromWritableStream:
-    jr .success ; TODO
 
 ;; streamReadWord [File Stream]
 ;;  Reads a 16-bit word from a file stream and advances the stream.
