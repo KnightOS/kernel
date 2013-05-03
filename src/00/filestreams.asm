@@ -62,7 +62,24 @@ _:  pop af
                 push ix \ pop bc
                 ld (iy + 1), c ; Buffer
                 ld (iy + 2), b
-                dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to least significant file size byte
+                dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
+                ; Check for final block
+                ld a, (hl)
+                or a ; cp 0
+                jr z, .final
+                cp 1
+                jr nz, .notFinal
+                ; Check next byte to see if it's zero - if so, it's the final block
+                inc hl
+                ld a, (hl)
+                or a ; cp 0
+                jr nz, .notFinal - 1 ; (-1 adds the inc hl)
+.final:         
+                set 7, (iy)
+                jr .notFinal
+dec hl
+.notFinal:      
+                inc hl
                 ld a, (hl)
                 ld (iy + 6), a ; Length of final block
                 dec hl \ dec hl ; Move to section ID
@@ -115,9 +132,11 @@ populateStreamBuffer:
             or a \ rra \ rra \ rra \ rra \ rra
             and 0b1111
             push bc
-                or a
-                rl b \ rl b \ rl b
-                or b
+                ld c, a
+                ld a, b
+                rla \ rla \ rla
+                and 0b11111000
+                or c
             pop bc
             out (6), a
             ld a, c
@@ -226,7 +245,7 @@ closeStream:
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Data read (on success); Error code (on failure)
-streamReadByte:
+streamReadByte: ; TODO: Page through blocks
     push ix
         call getStreamEntry
         jr nz, .fail
@@ -234,16 +253,30 @@ streamReadByte:
             ld l, (ix + 1)
             ld h, (ix + 2)
             ld a, (ix + 3)
-            add l
+            bit 7, (ix)
+            jr z, _
+            ; check for end of stream
+            cp (ix + 6)
+            jr c, _
+            jr nz, _
+            ; End of stream!
+        pop hl
+   pop ix
+   or 1
+   ld a, errEndOfStream
+   ret
+_:          add l
             ld l, a
             jr nc, _
             inc h
-_:          ld a, (hl)
-            inc (ix + 3)
+_:          ld a, (ix + 3)
+            inc a
+            ld (ix + 3), a
             jr nc, _
             ; We need to get the next block (or end of stream)
             jr $
-_:      pop hl
+_:      ld a, (hl)
+        pop hl
     pop ix
     cp a
     ret

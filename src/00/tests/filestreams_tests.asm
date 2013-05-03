@@ -60,7 +60,6 @@ test_closeStream:
 
 ; streamReadByte 0009
 test_streamReadByte:
-    jr $
     ld d, 0xFF
     call streamReadByte
     jr z, .fail
@@ -78,12 +77,25 @@ test_streamReadByte:
 
     call closeStream
     
+    ; Test for end of stream
+    ld de, .testPath1
+    call openFileRead
+    ld b, 10 ; size of test.txt
+_:  call streamReadByte
+    jr nz, .fail
+    djnz -_
+    call streamReadByte
+    jr z, .fail
+    
+    assert_pass()
+
     ; Test with file that is greater than one block in length
     ld b, 0xFF
-    jr $
     ld de, .testPath2
     call openFileRead
+    jr $
 _:  call streamReadByte
+    jr nz, .fail
     djnz -_
     jr $
     
