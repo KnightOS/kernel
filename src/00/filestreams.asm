@@ -45,7 +45,6 @@ _:  pop af
     or a
     ld a, errTooManyStreams
     ret
-
 .entryFound:
             ; We can put the stream entry at (iy) and use d as the ID
             pop bc
@@ -106,12 +105,10 @@ _:  pop af
     pop bc
     pop hl
     ret
-
 .fileNotFound:
     pop bc
     pop hl
     ret
-
 .outOfMemory:
             pop ix
             pop de
