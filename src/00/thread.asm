@@ -279,8 +279,6 @@ _:  pop af
 ; Inputs:    DE: Pointer to full path of program
 ; Outputs:     A: Thread ID
 ; Launches program in new thread
-
-; TODO: Errors
 launchProgram:
     push bc
     ld a, i
@@ -290,6 +288,7 @@ launchProgram:
     push de
     push ix
         call openFileRead
+        jr nz, .error
         
         push de
             call getStreamInfo
@@ -300,6 +299,7 @@ launchProgram:
                 ld a, nullThread
                 ld (currentThreadIndex), a ; The null thread will allocate memory to the next thread
                 call malloc
+                jr nz, .error_pop2
             pop af
             ld (currentThreadIndex), a
         pop de
@@ -317,6 +317,7 @@ launchProgram:
             pop af
         pop hl
         call startThread
+        jr nz, .error
     ld b, a
     pop ix
     pop de
@@ -325,6 +326,23 @@ launchProgram:
     jp po, _
     ei
 _:  ld a, b
+    pop bc
+    cp a
+    ret
+.error_pop2:
+    inc sp \ inc sp
+.error_pop1:
+    inc sp \ inc sp
+.error:
+    pop ix
+    pop de
+    pop hl
+    ld b, a
+    pop af
+    jp po, _
+    ei
+    or 1
+    ld a, b
     pop bc
     ret
     
