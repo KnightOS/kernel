@@ -3,16 +3,16 @@ test_openFileRead:
     xor a
     ld (currentThreadIndex), a
     ld (threadTable), a
-
+    
     ld de, .testPath1
     call openFileRead
     jr nz, .fail
-    xor a
+    ld a, 0b10000000
     ld ix, fileHandleTable
     cp (ix)
     jr nz, .fail
     call closeStream
-    dec a
+    ld a, 0xFF
     cp (ix)
     jr nz, .fail
 
@@ -20,7 +20,7 @@ test_openFileRead:
     call openFileRead
     jr nz, .fail
     call closeStream
-
+    
     ld de, .testPath3
     call openFileRead
     jr z, .fail
@@ -86,18 +86,39 @@ _:  call streamReadByte
     djnz -_
     call streamReadByte
     jr z, .fail
+    call closeStream
     
-    assert_pass()
-
     ; Test with file that is greater than one block in length
     ld b, 0xFF
     ld de, .testPath2
     call openFileRead
-    jr $
 _:  call streamReadByte
     jr nz, .fail
     djnz -_
-    jr $
+    call streamReadByte
+    cp '\n'
+    jr nz, .fail
+    call streamReadByte
+    cp 'B'
+    jr nz, .fail
+    ; Read up to next block
+    ld b, 0xFF
+_:  call streamReadByte
+    jr nz, .fail
+    djnz -_
+    call streamReadByte
+    cp 'e'
+    jr nz, .fail
+    ; Read last eleven bytes, then test for end of stream
+    ld b, 11
+_:  jr nz, .fail
+    call streamReadByte
+    jr nz, .fail
+    djnz -_
+    call streamReadByte
+    jr z, .fail
+
+    call closeStream
     
     assert_pass()
 .fail:
@@ -106,3 +127,23 @@ _:  call streamReadByte
     .db "/test.txt", 0
 .testPath2:
     .db "/large.txt", 0
+
+; streamReadWord 000A
+test_streamReadWord:
+    ; Since this one just uses streamReadByte, we can get away with minimal testing
+    ld de, .testPath
+    call openFileRead
+    call streamReadWord
+    ld a, 'T'
+    cp l
+    jr nz, .fail
+    ld a, 'e'
+    cp h
+    jr nz, .fail
+
+    call closeStream
+    assert_pass()
+.fail:
+    assert_fail()
+.testPath:
+    .db "/test.txt", 0

@@ -11,7 +11,7 @@ openFileRead:
     push hl
     push bc
         call findFileEntry
-        jr nz, .fileNotFound
+        jp nz, .fileNotFound
         ld b, a
         push af
         ld a, i
@@ -64,6 +64,8 @@ _:  pop af
                 ld (iy + 2), b
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
+                xor a
+                ld (iy + 7), a
                 ld a, (hl)
                 or a ; cp 0
                 jr z, .final
@@ -74,8 +76,11 @@ _:  pop af
                 ld a, (hl)
                 or a ; cp 0
                 jr nz, .notFinal - 1 ; (-1 adds the inc hl)
+                dec hl
 .final:         
                 set 7, (iy)
+                ld a, (hl)
+                ld (iy + 7), a
                 jr .notFinal
 dec hl
 .notFinal:      
@@ -128,6 +133,7 @@ populateStreamBuffer:
         push af
         push de
         push hl
+        push bc
             ld a, c
             or a \ rra \ rra \ rra \ rra \ rra
             and 0b1111
@@ -147,6 +153,7 @@ populateStreamBuffer:
             ld bc, 256
             push ix \ pop de
             ldir
+        pop bc
         pop hl
         pop de
         pop af
@@ -245,7 +252,7 @@ closeStream:
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Data read (on success); Error code (on failure)
-streamReadByte: ; TODO: Page through blocks
+streamReadByte:
     push ix
         call getStreamEntry
         jr nz, .fail
@@ -254,9 +261,16 @@ streamReadByte: ; TODO: Page through blocks
             ld h, (ix + 2)
             ld a, (ix + 3)
             bit 7, (ix)
-            jr z, _
+            jr z, ++_
             ; check for end of stream
-            cp (ix + 6)
+            bit 5, (ix) ; Set on EOF
+            jr z, _
+        pop hl
+    pop ix
+    or 1
+    ld a, errEndOfStream
+    ret
+_:          cp (ix + 6)
             jr c, _
             jr nz, _
             ; End of stream!
@@ -270,18 +284,83 @@ _:          add l
             jr nc, _
             inc h
 _:          ld a, (ix + 3)
-            inc a
+            add a, 1 ; inc doesn't affect flags
             ld (ix + 3), a
+            ld a, (hl)
             jr nc, _
             ; We need to get the next block (or end of stream)
-            jr $
-_:      ld a, (hl)
-        pop hl
+            call getNextBuffer
+_:      pop hl
     pop ix
     cp a
     ret
 .fail:
     pop ix
+    ret
+
+getNextBuffer:
+    push af
+        bit 7, (ix)
+        jr z, _
+        ; Set EOF
+        set 5, (ix)
+    pop af
+    ret
+_:      push bc
+        push hl
+        ld a, i
+        push af
+            di
+            call selectSection
+            or a \ rlca \ rlca \ inc a \ inc a
+            ld l, a
+            ld h, 0x40
+            ld c, (hl)
+            inc hl
+            ld b, (hl)
+            push ix
+                ld l, (ix + 1)
+                ld h, (ix + 2)
+                push hl \ pop ix
+                call populateStreamBuffer
+            pop ix
+            ; Update the entry in the stream table
+            ld (ix + 4), c
+            ld (ix + 5), b
+            ; Check if this is the last block
+            call selectSection
+            or a \ rlca \ rlca \ inc a \ inc a
+            ld l, a
+            ld h, 0x40
+            ld a, 0xFF
+            cp (hl)
+            jr nz, _
+            inc hl \ cp (hl)
+            jr nz, _
+            ; Set last section stuff
+            set 7, (ix)
+            ld a, (ix + 6)
+            ld (ix + 7), a
+_:      pop af
+        jp po, _
+        ei
+_:      pop hl
+        pop bc
+    pop af
+    ret
+
+; Given stream entry at IX, grabs the section ID, swaps in the page, and sets A to the block index.
+; Destroys B
+selectSection:
+    ld a, (ix + 4)
+    rra \ rra \ rra \ rra \ rra \ and 0b111
+    ld b, a
+    ld a, (ix + 5)
+    rla \ rla \ rla \ and 0b11111000
+    or b
+    out (6), a
+    ld a, (ix + 4)
+    and 0b11111
     ret
 
 ;; streamReadWord [File Stream]
