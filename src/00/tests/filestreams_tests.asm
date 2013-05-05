@@ -147,3 +147,27 @@ test_streamReadWord:
     assert_fail()
 .testPath:
     .db "/test.txt", 0
+
+; streamReadBuffer 000B
+test_streamReadBuffer:
+    ld de, .testPath
+    call openFileRead
+    ld bc, 5
+    call malloc
+    dec bc
+    jr $
+    call streamReadBuffer
+    call closeStream
+    xor a
+    ld (ix + 4), a
+    push ix \ pop hl
+    ld de, .testString
+    call compareStrings
+    jr nz, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.testPath:
+    .db "/test.txt", 0
+.testString:
+    .db "Test", 0

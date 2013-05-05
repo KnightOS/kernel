@@ -401,163 +401,53 @@ streamReadWord:
 ;;  If BC is greater than the remaining space in the stream, the stream will be advanced to the end
 ;;  before returning an error.
 streamReadBuffer:
+    push ix
     push hl
+    push ix \ pop hl
         call getStreamEntry
-        jr z, .doRead
+        jr z, _
     pop hl
+    pop ix
     ret
-.doRead:
-        push af
-        ld a, i
-        push af
-        push de
+_:      bit 5, (ix)
+        jr z, _
+        ; End of stream
+        or 1
+        ld a, errEndOfStream
+    pop hl
+    pop ix
+    ret
+_:  ; Do read
         push bc
-        push ix
-            di
-            ld a, (hl) \ inc hl
-            bit 7, a
-            jr nz, .readFromWritableStream
-            ; Read from read-only stream
-            inc hl \ inc hl
-            ld e, (hl) \ inc hl \ ld d, (hl)
-            ; If DE is 0xFFFF, we've r0xeaced the end of this file (and the "next" block is an empty one)
-            ld a, 0xFF
-            cp e \ jr nz, +_
-            cp d \ jr nz, +_
-            ; End of stream
-            jr .endOfStream
-_:          ; Set A to the flash page and DE to the address (relative to 0x4000)
-            ld a, e \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-            sla d \ sla d \ sla d \ or d
-            out (6), a
-            ; Now get the address of the entry on the page
-            ld a, e \ and 0b011111 \ ld d, a
-            inc hl \ ld a, (hl) \ ld e, a
-            push bc ; TODO: Can be optimized
-                ld bc, 0x4000
-                ex de, hl
-                add hl, bc
-                ld a, e
-                sub 5
-                ld e, a
-            pop bc
-            push de \ push ix \ pop de \ pop ix
-            ; HL refers to the block in Flash
-            ; IX refers to the file stream entry in RAM
-            ; DE refers to the destination address
-            ; BC is the amount to read
-.readLoop:
-            ; Calculate remaining space in the block
-            ld a, (ix + 6)
-            sub (ix + 5)
-            ; A is remaining space in block
-            ; if (bc > A) BC = A
-            push af
-                xor a
-                cp b
-                jr nz, _
-            pop af
-            cp c
-            jr nc, ++_
-            ld a, c
-            jr ++_
-
-_:          pop af
-            ; A is length to read
-_:          push bc
-                ld b, 0
-                or a
-                jr nz, _
-                inc b
-_:              ld c, a
-                ldir
-            pop bc
-            ; BC -= A
-            push af
-                or a
-                jr nz, _
-                dec b
-                jr ++_
-_:              push bc
-                    ld b, a
-                    ld a, c
-                    sub b
-                pop bc
-                ld c, a
-                jr nc, _
-                dec b
-_:          pop af
-            add (ix + 5)
-            or a
-            jr nz, .iter
-            ; We need to use the next block
-            push bc
-                ; Grab the new one
-                ld a, (ix + 3) \ and 0b011111 \ rla \ rla \ ld l, a
-                ld h, 0x40
-                inc hl \ inc hl
-                ld c, (hl) \ inc hl \ ld b, (hl)
-                ld a, c \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-                sla b \ sla b \ or b
-                ld b, (hl)
-                ; 0xCange flash page
-                out (6), a
-                ; Update entry
-                ld (ix + 3), c
-                ld (ix + 4), b
-                ; Update block size
-                ld a, c \ and 0b011111 \ rla \ rla \ ld l, a
-                inc hl \ inc hl
-                ld a, 0xFF
-                cp (hl)
-                jr nz, _
-                inc hl
-                cp (hl)
-                jr nz, _
-                ld a, (ix + 7) ; Final block
-_:              xor a
-                ld (ix + 6), a ; Not final block
-_:              ; Update HL
-                ld hl, 0x4000
-                ld a, c \ and 0b011111 \ add h \ ld h, a
-            pop bc
-            xor a
-.iter:
-            ld (ix + 5), a
-            ; BC is remaining length to read
-            ; 0xCeck to see if we're done
-            xor a
-            cp b
-            jp nz, .readLoop
-            cp c
-            jp nz, .readLoop
-        pop ix
-        pop bc
-        pop de
+        push de
+        push af
+            ex de, hl
+            ld l, (ix + 1)
+            ld h, (ix + 2)
+            ld a, (ix + 3)
+            ; Determine maximum amount that can be read from this block
+            ld d, 0
+            sub d
+            ; A is amount to read assuming full size block
+            ; So check if it really should be a full sized block
+            bit 7, (ix)
+            jr z, _
+            ld d, (ix + 6)
+            cp d
+            jr nc, _
+            ; Overflow, end of stream
         pop af
-        jp po, _
-        ei
-_:      pop af
-    pop hl
-    cp a
-    ret
-.endOfStream_pop:
-            pop af
-.endOfStream:
-        pop ix
+        pop hl
         pop bc
-        pop de
-        pop af
-        jp po, _
-        ei
-_:      pop af
     pop hl
+    pop ix
     or 1
     ld a, errEndOfStream
     ret
-
-.readFromWritableStream:
-    ; TODO
+_:          ; We're fine to read this much
+            jr $
+            ldir
+            
 
 ;; getStreamInfo [File Stream]
 ;;  Gets the amount of space remaining in a file stream.

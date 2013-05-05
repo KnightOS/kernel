@@ -89,8 +89,8 @@ All active file streams are stored in this table.
     <tr><td>0007</td><td>1</td><td>Length of current block</td></tr>
 </table>
 
-Flags/owner is the following 8 bit format: FTxxxxxx, where xxxxxx is the thread ID of the owner. F is set if the stream is currently on the
-final block of the file. T is set if thread is writable.
+Flags/owner is the following 8 bit format: FTExxxxx, where xxxxx is the thread ID of the owner. F is set if the stream is currently on the
+final block of the file. T is set if thread is writable. E is set if the stream pointer is past the end of the file.
 
 The buffer address is the location of the buffer in memory (the first byte). This 256-byte buffer contains the contents of the current DAT
 block. The stream pointer is the offset within this buffer that the stream is currently poitned to. When this offset overflows or underflows,

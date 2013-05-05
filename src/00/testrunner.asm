@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x0007
+.equ defaultTest 0x000B
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -12,18 +12,19 @@
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
 test_collection:
-    .dw test_hexToA         ; 0000 test_hexToA
-    .dw test_cpHLDE         ; 0001 test_cpHLDE
-    .dw test_cpHLBC         ; 0002 test_cpHLBC
-    .dw test_cpBCDE         ; 0003 test_cpBCDE
-    .dw test_stringLength   ; 0004 test_stringLength
-    .dw test_DEMulA         ; 0005 test_DEMulA
-    .dw test_compareStrings ; 0006 test_compareStrings
+    .dw test_hexToA             ; 0000 test_hexToA
+    .dw test_cpHLDE             ; 0001 test_cpHLDE
+    .dw test_cpHLBC             ; 0002 test_cpHLBC
+    .dw test_cpBCDE             ; 0003 test_cpBCDE
+    .dw test_stringLength       ; 0004 test_stringLength
+    .dw test_DEMulA             ; 0005 test_DEMulA
+    .dw test_compareStrings     ; 0006 test_compareStrings
 
-    .dw test_openFileRead   ; 0007 test_openFileRead
-    .dw test_closeStream    ; 0008 test_closeStream
-    .dw test_streamReadByte ; 0009 test_streamReadByte
-    .dw test_streamReadWord ; 000A test_streamReadWord
+    .dw test_openFileRead       ; 0007 test_openFileRead
+    .dw test_closeStream        ; 0008 test_closeStream
+    .dw test_streamReadByte     ; 0009 test_streamReadByte
+    .dw test_streamReadWord     ; 000A test_streamReadWord
+    .dw test_streamReadBuffer   ; 000B test_streamReadBuffer
 
     .dw 0xFFFF
 explicit_only:
