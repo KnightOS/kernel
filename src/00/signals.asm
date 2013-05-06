@@ -82,7 +82,9 @@ readSignal_none:
     jp po, _
     ei
 _:  pop af
+    ld l, a
     or 1
+    ld a, l
     ret
     
 readSignal_found:
