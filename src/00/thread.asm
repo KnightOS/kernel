@@ -150,6 +150,11 @@ killCurrentThread:
 
     pop af
     ; A = Old thread ID
+    ; Clear old semaphores/signals.
+    push hl \ push bc ; In case there are old signals, we don't want them!
+_:      call readSignalAsThread
+        jr z, -_
+    pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
 killCurrentThread_Deallocate:
     ld ix, userMemory
@@ -171,6 +176,7 @@ _:  inc ix \ inc ix
     jr killCurrentThread_DeallocationLoop
 
 killCurrentThread_DeallocationDone:
+
     ld hl, activeThreads
     dec (hl)
     xor a
@@ -237,6 +243,11 @@ _:  ; HL points to old thread in table
     ldir
     pop af
     ; A = Old thread ID
+    ; Clear old semaphores/signals.
+    push hl \ push bc
+_:      call readSignalAsThread
+        jr z, -_
+    pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
     ld ix, userMemory
 killThread_DeallocationLoop:
