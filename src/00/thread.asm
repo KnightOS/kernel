@@ -152,7 +152,7 @@ killCurrentThread:
     ; A = Old thread ID
     ; Clear old semaphores/signals.
     push hl \ push bc ; In case there are old signals, we don't want them!
-_:      call readSignalGivenThread
+_:      call readSignalAsThread
         jr z, -_
     pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
@@ -245,7 +245,7 @@ _:  ; HL points to old thread in table
     ; A = Old thread ID
     ; Clear old semaphores/signals.
     push hl \ push bc
-_:      call readSignalGivenThread
+_:      call readSignalAsThread
         jr z, -_
     pop bc \ pop hl
     ; Deallocate all memory belonging to the thread

@@ -56,11 +56,15 @@ _:  pop af
 readSignal:
     push af
         call getCurrentThreadId
-        call readSignalGivenThread
+        call readSignalAsThread
     pop af
     ret
 
-readSignalGivenThread: ; give the thread ID in A
+; Reads a signal that was originally sent to a thread whose
+; ID should be given in A. This routine is meant for internal
+; use (specifically, the thread killing code uses it to clear
+; undelivered signals). Not for userland use.
+readSignalAsThread:
     push hl
     push af
     ld a, i
