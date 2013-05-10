@@ -418,35 +418,44 @@ _:      bit 5, (ix)
     pop ix
     ret
 _:  ; Do read
-        push bc
         push de
         push af
             ex de, hl
-            ld l, (ix + 1)
-            ld h, (ix + 2)
-            ld a, (ix + 3)
-            ; Determine maximum amount that can be read from this block
-            ld d, 0
-            sub d
-            ; A is amount to read assuming full size block
-            ; So check if it really should be a full sized block
-            bit 7, (ix)
-            jr z, _
-            ld d, (ix + 6)
-            cp d
+            push de
+                ld l, (ix + 1)
+                ld h, (ix + 2)
+                ld a, (ix + 3)
+                ; Determine maximum amount that can be read from this block
+                ld d, 0
+                sub d
+                ; A is amount to read assuming full size block
+                ; So check if it really should be a full sized block
+                bit 7, (ix)
+                jr z, _
+                ld d, (ix + 6)
+                cp d
+                jr nc, _
+                ; Set A to size of block, max to read
+                ld a, d
+_:          pop de
+            ; Compare with BC to ensure we have space
+            cp c
             jr nc, _
-            ; Overflow, end of stream
         pop af
-        pop hl
-        pop bc
-    pop hl
-    pop ix
+        pop de
     or 1
     ld a, errEndOfStream
+    pop hl
+    pop ix
     ret
-_:          ; We're fine to read this much
-            jr $
-            ldir
+_:          ld a, c ; For later comparison
+            push bc
+                ld b, 0
+                or a ; (later comparison)
+                jr nz, $+3 \ inc b
+                jr $
+                ldir
+            pop bc
             
 
 ;; getStreamInfo [File Stream]
