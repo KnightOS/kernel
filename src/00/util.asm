@@ -513,4 +513,92 @@ getBootCodeVersionString:
     ret po
     ei
     ret
-    
+
+;; rleCompress [Miscellaneous]
+;;  Compresses data using a simple Run-Length-Encoding scheme.
+;;  All bytes in a compressed block are treated as literal,
+;;  except the two following a 9Bh byte (selected because of
+;;  its low occurance in z80 code), which specify the length of
+;;  the run and the byte to run with, respectively.  However,
+;;  if the length of the run is 00h, the last byte is omitted, and
+;;  the byte sequence 9Bh, 00h is treated as a literal byte 9Bh.
+;; Inputs:
+;;  HL: Data to compress
+;;  DE: Destination, cannot (yet) be the same location as original data
+;;  BC: Size of uncompressed data
+;; Outputs:
+;;  A: 0 on success, 1 on error
+;;  BC: Size of compressed data
+;;  Z: set on success, reset on error (if input and output overlap, input is destroyed on error)
+rleCompress:
+    push hl
+    push de
+    push ix
+.next:                              ; Must have at least four bytes left in input to try to run.
+        ld a, b \ or a \ jr nz, .nextfour
+        ld a, c \ or a \ jr z, .done
+        cp 4 \ jr c, .literalLast3
+.nextfour:                          ; Must have a run of at least four bytes to save space.
+        push hl \ pop ix
+        ld a, (hl)
+        cp (ix + 1)
+        jr nz, .literal
+        cp 9Bh                      ; Except if the run is of 9Bh; then we only need a 2-byte run.
+        jr z, .run
+        cp (ix + 2)
+        jr nz, .literal
+        cp (ix + 3)
+        jr nz, .literal
+.run:
+        ; Find the length of the run.
+        push de
+            ld e, a             ; Save the running byte
+            ld d, 0             ; D is the length of the run
+_:          inc hl
+            dec bc
+            inc d
+            cp (hl)
+            jr nz, _
+            ld a, d
+            cp 255              ; Check for maximum run length
+            ld a, e
+            jp nz, -_
+_:
+            push hl \ pop ix
+        pop hl \ push ix
+            ; DEstination now in HL
+            ld (hl), 9Bh
+            inc hl
+            ld (hl), d
+            inc hl
+            ld (hl), e
+            inc hl
+        pop de
+        ex de, hl
+        jr .next
+.literalLast3:
+        ld a, (hl)
+.literal:
+        ld (de), a
+        inc de
+        cp 9Bh                      ; Check if byte literal is 9B, if so it must be escaped.
+        jr nz, _
+        xor a
+        ld (de), a
+        inc de
+_:      inc hl
+        dec bc
+        jr .next
+.done:
+    pop ix
+
+    ; Calculate size of compressed data, store in BC
+    ex de, hl
+    pop de
+    xor a
+    sbc hl, de
+    push hl \ pop bc
+
+    pop hl
+    xor a
+    ret
