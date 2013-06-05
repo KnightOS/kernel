@@ -602,3 +602,66 @@ _:      inc hl
     pop hl
     xor a
     ret
+
+;; rleDecompress [Miscellaneous]
+;;  Decompresses data compressed with the algorithm used by the kernel
+;;  routine rleCompress.  See its documentation for algorithm details.
+;; Inputs:
+;;  HL: Data to decompress
+;;  DE: Destination, cannot be the same location as original data
+;;  BC: Size of compressed data
+;; Outputs:
+;;  A: 0 on success, 1 on error
+;;  BC: Size of decompressed data
+;;  Z: set on success, reset on error
+rleDecompress:
+    push hl
+    push de
+.repeat:
+        ld a, b \ or c \ jr z, .done
+        ld a, (hl)
+        cp 9Bh                      ; Check for sentinel byte 9Bh
+        jr z, .expand
+        ld (de), a                  ; Copy literal
+        jr .nextBytes
+.expand:
+        dec bc
+        inc hl
+        push bc
+            ld a, (hl)              ; Check for literally encoded 9Bh (byte sequence 9Bh, 00h)
+            or a
+            jr nz, _
+            ld a, 9Bh
+            ld (de), a
+        pop bc
+        jr .nextBytes
+
+_:          ld b, 0                 ; "Prepare to copy!"
+            ld c, a                 ; "Preparing to copy, sir!"
+            inc hl
+            ld a, (hl)
+            ld (de), a
+            push hl
+                dec bc
+                push de \ pop hl    ; "What are you preparing for?
+                inc de              ; You're always preparing! Just copy!"
+                ldir                ; "Just copying, sir!"
+                dec de
+            pop hl
+        pop bc
+        dec bc
+.nextBytes:
+        inc hl
+        inc de
+        dec bc
+        jr .repeat
+.done:
+    ex de, hl                       ; Calculate size of decompressed data
+    pop de
+    xor a
+    sbc hl, de
+    push hl \ pop bc
+
+    pop hl
+    xor a
+    ret
