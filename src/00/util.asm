@@ -517,11 +517,11 @@ getBootCodeVersionString:
 ;; rleCompress [Miscellaneous]
 ;;  Compresses data using a simple Run-Length-Encoding scheme.
 ;;  All bytes in a compressed block are treated as literal,
-;;  except the two following a 9Bh byte (selected because of
+;;  except the two following a 0x9B byte (selected because of
 ;;  its low occurance in z80 code), which specify the length of
 ;;  the run and the byte to run with, respectively.  However,
-;;  if the length of the run is 00h, the last byte is omitted, and
-;;  the byte sequence 9Bh, 00h is treated as a literal byte 9Bh.
+;;  if the length of the run is 0x00, the last byte is omitted, and
+;;  the byte sequence 0x9B, 0x00 is treated as a literal byte 0x9B.
 ;; Inputs:
 ;;  HL: Data to compress
 ;;  DE: Destination, cannot (yet) be the same location as original data
@@ -543,7 +543,7 @@ rleCompress:
         ld a, (hl)
         cp (ix + 1)
         jr nz, .literal
-        cp 9Bh                      ; Except if the run is of 9Bh; then we only need a 2-byte run.
+        cp 0x9B                      ; Except if the run is of 0x9B; then we only need a 2-byte run.
         jr z, .run
         cp (ix + 2)
         jr nz, .literal
@@ -567,7 +567,7 @@ _:
             push hl \ pop ix
         pop hl \ push ix
             ; DEstination now in HL
-            ld (hl), 9Bh
+            ld (hl), 0x9B
             inc hl
             ld (hl), d
             inc hl
@@ -581,7 +581,7 @@ _:
 .literal:
         ld (de), a
         inc de
-        cp 9Bh                      ; Check if byte literal is 9B, if so it must be escaped.
+        cp 0x9B                      ; Check if byte literal is 9B, if so it must be escaped.
         jr nz, _
         xor a
         ld (de), a
@@ -620,7 +620,7 @@ rleDecompress:
 .repeat:
         ld a, b \ or c \ jr z, .done
         ld a, (hl)
-        cp 9Bh                      ; Check for sentinel byte 9Bh
+        cp 0x9B                      ; Check for sentinel byte 0x9B
         jr z, .expand
         ld (de), a                  ; Copy literal
         jr .nextBytes
@@ -628,10 +628,10 @@ rleDecompress:
         dec bc
         inc hl
         push bc
-            ld a, (hl)              ; Check for literally encoded 9Bh (byte sequence 9Bh, 00h)
+            ld a, (hl)              ; Check for literally encoded 0x9B (byte sequence 0x9B, 0x00)
             or a
             jr nz, _
-            ld a, 9Bh
+            ld a, 0x9B
             ld (de), a
         pop bc
         jr .nextBytes
