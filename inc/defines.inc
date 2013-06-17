@@ -10,43 +10,64 @@ errTooManyLibraries .equ 8
 errUnsupported .equ 9
 errTooManySignals .equ 10
 
+
+; ** SIZES OF KERNEL TABLES **
+; Modify individual values as needed, everything else will shift around automatically.
 kernelMem .equ 0x8000
-kernelGarbage .equ 0x8100
-kernelGarbageSize .equ 0x100
-userMemory .equ kernelGarbage + kernelGarbageSize
 
 threadTable .equ kernelMem
-libraryTable .equ 0x8050
-threadTableSize .equ libraryTable - threadTable ; TODO: More of these? Less?
-signalTable .equ 0x8078
-fileHandleTable .equ 0x808C
-fileHandleTableSize .equ 0x28
+maxThreads .equ 32
+threadTableSize .equ 8 * maxThreads                     ; 8 bytes per entry
 
-currentThreadIndex .equ 0x80B4
-activeThreads .equ 0x80B5
-loadedLibraries .equ 0x80B6
-activeSignals .equ 0x80B7
-activeFileStreams .equ 0x80B8
-lastThreadId .equ 0x80B9
+libraryTable .equ threadTable + threadTableSize
+maxLibraries .equ 16
+libraryTableSize .equ 4 * maxLibraries                  ; 4 bytes per entry
 
-hwLockIO .equ 0x80BA
-hwLockLCD .equ 0x80BB
-hwLockKeypad .equ 0x80BC
-hwLockUSB .equ 0x80BD
+signalTable .equ libraryTable + libraryTableSize
+maxSignals .equ 16
+signalTableSize .equ 4 * maxSignals                     ; 4 bytes per entry
+
+fileHandleTable .equ signalTable + signalTableSize
+maxFileStreams .equ 16
+fileHandleTableSize .equ 8 * maxFileStreams             ; 8 bytes per entry
+
+tablesSize .equ threadTableSize + libraryTableSize + signalTableSize + fileHandleTableSize
+
+; ** MISCELLANEOUS STATE MEMORY ASSIGNMENTS **
+; Again, allocate as needed, and increase the size if necessary.
+
+stateMemory .equ kernelMem + tablesSize
+
+currentThreadIndex .equ stateMemory                     ; 1 byte
+activeThreads .equ currentThreadIndex + 1               ; 1 byte
+loadedLibraries .equ activeThreads + 1                  ; 1 byte
+activeSignals .equ loadedLibraries + 1                  ; 1 byte
+activeFileStreams .equ activeSignals + 1                ; 1 byte
+lastThreadId .equ activeFileStreams + 1                 ; 1 byte
+
+hwLockIO .equ lastThreadId + 1                          ; 1 byte
+hwLockLCD .equ hwLockIO + 1                             ; 1 byte
+hwLockKeypad .equ hwLockLCD + 1                         ; 1 byte
+hwLockUSB .equ hwLockKeypad + 1                         ; 1 byte
 
 ; Misc.
-currentContrast .equ 0x80BE
-bcallHook .equ  0x80BF ; 2 bytes
+currentContrast .equ hwLockUSB + 1                      ; 1 byte
+bcallHook .equ  currentContrast + 1                     ; 2 bytes
 
 ; Used for line drawing
-clip_mask .equ 0x80C1
+clip_mask .equ bcallHook + 2                            ; 1 byte
 
-priorityHook .equ 0x80C2
+priorityHook .equ clip_mask + 1                         ; 1 byte
 
-maxThreads .equ 10
-maxFileStreams .equ 5
-maxLibraries .equ 10
-maxSignals .equ 5 ; Consider increasing this
+stateMemorySize .equ 0x100                              ; Hardcoded constant
+
+; ** KERNEL GARBAGE MEMORY ALLOCATION **
+kernelGarbage .equ stateMemory + stateMemorySize
+kernelGarbageSize .equ 0x200                            ; Hardcoded constant
+
+; ** USER MEMORY DECLARATION **
+userMemory .equ kernelGarbage + kernelGarbageSize
+userMemorySize .equ 0xFFFF - userMemory                 ; user memory extends to 0xFFFF
 
 threadRangeMask .equ 0x3F
 
