@@ -150,6 +150,11 @@ killCurrentThread:
 
     pop af
     ; A = Old thread ID
+    ; Clear old semaphores/signals.
+    push hl \ push bc ; In case there are old signals, we don't want them!
+_:      call readSignalAsThread
+        jr z, -_
+    pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
 killCurrentThread_Deallocate:
     ld ix, userMemory
@@ -171,6 +176,7 @@ _:  inc ix \ inc ix
     jr killCurrentThread_DeallocationLoop
 
 killCurrentThread_DeallocationDone:
+
     ld hl, activeThreads
     dec (hl)
     xor a
@@ -237,6 +243,11 @@ _:  ; HL points to old thread in table
     ldir
     pop af
     ; A = Old thread ID
+    ; Clear old semaphores/signals.
+    push hl \ push bc
+_:      call readSignalAsThread
+        jr z, -_
+    pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
     ld ix, userMemory
 killThread_DeallocationLoop:
@@ -279,8 +290,6 @@ _:  pop af
 ; Inputs:    DE: Pointer to full path of program
 ; Outputs:     A: Thread ID
 ; Launches program in new thread
-
-; TODO: Errors
 launchProgram:
     push bc
     ld a, i
@@ -290,6 +299,7 @@ launchProgram:
     push de
     push ix
         call openFileRead
+        jr nz, .error
         
         push de
             call getStreamInfo
@@ -300,6 +310,7 @@ launchProgram:
                 ld a, nullThread
                 ld (currentThreadIndex), a ; The null thread will allocate memory to the next thread
                 call malloc
+                jr nz, .error_pop2
             pop af
             ld (currentThreadIndex), a
         pop de
@@ -317,6 +328,7 @@ launchProgram:
             pop af
         pop hl
         call startThread
+        jr nz, .error
     ld b, a
     pop ix
     pop de
@@ -326,7 +338,43 @@ launchProgram:
     ei
 _:  ld a, b
     pop bc
+    cp a
     ret
+.error_pop2:
+    inc sp \ inc sp
+.error_pop1:
+    inc sp \ inc sp
+.error:
+    pop ix
+    pop de
+    pop hl
+    ld b, a
+    pop af
+    jp po, _
+    ei
+    or 1
+    ld a, b
+    pop bc
+    ret
+
+;; exitThread [Thread]
+;;  Immediately terminates the running thread.  This routine
+;;  does not return, so it is acceptable to JP to it instead
+;;  of CALLing it.
+exitThread:
+    ; Not returning; we can clobber registers at will!
+    call getCurrentThreadID
+    call getThreadEntry
+    inc hl \ inc hl \ inc hl
+    ld c, (hl) \ inc hl \ ld b, (hl)
+    push bc \ pop ix
+    call memSeekToStart
+    dec ix \ dec ix
+    ld c, (ix) \ ld b, (ix + 1)
+    add ix, bc
+    ld l, (ix)
+    ld h, (ix + 1)
+    jp (hl)
     
 ; Input:  A: Thread ID
 ; Output: HL: Thread entry
@@ -372,28 +420,59 @@ _:      inc hl \ inc hl \ inc hl
     pop bc
     pop de
     ret
-    
+
+
+; Sets the initial value of BC on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialBC:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -6), e
+            ld (ix + -5), d
+        pop de
+    pop hl
+    ret
+
 ; Sets the initial value of DE on start up.
 ; Input: HL: Start value
 ;        A: Thread Id
 setInitialDE:
     push hl
-    push bc
-        call getThreadEntry
-        jr z, _
-        pop bc
-        pop hl
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -8), e
-        ld (ix + -7), d
-    pop bc
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -8), e
+            ld (ix + -7), d
+        pop de
     pop hl
     ret
     
@@ -401,49 +480,107 @@ _:      inc hl \ inc hl \ inc hl
 ; Input: HL: Start value
 ;        A: Thread Id
 setInitialHL:
-    push de
-    push bc
-        ex de, hl
-        call getThreadEntry
-        jr z, _
-        pop bc
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
         pop de
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -10), e
-        ld (ix + -9), d
-    pop bc
-    pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -10), e
+            ld (ix + -9), d
+        pop de
+    pop hl
     ret
     
 ; Sets the initial value of A on start up.
 ; Input: H: Start value
 ;        A: Thread Id
 setInitialA:
-    push de
-    push bc
-        ex de, hl
-        call getThreadEntry
-        jr z, _
-        pop bc
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
         pop de
-        ret
-_:      inc hl \ inc hl \ inc hl
-        ld c, (hl) \ inc hl \ ld b, (hl)
-        push bc \ pop ix
-        call memSeekToStart
-        dec ix \ dec ix
-        ld c, (ix) \ ld b, (ix + 1)
-        add ix, bc
-        ld (ix + -3), d
-    pop bc
-    pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -3), d
+        pop de
+    pop hl
+    ret
+
+; Sets the initial value of IX on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialIX:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -12), e
+            ld (ix + -11), d
+        pop de
+    pop hl
+    ret
+
+; Sets the initial value of IY on start up.
+; Input: HL: Start value
+;        A: Thread Id
+setInitialIY:
+    push hl
+        push de
+            ex de, hl
+            call getThreadEntry
+            jr z, _
+        pop de
+    pop hl
+    ret
+_:          inc hl \ inc hl \ inc hl
+            push bc
+                ld c, (hl) \ inc hl \ ld b, (hl)
+                push bc \ pop ix
+                call memSeekToStart
+                dec ix \ dec ix
+                ld c, (ix) \ ld b, (ix + 1)
+                add ix, bc
+            pop bc
+            ld (ix + -14), e
+            ld (ix + -13), d
+        pop de
+    pop hl
     ret
     
 suspendCurrentThread:

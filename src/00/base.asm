@@ -1,5 +1,6 @@
 ; Base file for KnightOS kernel
 
+#include "platforms.inc"
 #include "defines.inc"
 
 #include "header.asm"

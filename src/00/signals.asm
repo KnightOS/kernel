@@ -48,41 +48,54 @@ _:  pop af
     or 1
     ld a, errTooManySignals
     ret
-    
+
 ; Outputs:  NZ: No signals to read, or Z: Signal read, and:
 ;           B:  Message type
 ;           HL: Message payload
 ; Reads the next signal for the current thread.
 readSignal:
     push af
+        call getCurrentThreadId
+        call readSignalAsThread
+    pop af
+    ret
+
+; Reads a signal that was originally sent to a thread whose
+; ID should be given in A. This routine is meant for internal
+; use (specifically, the thread killing code uses it to clear
+; undelivered signals). Not for userland use.
+readSignalAsThread:
+    push hl
+    push af
     ld a, i
     push af
-    push hl
     push bc
     push de
         ld de, 4
+        ld l, a
         ld a, (activeSignals)
         or a
         jr z, readSignal_none
         ld b, a
-        call getCurrentThreadId
+        ld a, l
         ld hl, signalTable
-        
 _:      cp (hl)
         jr z, readSignal_found
         add hl, de
         djnz -_
-    
+
 readSignal_none:
     ; We don't want to destroy anything if it isn't found
     pop de
     pop bc
-    pop hl
     pop af
     jp po, _
     ei
 _:  pop af
+    ld l, a
     or 1
+    ld a, l
+    pop hl
     ret
     
 readSignal_found:
@@ -103,18 +116,18 @@ readSignal_found:
         add a, a \ add a, a
         ld c, a \ ld b, 0
         ldir
-    
 _:  pop de
     pop af
+
     ex de, hl
     pop de
     pop bc
     ld b, a
-    inc sp \ inc sp ; pop hl    
     pop af
     jp po, _
     ei
 _:  pop af
+    inc sp \ inc sp ; pop hl
     cp a
     ret
     
