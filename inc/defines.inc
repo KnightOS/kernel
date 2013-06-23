@@ -10,7 +10,7 @@ errTooManyLibraries .equ 8
 errUnsupported .equ 9
 errTooManySignals .equ 10
 
-#include "tables.inc"
+#include "kernelmem.inc"
 
 threadRangeMask .equ 0x3F
 
