@@ -525,7 +525,7 @@ getBootCodeVersionString:
 ;;  DE: Destination, cannot (yet) be the same location as original data
 ;;  BC: Size of uncompressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error
+;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  BC: Size of compressed data
 ;;  Z: set on success, reset on error (if input and output overlap, input is destroyed on error)
 rleCompress:
@@ -608,9 +608,9 @@ _:      inc hl
 ;;  HL: Data to compress
 ;;  BC: Size of decompressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error
+;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  DE: Size of compressed data
-;;  Z: set on success, reset on error
+;;  Z: set on success, reset on error (no errors can arise yet)
 rlePredictCompress:
     push hl
     push bc
@@ -677,9 +677,9 @@ _:      inc hl
 ;;  DE: Destination, cannot be the same location as original data
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error
+;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  BC: Size of decompressed data
-;;  Z: set on success, reset on error
+;;  Z: set on success, reset on error (no errors can arise yet)
 rleDecompress:
     push hl
     push de
@@ -733,9 +733,9 @@ _:      pop bc
 ;;  HL: Data to decompress
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error
+;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  DE: Size of decompressed data
-;;  Z: set on success, reset on error
+;;  Z: set on success, reset on error (no errors can arise yet)
 rlePredictDecompress:
     push hl
     push bc
