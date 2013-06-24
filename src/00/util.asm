@@ -657,3 +657,41 @@ _:      pop bc
     pop bc
     xor a
     ret
+
+;; rlePredictDecompress [Miscellaneous]
+;;  Predicts the size of data resulting from a decompression, but
+;;  does not actually decompress anything.
+;; Inputs:
+;;  HL: Data to decompress
+;;  BC: Size of compressed data
+;; Outputs:
+;;  A: 0 on success, 1 on error
+;;  DE: Size of decompressed data
+;;  Z: set on success, reset on error
+rlePredictDecompress:
+    push hl
+    push bc
+    ld de, 0
+        ; Just step through and add everything up!
+.nextByte:
+        ld a, b \ or c \ jr z, .done    ; If we're out of bytes, we're done!
+        ld a, (hl)
+        inc de                          ; Output gets larger
+        dec bc                          ; Input gets smaller
+        inc hl                          ; Next input byte
+        cp 0x9B
+        jr nz, .nextByte
+        dec de                          ; Sentinel byte doesn't affect output size
+        ld a, e
+        add a, (hl)                     ; Add size of run
+        ld e, a \ jr nc, _ \ inc d
+_:      inc hl
+        inc hl                          ; Skip byte to run with (we don't care)
+        dec bc
+        dec bc
+        jr .nextByte
+.done:
+    pop bc
+    pop hl
+    xor a
+    ret
