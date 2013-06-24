@@ -21,6 +21,10 @@ test_collection:
     .dw test_compareStrings ; 0006 test_compareStrings
 
     .dw test_openFileRead   ; 0007 test_openFileRead
+    .dw test_rleCompress    ; 0008 test_rleCompress
+    .dw test_rleDecompress  ; 0009 test_rleDecompress
+    .dw test_rlePredictCompress     ; 000A test_rlePredictCompress
+    .dw test_rlePredictDecompress   ; 000B test_rlePredictDecompress
 
     .dw 0xFFFF
 explicit_only:

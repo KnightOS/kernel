@@ -151,3 +151,90 @@ test_compareStrings:
 .string5:
     .db 0
 .undefine assert_equal assert_notequal
+
+; rleCompress 0008
+test_rleCompress:
+    ld bc, 0x0010
+    call malloc
+    jr nz, .failmem
+    ld hl, rle_src1
+    ld bc, rle_src1_size
+    push ix \ pop de
+    call rleCompress
+    push hl
+        ld hl, rle_check1_size
+        call cpHLBC
+    pop hl
+    jr nz, .fail
+
+    ex de, hl
+    ld de, rle_check1
+_:  ld a, (de)
+    cpi
+    inc de
+    jr nz, .fail
+    ld a, b \ or c \ jr nz, -_
+    call free
+    assert_pass()
+.fail:
+    call free
+.failmem:
+    assert_fail()
+
+; rleDecompress 0009
+test_rleDecompress:
+    ld bc, 0x0010
+    call malloc
+    jr nz, .failmem
+    ld hl, rle_check1
+    ld bc, rle_check1_size
+    push ix \ pop de
+    call rleDecompress
+    push hl
+        ld hl, rle_src1_size
+        call cpHLBC
+    pop hl
+    jr nz, .fail
+
+    ex de, hl
+    ld de, rle_src1
+_:  ld a, (de)
+    cpi
+    inc de
+    jr nz, .fail
+    ld a, b \ or c \ jr nz, -_
+    call free
+    assert_pass()
+.fail:
+    call free
+.failmem:
+    assert_fail()
+
+; rlePredictCompress 000A
+test_rlePredictCompress:
+    ld hl, rle_src1
+    ld bc, rle_src1_size
+    call rlePredictCompress
+    ld hl, rle_check1_size
+    call cpHLDE
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+; rlePredictDecompress 000B
+test_rlePredictDecompress:
+    ld hl, rle_check1
+    ld bc, rle_check1_size
+    call rlePredictDecompress
+    ld hl, rle_src1_size
+    call cpHLDE
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+rle_src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+rle_src1_size .equ $ - rle_src1
+rle_check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+rle_check1_size .equ $ - rle_check1
