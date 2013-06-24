@@ -601,6 +601,74 @@ _:      inc hl
     xor a
     ret
 
+;; rlePredictCompress [Miscellaneous]
+;;  Predicts the size of data resulting from a compression, but
+;;  does not actually compress anything.
+;; Inputs:
+;;  HL: Data to compress
+;;  BC: Size of decompressed data
+;; Outputs:
+;;  A: 0 on success, 1 on error
+;;  DE: Size of compressed data
+;;  Z: set on success, reset on error
+rlePredictCompress:
+    push hl
+    push bc
+    push ix
+        ld de, 0
+.next:                              ; Must have at least four bytes left in input to try to run.
+        ld a, b \ or a \ jr nz, .nextfour
+        ld a, c \ or a \ jr z, .done
+        cp 4 \ jr c, .literalLast3
+.nextfour:                          ; Must have a run of at least four bytes to save space.
+        push hl \ pop ix
+        ld a, (hl)
+        cp (ix + 1)
+        jr nz, .literal
+        cp 0x9B                      ; Except if the run is of 0x9B; then we only need a 2-byte run.
+        jr z, .run
+        cp (ix + 2)
+        jr nz, .literal
+        cp (ix + 3)
+        jr nz, .literal
+.run:
+        ; Find the length of the run.
+        push de
+            ld e, a             ; Save the running byte
+            ld d, 0             ; D is the length of the run
+_:          inc hl
+            dec bc
+            inc d
+            cp (hl)
+            jr nz, _
+            ld a, d
+            cp 255              ; Check for maximum run length
+            ld a, e
+            jp nz, -_
+_:      pop de
+        inc de
+        inc de
+        inc de
+        jr .next
+.literalLast3:
+        ld a, (hl)
+.literal:
+        inc de
+        cp 0x9B                      ; Check if byte literal is 0x9B, if so it must be escaped.
+        jr nz, _
+        inc de
+        inc de
+_:      inc hl
+        dec bc
+        jr .next
+.done:
+
+    pop ix
+    pop bc
+    pop hl
+    xor a
+    ret
+
 ;; rleDecompress [Miscellaneous]
 ;;  Decompresses data compressed with the algorithm used by the kernel
 ;;  routine rleCompress.  See its documentation for algorithm details.
