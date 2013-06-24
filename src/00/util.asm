@@ -563,9 +563,7 @@ _:          inc hl
             cp 255              ; Check for maximum run length
             ld a, e
             jp nz, -_
-_:
-            push hl \ pop ix
-        pop hl \ push ix
+_:          ex (sp), hl
             ; DEstination now in HL
             ld (hl), 0x9B
             inc hl
@@ -597,9 +595,8 @@ _:      inc hl
     pop de
     xor a
     sbc hl, de
-    push hl \ pop bc
-
-    pop hl
+    ex (sp), hl
+    pop bc
     xor a
     ret
 
@@ -660,8 +657,7 @@ _:          ld b, 0                 ; "Prepare to copy!"
     pop de
     xor a
     sbc hl, de
-    push hl \ pop bc
-
-    pop hl
+    ex (sp), hl
+    pop bc
     xor a
     ret
