@@ -293,7 +293,7 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
                 jr c, .done             ; If our carry is 1, we've been through all 8 bits (base case).
             pop hl
             call radixSortRecurse       ; Sort the 0s bin
-            push de \ pop hl
+            ex de, hl
             inc hl
         pop de
         call radixSortRecurse           ; Sort the 1s bin
@@ -431,8 +431,6 @@ _:  push hl \ pop ix
 add16to32:
     push hl
     push de
-    push bc
-    pop bc
         push ix \ pop hl
         push de
             ld d, a
