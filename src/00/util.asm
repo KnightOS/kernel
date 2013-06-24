@@ -519,9 +519,7 @@ getBootCodeVersionString:
 ;;  All bytes in a compressed block are treated as literal,
 ;;  except the two following a 0x9B byte (selected because of
 ;;  its low occurance in z80 code), which specify the length of
-;;  the run and the byte to run with, respectively.  However,
-;;  if the length of the run is 0x00, the last byte is omitted, and
-;;  the byte sequence 0x9B, 0x00 is treated as a literal byte 0x9B.
+;;  the run and the byte to run with, respectively.
 ;; Inputs:
 ;;  HL: Data to compress
 ;;  DE: Destination, cannot (yet) be the same location as original data
@@ -581,7 +579,10 @@ _:          ex (sp), hl
         inc de
         cp 0x9B                      ; Check if byte literal is 9B, if so it must be escaped.
         jr nz, _
-        xor a
+        ld a, 1
+        ld (de), a
+        inc de
+        ld a, 0x9B
         ld (de), a
         inc de
 _:      inc hl
@@ -617,7 +618,7 @@ rleDecompress:
 .repeat:
         ld a, b \ or c \ jr z, .done
         ld a, (hl)
-        cp 0x9B                      ; Check for sentinel byte 0x9B
+        cp 0x9B                     ; Check for sentinel byte 0x9B
         jr z, .expand
         ld (de), a                  ; Copy literal
         jr .nextBytes
@@ -625,27 +626,22 @@ rleDecompress:
         dec bc
         inc hl
         push bc
-            ld a, (hl)              ; Check for literally encoded 0x9B (byte sequence 0x9B, 0x00)
-            or a
-            jr nz, _
-            ld a, 0x9B
-            ld (de), a
-        pop bc
-        jr .nextBytes
-
-_:          ld b, 0                 ; "Prepare to copy!"
-            ld c, a                 ; "Preparing to copy, sir!"
+            ld b, 0                 ; "Prepare to copy!"
+            ld c, (hl)              ; "Preparing to copy, sir!"
+            dec c
             inc hl
             ld a, (hl)
             ld (de), a
+            ld a, c
+            or a
+            jr z, _                 ; Test for length one, special case
             push hl
-                dec bc
                 push de \ pop hl    ; "What are you preparing for?
                 inc de              ; You're always preparing! Just copy!"
                 ldir                ; "Just copying, sir!"
                 dec de
             pop hl
-        pop bc
+_:      pop bc
         dec bc
 .nextBytes:
         inc hl
