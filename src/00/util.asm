@@ -512,10 +512,13 @@ getBootCodeVersionString:
     ei
     ret
 
+; This is the sentinel byte for all RLE routines.
+rleSentinel .equ 0x9B
+
 ;; rleCompress [Miscellaneous]
 ;;  Compresses data using a simple Run-Length-Encoding scheme.
 ;;  All bytes in a compressed block are treated as literal,
-;;  except the two following a 0x9B byte (selected because of
+;;  except the two following a sentinel byte (selected because of
 ;;  its low occurance in z80 code), which specify the length of
 ;;  the run and the byte to run with, respectively.
 ;; Inputs:
@@ -538,7 +541,7 @@ rleCompress:
         ld a, (hl)
         cp (ix + 1)
         jr nz, .literal
-        cp 0x9B                      ; Except if the run is of 0x9B; then we only need a 2-byte run.
+        cp rleSentinel              ; Except if the run is of the sentinel; then we only need a 2-byte run.
         jr z, .run
         cp (ix + 2)
         jr nz, .literal
@@ -560,7 +563,7 @@ _:          inc hl
             jp nz, -_
 _:          ex (sp), hl
             ; DEstination now in HL
-            ld (hl), 0x9B
+            ld (hl), rleSentinel
             inc hl
             ld (hl), d
             inc hl
@@ -574,12 +577,12 @@ _:          ex (sp), hl
 .literal:
         ld (de), a
         inc de
-        cp 0x9B                      ; Check if byte literal is 9B, if so it must be escaped.
+        cp rleSentinel          ; Check if byte is the sentinel, if so it must be escaped.
         jr nz, _
         ld a, 1
         ld (de), a
         inc de
-        ld a, 0x9B
+        ld a, rleSentinel
         ld (de), a
         inc de
 _:      inc hl
@@ -621,7 +624,7 @@ rleCalculateCompressedLength:
         ld a, (hl)
         cp (ix + 1)
         jr nz, .literal
-        cp 0x9B                      ; Except if the run is of 0x9B; then we only need a 2-byte run.
+        cp rleSentinel              ; Except if the run is of the sentinel; then we only need a 2-byte run.
         jr z, .run
         cp (ix + 2)
         jr nz, .literal
@@ -650,7 +653,7 @@ _:      pop de
         ld a, (hl)
 .literal:
         inc de
-        cp 0x9B                      ; Check if byte literal is 0x9B, if so it must be escaped.
+        cp rleSentinel          ; Check if byte is the sentinel, if so it must be escaped.
         jr nz, _
         inc de
         inc de
@@ -658,7 +661,6 @@ _:      inc hl
         dec bc
         jr .next
 .done:
-
     pop ix
     push de \ pop bc
     pop de
@@ -682,7 +684,7 @@ rleDecompress:
 .repeat:
         ld a, b \ or c \ jr z, .done
         ld a, (hl)
-        cp 0x9B                     ; Check for sentinel byte 0x9B
+        cp rleSentinel              ; Check for sentinel byte
         jr z, .expand
         ld (de), a                  ; Copy literal
         jr .nextBytes
@@ -742,7 +744,7 @@ rleCalculateDecompressedLength:
         inc de                          ; Output gets larger
         dec bc                          ; Input gets smaller
         inc hl                          ; Next input byte
-        cp 0x9B
+        cp rleSentinel
         jr nz, .nextByte
         dec de                          ; Sentinel byte doesn't affect output size
         ld a, e
