@@ -607,12 +607,11 @@ _:      inc hl
 ;;  HL: Data to compress
 ;;  BC: Size of decompressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error (no errors can arise yet)
-;;  DE: Size of compressed data
-;;  Z: set on success, reset on error (no errors can arise yet)
+;;  AF: Destroyed
+;;  BC: Size of compressed data
 rleCalculateCompressedLength:
     push hl
-    push bc
+    push de
     push ix
         ld de, 0
 .next:                              ; Must have at least four bytes left in input to try to run.
@@ -663,7 +662,8 @@ _:      inc hl
 .done:
 
     pop ix
-    pop bc
+    push de \ pop bc
+    pop de
     pop hl
     xor a
     ret
@@ -676,9 +676,8 @@ _:      inc hl
 ;;  DE: Destination, cannot be the same location as original data
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error (no errors can arise yet)
+;;  AF: Destroyed
 ;;  BC: Size of decompressed data
-;;  Z: set on success, reset on error (no errors can arise yet)
 rleDecompress:
     push hl
     push de
@@ -732,12 +731,11 @@ _:      pop bc
 ;;  HL: Data to decompress
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error (no errors can arise yet)
-;;  DE: Size of decompressed data
-;;  Z: set on success, reset on error (no errors can arise yet)
+;;  AF: Destroyed
+;;  BC: Size of decompressed data
 rleCalculateDecompressedLength:
     push hl
-    push bc
+    push de
     ld de, 0
         ; Just step through and add everything up!
 .nextByte:
@@ -758,7 +756,8 @@ _:      inc hl
         dec bc
         jr .nextByte
 .done:
-    pop bc
+    push de \ pop bc
+    pop de
     pop hl
     xor a
     ret

@@ -226,7 +226,7 @@ test_rleCalculateCompressedLength:
     ld bc, 16
     call rleCalculateCompressedLength
     ld hl, 11
-    call cpHLDE
+    call cpHLBC
     jr z, _
     assert_fail()
 _:  assert_pass()
@@ -242,7 +242,7 @@ test_rleCalculateDecompressedLength:
     ld bc, 11
     call rleCalculateDecompressedLength
     ld hl, 16
-    call cpHLDE
+    call cpHLBC
     jr z, _
     assert_fail()
 _:  assert_pass()
