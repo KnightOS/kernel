@@ -525,9 +525,8 @@ getBootCodeVersionString:
 ;;  DE: Destination, cannot (yet) be the same location as original data
 ;;  BC: Size of uncompressed data
 ;; Outputs:
-;;  A: 0 on success, 1 on error (no errors can arise yet)
+;;  AF: Destroyed
 ;;  BC: Size of compressed data
-;;  Z: set on success, reset on error (if input and output overlap, input is destroyed on error)
 rleCompress:
     push hl
     push de
@@ -601,8 +600,8 @@ _:      inc hl
     xor a
     ret
 
-;; rlePredictCompress [Miscellaneous]
-;;  Predicts the size of data resulting from a compression, but
+;; rleCalculateCompressedLength [Miscellaneous]
+;;  Calculates the size of data resulting from a compression, but
 ;;  does not actually compress anything.
 ;; Inputs:
 ;;  HL: Data to compress
@@ -611,7 +610,7 @@ _:      inc hl
 ;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  DE: Size of compressed data
 ;;  Z: set on success, reset on error (no errors can arise yet)
-rlePredictCompress:
+rleCalculateCompressedLength:
     push hl
     push bc
     push ix
@@ -694,8 +693,8 @@ rleDecompress:
         dec bc
         inc hl
         push bc
-            ld b, 0                 ; "Prepare to copy!"
-            ld c, (hl)              ; "Preparing to copy, sir!"
+            ld b, 0
+            ld c, (hl)
             dec c
             inc hl
             ld a, (hl)
@@ -704,9 +703,9 @@ rleDecompress:
             or a
             jr z, _                 ; Test for length one, special case
             push hl
-                push de \ pop hl    ; "What are you preparing for?
-                inc de              ; You're always preparing! Just copy!"
-                ldir                ; "Just copying, sir!"
+                push de \ pop hl
+                inc de
+                ldir
                 dec de
             pop hl
 _:      pop bc
@@ -726,8 +725,8 @@ _:      pop bc
     xor a
     ret
 
-;; rlePredictDecompress [Miscellaneous]
-;;  Predicts the size of data resulting from a decompression, but
+;; rleCalculateDecompressedLength [Miscellaneous]
+;;  Calculates the size of data resulting from a decompression, but
 ;;  does not actually decompress anything.
 ;; Inputs:
 ;;  HL: Data to decompress
@@ -736,7 +735,7 @@ _:      pop bc
 ;;  A: 0 on success, 1 on error (no errors can arise yet)
 ;;  DE: Size of decompressed data
 ;;  Z: set on success, reset on error (no errors can arise yet)
-rlePredictDecompress:
+rleCalculateDecompressedLength:
     push hl
     push bc
     ld de, 0

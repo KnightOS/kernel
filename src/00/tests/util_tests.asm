@@ -157,18 +157,18 @@ test_rleCompress:
     ld bc, 0x0010
     call malloc
     jr nz, .failmem
-    ld hl, rle_src1
-    ld bc, rle_src1_size
+    ld hl, .src1
+    ld bc, 16
     push ix \ pop de
     call rleCompress
     push hl
-        ld hl, rle_check1_size
+        ld hl, 11
         call cpHLBC
     pop hl
     jr nz, .fail
 
     ex de, hl
-    ld de, rle_check1
+    ld de, .check1
 _:  ld a, (de)
     cpi
     inc de
@@ -180,24 +180,29 @@ _:  ld a, (de)
     call free
 .failmem:
     assert_fail()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
 
 ; rleDecompress 0009
 test_rleDecompress:
     ld bc, 0x0010
     call malloc
     jr nz, .failmem
-    ld hl, rle_check1
-    ld bc, rle_check1_size
+    ld hl, .check1
+    ld bc, 11
     push ix \ pop de
     call rleDecompress
     push hl
-        ld hl, rle_src1_size
+        ld hl, 16
         call cpHLBC
     pop hl
     jr nz, .fail
 
     ex de, hl
-    ld de, rle_src1
+    ld de, .src1
 _:  ld a, (de)
     cpi
     inc de
@@ -210,31 +215,39 @@ _:  ld a, (de)
 .failmem:
     assert_fail()
 
-; rlePredictCompress 000A
-test_rlePredictCompress:
-    ld hl, rle_src1
-    ld bc, rle_src1_size
-    call rlePredictCompress
-    ld hl, rle_check1_size
-    call cpHLDE
-    jr z, _
-    assert_fail()
-_:  assert_pass()
-
-; rlePredictDecompress 000B
-test_rlePredictDecompress:
-    ld hl, rle_check1
-    ld bc, rle_check1_size
-    call rlePredictDecompress
-    ld hl, rle_src1_size
-    call cpHLDE
-    jr z, _
-    assert_fail()
-_:  assert_pass()
-
-rle_src1:
+.src1:
     .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
-rle_src1_size .equ $ - rle_src1
-rle_check1:
+.check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
-rle_check1_size .equ $ - rle_check1
+
+; rleCalculateCompressedLength 000A
+test_rleCalculateCompressedLength:
+    ld hl, .src1
+    ld bc, 16
+    call rleCalculateCompressedLength
+    ld hl, 11
+    call cpHLDE
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+
+; rleCalculateDecompressedLength 000B
+test_rleCalculateDecompressedLength:
+    ld hl, .check1
+    ld bc, 11
+    call rleCalculateDecompressedLength
+    ld hl, 16
+    call cpHLDE
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
