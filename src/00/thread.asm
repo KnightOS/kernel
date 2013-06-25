@@ -360,20 +360,22 @@ _:  ld a, b
 ;; exitThread [Thread]
 ;;  Immediately terminates the running thread.  This routine
 ;;  does not return, so it is acceptable to JP to it instead
-;;  of CALLing it.
+;;  of CALLing it.  It also passes AF to the calling program.
 exitThread:
     ; Not returning; we can clobber registers at will!
-    call getCurrentThreadID
-    call getThreadEntry
-    inc hl \ inc hl \ inc hl
-    ld c, (hl) \ inc hl \ ld b, (hl)
-    push bc \ pop ix
-    call memSeekToStart
-    dec ix \ dec ix
-    ld c, (ix) \ ld b, (ix + 1)
-    add ix, bc
-    ld l, (ix)
-    ld h, (ix + 1)
+    push af
+        call getCurrentThreadID
+        call getThreadEntry
+        inc hl \ inc hl \ inc hl
+        ld c, (hl) \ inc hl \ ld b, (hl)
+        push bc \ pop ix
+        call memSeekToStart
+        dec ix \ dec ix
+        ld c, (ix) \ ld b, (ix + 1)
+        add ix, bc
+        ld l, (ix)
+        ld h, (ix + 1)
+    pop af
     jp (hl)
     
 ; Input:  A: Thread ID
