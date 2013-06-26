@@ -1,6 +1,6 @@
 language: c
 install:
-- sudo apt-get install mono-runtime
+- sudo apt-get install mono-runtime mono-utils
 script:
 - make
 - make test
