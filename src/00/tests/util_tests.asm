@@ -151,3 +151,103 @@ test_compareStrings:
 .string5:
     .db 0
 .undefine assert_equal assert_notequal
+
+; rleCompress 0008
+test_rleCompress:
+    ld bc, 0x0010
+    call malloc
+    jr nz, .failmem
+    ld hl, .src1
+    ld bc, 16
+    push ix \ pop de
+    call rleCompress
+    push hl
+        ld hl, 11
+        call cpHLBC
+    pop hl
+    jr nz, .fail
+
+    ex de, hl
+    ld de, .check1
+_:  ld a, (de)
+    cpi
+    inc de
+    jr nz, .fail
+    ld a, b \ or c \ jr nz, -_
+    call free
+    assert_pass()
+.fail:
+    call free
+.failmem:
+    assert_fail()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+
+; rleDecompress 0009
+test_rleDecompress:
+    ld bc, 0x0010
+    call malloc
+    jr nz, .failmem
+    ld hl, .check1
+    ld bc, 11
+    push ix \ pop de
+    call rleDecompress
+    push hl
+        ld hl, 16
+        call cpHLBC
+    pop hl
+    jr nz, .fail
+
+    ex de, hl
+    ld de, .src1
+_:  ld a, (de)
+    cpi
+    inc de
+    jr nz, .fail
+    ld a, b \ or c \ jr nz, -_
+    call free
+    assert_pass()
+.fail:
+    call free
+.failmem:
+    assert_fail()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+
+; rleCalculateCompressedLength 000A
+test_rleCalculateCompressedLength:
+    ld hl, .src1
+    ld bc, 16
+    call rleCalculateCompressedLength
+    ld hl, 11
+    call cpHLBC
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+
+; rleCalculateDecompressedLength 000B
+test_rleCalculateDecompressedLength:
+    ld hl, .check1
+    ld bc, 11
+    call rleCalculateDecompressedLength
+    ld hl, 16
+    call cpHLBC
+    jr z, _
+    assert_fail()
+_:  assert_pass()
+
+.src1:
+    .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
+.check1:
+    .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
