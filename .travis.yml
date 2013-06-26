@@ -1,6 +1,6 @@
 language: c
 install:
-- sudo apt-get install mono-devl mono-gmcs
+- sudo apt-get install mono-runtime
 script:
 - make
 - make test
