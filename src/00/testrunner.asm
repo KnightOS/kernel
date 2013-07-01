@@ -12,15 +12,19 @@
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
 test_collection:
-    .dw test_hexToA         ; 0000 test_hexToA
-    .dw test_cpHLDE         ; 0001 test_cpHLDE
-    .dw test_cpHLBC         ; 0002 test_cpHLBC
-    .dw test_cpBCDE         ; 0003 test_cpBCDE
-    .dw test_stringLength   ; 0004 test_stringLength
-    .dw test_DEMulA         ; 0005 test_DEMulA
-    .dw test_compareStrings ; 0006 test_compareStrings
+    .dw test_hexToA                         ; 0000 test_hexToA
+    .dw test_cpHLDE                         ; 0001 test_cpHLDE
+    .dw test_cpHLBC                         ; 0002 test_cpHLBC
+    .dw test_cpBCDE                         ; 0003 test_cpBCDE
+    .dw test_stringLength                   ; 0004 test_stringLength
+    .dw test_DEMulA                         ; 0005 test_DEMulA
+    .dw test_compareStrings                 ; 0006 test_compareStrings
 
-    .dw test_openFileRead   ; 0007 test_openFileRead
+    .dw test_openFileRead                   ; 0007 test_openFileRead
+    .dw test_rleCompress                    ; 0008 test_rleCompress
+    .dw test_rleDecompress                  ; 0009 test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 000A test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 000B test_rlePredictDecompress
 
     .dw 0xFFFF
 explicit_only:
