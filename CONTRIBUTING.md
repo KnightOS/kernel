@@ -8,7 +8,7 @@ It's also worth noting that small changes are better than broad ones. The all pu
 inspected before merging them, and huge diffs are a pain to inspect and will be rejected. Your code
 should also be tidy and understandable - this is assembly, after all.
 
-## Reporting Bugs, Requesting Features, and Asking Questions
+## Reporting Bugs, Requesting Features, Asking Questions
 
 To make sure your bug reports are easy to understand and fix, please follow these guidelines:
 
@@ -44,7 +44,7 @@ A small bit of example code is shown below:
             jr c, labelName
         pop bc
         pop af
-    .localLabel
+    .localLabel:
         dec a
         cp 10
         jr z, .localLabel
