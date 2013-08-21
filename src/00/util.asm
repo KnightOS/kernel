@@ -112,20 +112,18 @@ _:    in a,(0x10)
 ;; Output:
 ;;  Same as z80 CP instruction.
 cpHLDE:
-    push hl
     or a
     sbc hl, de
-    pop hl
+    add hl,de
     ret
 ;; cpHLBC [Miscellaneous]
 ;;  Compares HL to BC.
 ;; Output:
 ;;  Same as z80 CP instruction.
 cpHLBC:
-    push hl
     or a
     sbc hl, bc
-    pop hl
+    add hl,bc
     ret
 ;; cpBCDE [Miscellaneous]
 ;;  Compares DE to BC.
