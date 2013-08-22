@@ -7,7 +7,7 @@
 ;#define BREAK_BEFORE_TEST
 
 ; To create a new unit test:
-; 1. Create a file for it in tests/ (if needed)
+; 1. Create a file for it in tests (if needed)
 ; 2. Add the test function
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection

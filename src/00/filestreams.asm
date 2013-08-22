@@ -76,13 +76,13 @@ _:  pop af
                 or a ; cp 0
                 jr nz, .notFinal - 1 ; (-1 adds the inc hl)
                 dec hl
-.final:         
+.final:
                 set 7, (iy)
                 ld a, (hl)
                 ld (iy + 7), a
                 jr .notFinal
 dec hl
-.notFinal:      
+.notFinal:
                 inc hl
                 ld a, (hl)
                 ld (iy + 6), a ; Length of final block
@@ -401,62 +401,53 @@ streamReadWord:
 ;;  If BC is greater than the remaining space in the stream, the stream will be advanced to the end
 ;;  before returning an error.
 streamReadBuffer:
-    push ix
-    push hl
-    push ix \ pop hl
+    push hl \ push bc \ push de \ push af \ push ix
         call getStreamEntry
-        jr z, _
-    pop hl
-    pop ix
+        jr z, .streamFound
+    pop ix \ pop de \ pop de \ pop bc \ pop hl
     ret
-_:      bit 5, (ix)
-        jr z, _
-        ; End of stream
-        or 1
-        ld a, errEndOfStream
-    pop hl
-    pop ix
-    ret
-_:  ; Do read
-        push de
-        push af
-            ex de, hl
-            push de
-                ld l, (ix + 1)
-                ld h, (ix + 2)
-                ld a, (ix + 3)
-                ; Determine maximum amount that can be read from this block
-                ld d, 0
-                sub d
-                ; A is amount to read assuming full size block
-                ; So check if it really should be a full sized block
-                bit 7, (ix)
-                jr z, _
-                ld d, (ix + 6)
-                cp d
-                jr nc, _
-                ; Set A to size of block, max to read
-                ld a, d
-_:          pop de
-            ; Compare with BC to ensure we have space
+.streamFound:
+        push ix \ pop de
+        ld l, (ix + 1)
+        ld h, (ix + 2)
+.readLoop:
+        ; Registers:
+        ; DE: Destination in RAM
+        ; HL: Buffer pointer (including current position offset)
+        ; IX: File stream entry
+        ; BC: Total length left to read
+
+        bit 5, (ix) ; Check for EOF
+        jr nz, .endOfStream
+        push bc
+            ; Check if we have enough space left in file stream
+            xor a
             cp c
-            jr nc, _
-        pop af
-        pop de
-    or 1
-    ld a, errEndOfStream
-    pop hl
-    pop ix
+            jr nz, .readOkay ; 0 < n < 0x100
+            cp b
+            jr z, .done - 1 ; Nothing left to read, return successfully
+            ; We need to read 0x100 bytes this round
+            bit 7, (ix)
+            jr z, .readOkay ; Not the final block, go for it
+            cp (ix + 6)
+            jr z, .readOkay
+            ; Not enough space
+        pop bc
+.endOfStream:
+    pop ix \ pop de \ pop de \ pop bc \ pop hl
+    or 1 \ ld a, errEndOfStream \ ret
+.readOkay:
+            ld b, 0
+            cp c
+            jr nz, _
+            ld bc, 0x100
+_:          ldir
+
+;.done - 1:
+        pop bc
+.done:
+    pop ix \ pop de \ pop af \ pop bc \ pop hl
     ret
-_:          ld a, c ; For later comparison
-            push bc
-                ld b, 0
-                or a ; (later comparison)
-                jr nz, $+3 \ inc b
-                jr $
-                ldir
-            pop bc
-            
 
 ;; getStreamInfo [File Stream]
 ;;  Gets the amount of space remaining in a file stream.

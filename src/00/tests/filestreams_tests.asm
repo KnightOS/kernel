@@ -3,7 +3,7 @@ test_openFileRead:
     xor a
     ld (currentThreadIndex), a
     ld (threadTable), a
-    
+
     ld de, .testPath1
     call openFileRead
     jr nz, .fail
@@ -20,7 +20,7 @@ test_openFileRead:
     call openFileRead
     jr nz, .fail
     call closeStream
-    
+
     ld de, .testPath3
     call openFileRead
     jr z, .fail
@@ -41,7 +41,7 @@ test_closeStream:
     ld d, 0xFF
     call closeStream
     jr z, .fail
-    
+
     ld de, .testPath1
     call openFileRead
     call getStreamBuffer
@@ -76,7 +76,7 @@ test_streamReadByte:
     jr nz, .fail
 
     call closeStream
-    
+
     ; Test for end of stream
     ld de, .testPath1
     call openFileRead
@@ -87,7 +87,7 @@ _:  call streamReadByte
     call streamReadByte
     jr z, .fail
     call closeStream
-    
+
     ; Test with file that is greater than one block in length
     ld b, 0xFF
     ld de, .testPath2
@@ -119,7 +119,7 @@ _:  jr nz, .fail
     jr z, .fail
 
     call closeStream
-    
+
     assert_pass()
 .fail:
     assert_fail()
