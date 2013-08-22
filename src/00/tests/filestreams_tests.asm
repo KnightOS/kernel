@@ -185,7 +185,9 @@ test_streamReadBuffer:
     call malloc
     call streamReadBuffer
     call closeStream
-    ld a, (ix + 0x100)
+    ld bc, 0x100
+    add ix, bc
+    ld a, (ix)
     cp 'B'
     jr nz, .fail
     assert_pass()

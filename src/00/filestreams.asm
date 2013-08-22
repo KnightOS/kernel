@@ -460,7 +460,6 @@ _:          ; BC is the amount they want us to read, assuming we're at the start
             or a ; cp 0
             jr nz, _
             ; See if we can manage a full block
-            xor a
             cp (ix + 3)
             jr z, .doRead
             ; We can't, so truncate
@@ -483,12 +482,16 @@ _:                  ; Space left in block in A
                 cp d
                 jr c, _
                 jr z, _
+                xor a \ cp d
+                jr z, _ ; Handle 0x100 bytes
                 ; Too long, truncate a little
                 ld c, d
                 ld b, 0
 _:          pop de
 .doRead:
             ; Update HL with stream pointer
+            ld l, (ix + 1)
+            ld h, (ix + 2)
             ld a, (ix + 3)
             add l, a \ ld l, a
             jr nc, _ \ inc h
@@ -511,7 +514,13 @@ _:      push hl ; Push *new* length to stack so we can remember it while we cycl
             set 5, (ix)
             jr .loopAround
 _:          ; Handle any other buffer
-
+            xor a
+            cp (ix + 3)
+            jr nz, .loopAround
+            ld (ix + 3), a
+            call getNextBuffer
+            ld l, (ix + 1)
+            ld h, (ix + 2)
 .loopAround:
             ; Back to the main loop
         pop bc
@@ -562,7 +571,7 @@ _:          ; Loop through remaining blocks
             out (6), a
             ld a, (ix + 3) \ and 0b011111 \ rla \ rla \ ld l, a
             ld h, 0x40
-            ; 0xCeck for early exit
+            ; Check for early exit
             push de
                 inc hl \ inc hl ; Skip "prior block" entry
                 ld e, (hl)
