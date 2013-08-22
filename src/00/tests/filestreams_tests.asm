@@ -150,18 +150,31 @@ test_streamReadWord:
 
 ; streamReadBuffer 000B
 test_streamReadBuffer:
+    ; Test reading the beginning of a small file
     ld de, .testPath
     call openFileRead
     ld bc, 5
     call malloc
     dec bc
-    jr $
     call streamReadBuffer
     call closeStream
-    xor a
+    xor a ; Terminate string
     ld (ix + 4), a
     push ix \ pop hl
     ld de, .testString
+    call compareStrings
+    jr nz, .fail
+    ; Test the same, but with one byte already read
+    ld de, .testPath
+    call openFileRead
+    call streamReadByte
+    ld bc, 3
+    call streamReadBuffer
+    call closeStream
+    xor a ; Terminate string
+    ld (ix + 3), a
+    push ix \ pop hl
+    ld de, .testString + 1
     call compareStrings
     jr nz, .fail
     assert_pass()

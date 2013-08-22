@@ -336,8 +336,6 @@ _:      push bc
             jr nz, _
             ; Set last section stuff
             set 7, (ix)
-            ld a, (ix + 6)
-            ld (ix + 7), a
 _:      pop af
         jp po, _
         ei
@@ -407,7 +405,7 @@ streamReadBuffer:
     pop ix \ pop de \ pop de \ pop bc \ pop hl
     ret
 .streamFound:
-        push ix \ pop de
+        pop de \ push de ; the value of IX before getStreamEntry was called
         ld l, (ix + 1)
         ld h, (ix + 2)
 .readLoop:
@@ -417,15 +415,29 @@ streamReadBuffer:
         ; IX: File stream entry
         ; BC: Total length left to read
 
-        bit 5, (ix) ; Check for EOF
+        ; Try to return if BC == 0
+        xor a
+        cp c
+        jr nz, _
+        cp b
+        jp z, .done
+
+_:      bit 5, (ix) ; Check for EOF
         jr nz, .endOfStream
         push bc
             ; Check if we have enough space left in file stream
-            xor a
+            bit 7, (ix) ; Final block?
+            jr z, _
+            ; Final block.
+            cp (ix + 6) ; A is still zero
+            jr z, .readOkay
+            ld a, (ix + 6)
+            cp c
+            jr nc, .readOkay
+            jr .endOfStream - 1
+_:          xor a
             cp c
             jr nz, .readOkay ; 0 < n < 0x100
-            cp b
-            jr z, .done - 1 ; Nothing left to read, return successfully
             ; We need to read 0x100 bytes this round
             bit 7, (ix)
             jr z, .readOkay ; Not the final block, go for it
@@ -441,12 +453,76 @@ streamReadBuffer:
             cp c
             jr nz, _
             ld bc, 0x100
-_:          ldir
+_:          ; BC is the amount they want us to read, assuming we're at the start of the block
+            ; But we may not be at the start of the block - handle that here
+            ; If (amount left in block) is less than BC, set BC to (amount left in block)
+            ld a, c
+            or a ; cp 0
+            jr nz, _
+            ; See if we can manage a full block
+            xor a
+            cp (ix + 3)
+            jr z, .doRead
+            ; We can't, so truncate
+            sub (ix + 3)
+            ld c, a
+            ld b, 0
+            jr .doRead
+_:          ; Check for partial blocks (BC != 0x100)
+            push de
+                push af
+                    ; Load the amount we *can* read into B
+                    xor a
+                    bit 7, (ix)
+                    jr z, _
+                    ld a, (ix + 6)
+_:                  ; Space left in block in A
+                    sub (ix + 3)
+                    ld d, a
+                pop af
+                cp d
+                jr c, _
+                jr z, _
+                ; Too long, truncate a little
+                ld c, d
+                ld b, 0
+_:          pop de
+.doRead:
+            ; Update HL with stream pointer
+            ld a, (ix + 3)
+            add l, a \ ld l, a
+            jr nc, _ \ inc h
+_:          ; Do read
+            push bc \ ldir \ pop bc
+            ; Subtract BC from itself
+        pop hl ; Was BC
+        or a \ sbc hl, bc
+_:      push hl ; Push *new* length to stack so we can remember it while we cycle to the next buffer
+            ; Update stream pointer
+            ld a, (ix + 3)
+            add c
+            ld (ix + 3), a
+
+            bit 7, (ix)
+            jr z, _
+            ; Handle "last buffer"
+            cp (ix + 6)
+            jr nz, .loopAround
+            set 5, (ix)
+            jr .loopAround
+_:          ; Handle any other buffer
+            ; TODO
+
+.loopAround:
+            ; Back to the main loop
+        pop bc
+        jp .readLoop
 
 ;.done - 1:
         pop bc
 .done:
     pop ix \ pop de \ pop af \ pop bc \ pop hl
+    cp a
     ret
 
 ;; getStreamInfo [File Stream]
@@ -525,7 +601,7 @@ _:          pop de
                 cp d \ jr nz, ++_
                 ; Last block, update accordingly and return
                 dec b
-                ld a, (ix + 7)
+                ld a, (ix + 6)
                 add c \ ld c, a
                 jr nc, _
                 inc b
