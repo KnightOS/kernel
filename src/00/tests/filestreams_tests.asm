@@ -177,10 +177,23 @@ test_streamReadBuffer:
     ld de, .testString + 1
     call compareStrings
     jr nz, .fail
+    call free
+    ; Test a larger file, with several blocks
+    ld de, .testPath2
+    call openFileRead
+    ld bc, 0x101
+    call malloc
+    call streamReadBuffer
+    call closeStream
+    ld a, (ix + 0x100)
+    cp 'B'
+    jr nz, .fail
     assert_pass()
 .fail:
     assert_fail()
 .testPath:
     .db "/test.txt", 0
+.testPath2:
+    .db "/large.txt", 0
 .testString:
     .db "Test", 0

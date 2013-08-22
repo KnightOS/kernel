@@ -511,7 +511,6 @@ _:      push hl ; Push *new* length to stack so we can remember it while we cycl
             set 5, (ix)
             jr .loopAround
 _:          ; Handle any other buffer
-            ; TODO
 
 .loopAround:
             ; Back to the main loop
