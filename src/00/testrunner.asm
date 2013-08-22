@@ -26,6 +26,11 @@ test_collection:
     .dw test_streamReadWord     ; 000A test_streamReadWord
     .dw test_streamReadBuffer   ; 000B test_streamReadBuffer
 
+    .dw test_rleCompress                    ; 000C test_rleCompress
+    .dw test_rleDecompress                  ; 000D test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 000E test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 0010 test_rlePredictDecompress
+
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
