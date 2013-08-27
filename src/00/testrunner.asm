@@ -25,6 +25,7 @@ test_collection:
     .dw test_rleDecompress                  ; 0009 test_rleDecompress
     .dw test_rleCalculateCompressedLength   ; 000A test_rlePredictCompress
     .dw test_rleCalculateDecompressedLength ; 000B test_rlePredictDecompress
+    .dw test_crc16                          ; 000C test_crc16
 
     .dw 0xFFFF
 explicit_only:
@@ -198,6 +199,7 @@ characterMap:
 .endmacro
 
 #include "tests/util_tests.asm"
+#include "tests/crypto_tests.asm"
 #include "tests/filestreams_tests.asm"
 
 .undefine assert_pass assert_fail

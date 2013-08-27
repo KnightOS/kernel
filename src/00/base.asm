@@ -25,6 +25,7 @@
 #include "time.asm"
 
 #include "util.asm"
+#include "crypto.asm"
 
 #ifdef TEST
 #include "testrunner.asm"
