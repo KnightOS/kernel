@@ -44,10 +44,11 @@ sha1Init:
     push bc
     push de
     push hl
-        ld bc, .defaultMemblock_copy_end - .defaultMemblock
+        ld bc, .defaultMemblock_end - .defaultMemblock
         call malloc
         jr nz, .fail
         push ix \ pop de
+        ld bc, .defaultMemblock_copy_end - .defaultMemblock
         ld hl, .defaultMemblock
         ldir
 
@@ -63,10 +64,6 @@ sha1Init:
         ld (ix + sha1_block_front_ptr), l
         ld (ix + sha1_block_front_ptr + 1), h
 
-        ; Success, set Z
-        ld h, a
-        xor a
-        ld a, h
 .fail:
     pop hl
     pop de
