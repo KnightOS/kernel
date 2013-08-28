@@ -77,15 +77,15 @@ sha1Init:
 ; state will be changed by the algorithm.
 .defaultMemblock:
 sha1_hash .equ $ - .defaultMemblock
-    .db $67,$45,$23,$01
-    .db $EF,$CD,$AB,$89
-    .db $98,$BA,$DC,$FE
-    .db $10,$32,$54,$76
-    .db $C3,$D2,$E1,$F0
+    .db 0x67,0x45,0x23,0x01
+    .db 0xEF,0xCD,0xAB,0x89
+    .db 0x98,0xBA,0xDC,0xFE
+    .db 0x10,0x32,0x54,0x76
+    .db 0xC3,0xD2,0xE1,0xF0
 ; The length of the input is kept here
 sha1_length .equ $ - .defaultMemblock
-    .db $00,$00,$00,$00
-    .db $00,$00,$00,$00
+    .db 0x00,0x00,0x00,0x00
+    .db 0x00,0x00,0x00,0x00
 ; Keep these contiguous
 sha1_temp .equ $ - .defaultMemblock
     .block 4
