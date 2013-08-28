@@ -186,20 +186,21 @@ sha1ProcessBlock:
     ld h, (ix + sha1_block_front_ptr + 1)
     ld bc, 63
     add hl, bc
-    push hl \ ex (sp), ix
+    push hl \ ex (sp), iy
+
         ld c, 64
 .extend:
         ld b, 4
 .extend_inner:
-        inc ix
-        ld a, (ix + -12)
-        xor (ix + -32)
-        xor (ix + -56)
-        xor (ix + -64)
-        ld (ix), a
+        inc iy
+        ld a, (iy + -12)
+        xor (iy + -32)
+        xor (iy + -56)
+        xor (iy + -64)
+        ld (iy), a
         djnz .extend_inner
-        push ix \ pop hl
-        ld a, (ix + -3)
+        push iy \ pop hl
+        ld a, (iy + -3)
         rlca
         rl (hl) \ dec hl
         rl (hl) \ dec hl
@@ -214,7 +215,7 @@ sha1ProcessBlock:
         ;    c = h2
         ;    d = h3
         ;    e = h4
-        push ix \ pop hl
+        push iy \ pop hl
         ; Unneeded because the sha1_hash offset is 0!
         ;ld de, sha1_hash
         ;add hl, de
@@ -263,7 +264,7 @@ sha1ProcessBlock:
         ld h, (ix + sha1_block_front_ptr + 1)
         ld (ix + sha1_block_ptr), l
         ld (ix + sha1_block_ptr + 1), h
-    pop ix
+    pop iy
     ret
 
 sha1Do20Rounds:
@@ -360,40 +361,41 @@ sha1Do20Rounds:
     ret
 
 .do_f_operation:
-    push ix
+    push iy
+        push ix \ pop iy
+        ex de, hl
+        ld de, sha1_a
+        add iy, de
+        ex de, hl
         ld l, (ix + sha1_f_op_ptr)
         ld h, (ix + sha1_f_op_ptr + 1)
-        push de
-            ld de, sha1_a
-            add ix, de
-        pop de
         ld b, 4
         jp (hl)
 
 sha1Operation_mux:
         ; f = (b & c) | (~b & d) = ((c ^ d) & 8) ^ d
-        ld a, (ix+8)
-        xor (ix+12)
-        and (ix+4)
-        xor (ix+12)
-        ld (ix+20), a
-        inc ix
+        ld a, (iy + 8)
+        xor (iy + 12)
+        and (iy + 4)
+        xor (iy + 12)
+        ld (iy + 20), a
+        inc iy
         djnz sha1Operation_mux
         jr sha1Operation_done
 sha1Operation_xor:
         ; f = b ^ c ^ d
-        ld a, (ix+4)
-        xor (ix+8)
-        xor (ix+12)
-        ld (ix+20), a
-        inc ix
+        ld a, (iy + 4)
+        xor (iy + 8)
+        xor (iy + 12)
+        ld (iy + 20), a
+        inc iy
         djnz sha1Operation_xor
         jr sha1Operation_done
 sha1Operation_maj:
         ; f = (b & c) | (b & d) | (c & d)
-        ld c, (ix+4)
-        ld d, (ix+8)
-        ld e, (ix+12)
+        ld c, (iy + 4)
+        ld d, (iy + 8)
+        ld e, (iy + 12)
         ld a, c
         and d
         ld h, a
@@ -404,12 +406,12 @@ sha1Operation_maj:
         and e
         or h
         or l
-        ld (ix+20), a
-        inc ix
+        ld (iy + 20), a
+        inc iy
         djnz sha1Operation_maj
         ;jr sha1Operation_done
 sha1Operation_done:
-    pop ix
+    pop iy
     ret
 
 sha1AddToTemp:
