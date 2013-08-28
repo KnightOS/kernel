@@ -372,9 +372,10 @@ ldir
 sha1Operation_mux:
         ; f = (b & c) | (~b & d) = ((c ^ d) & 8) ^ d
         ld a, (iy + 8)
-        xor (iy + 12)
+        ld c, (iy + 12)
+        xor c
         and (iy + 4)
-        xor (iy + 12)
+        xor c
         ld (iy + 20), a
         inc iy
         djnz sha1Operation_mux
@@ -390,19 +391,16 @@ sha1Operation_xor:
         jr sha1Operation_done
 sha1Operation_maj:
         ; f = (b & c) | (b & d) | (c & d)
+        ;   = (b & c) | ((b | c) & d)
         ld c, (iy + 4)
         ld d, (iy + 8)
-        ld e, (iy + 12)
         ld a, c
         and d
-        ld h, a
+        ld e, a
         ld a, c
-        and e
-        ld l, a
-        ld a, d
-        and e
-        or h
-        or l
+        or d
+        and (iy + 12)
+        or e
         ld (iy + 20), a
         inc iy
         djnz sha1Operation_maj
