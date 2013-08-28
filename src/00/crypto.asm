@@ -113,6 +113,11 @@ sha1_block_front_ptr .equ $ - .defaultMemblock
     .dw $0000
 .defaultMemblock_end:
 
+;; sha1Crypto [Crypto]
+;;  Safely deallocates a SHA1 state block allocated by
+;;  sha1Init.
+;; Inputs:
+;;  IX: location of allocated block
 sha1Clean:
     push hl
     push ix
@@ -132,13 +137,9 @@ sha1Pad:
     ld a, $80
 .zero:
     call sha1AddByte_noLength
-    push hl
-        ld l, (ix + sha1_block_front_ptr)
-        ld a, 56
-        add a, l
-        ld l, (ix + sha1_block_ptr)
-        cp l
-    pop hl
+    ld a, (ix + sha1_block_front_ptr)
+    add a, 56
+    cp (ix + sha1_block_ptr)
     ld a, $00
     jr nz, .zero
     ; append length of message (before padding), in bits, as 64-bit big-endian integer
@@ -153,17 +154,16 @@ sha1Pad:
 
 sha1AddByte:
     push af
-    push ix
         ld a, (ix + sha1_length + 7)
         add a, 8
         ld (ix + sha1_length + 7), a
         jr nc, .length_ok
-.length_inc:
-        dec ix
-        inc (ix + sha1_length + 7)
-        jr z, .length_inc
+        push ix
+_:          dec ix
+            inc (ix + sha1_length + 7)
+            jr z, -_
+        pop ix
 .length_ok:
-    pop ix
     pop af
 
 sha1AddByte_noLength:
@@ -173,7 +173,6 @@ sha1AddByte_noLength:
     inc de
     ld (ix + sha1_block_ptr), e
     ld (ix + sha1_block_ptr + 1), d
-    ld a, e
     ld a, (ix + sha1_block_front_ptr)
     add a, 64
     cp e
@@ -246,7 +245,7 @@ sha1ProcessBlock:
         ;    h4 += e
         push bc
             ; Perhaps this could be improved.
-            push ix \ push ix \ pop de \ pop hl
+            push ix \ pop de \ push de \ pop hl
             ld bc, 19 + sha1_hash
             add hl, bc
             ex de, hl
@@ -270,13 +269,13 @@ sha1ProcessBlock:
 sha1Do20Rounds:
     ld (ix + sha1_f_op_ptr), l
     ld (ix + sha1_f_op_ptr + 1), h
-    ld hl, sha1_k
-    push ix \ pop de
+    ld de, sha1_k
+    push ix \ pop hl
     add hl, de
     ex de, hl
     pop hl
- ld bc, 4
- ldir
+ld bc, 4
+ldir
     push hl
 
     ld b, 20
@@ -301,8 +300,8 @@ sha1Do20Rounds:
         rrca
         rrca
         push de
-            ld hl, sha1_temp + 3
-            push ix \ pop de
+            ld de, sha1_temp + 3
+            push ix \ pop hl
             add hl, de
         pop de
         rld \ rl (hl) \ dec hl
@@ -310,10 +309,9 @@ sha1Do20Rounds:
         rld \ rl (hl) \ dec hl
         rld \ rl (hl)
         push de
-            ld de, 3 + sha1_k + 3 - sha1_temp ; Undo the three DECs we just did (HL now)
-                                              ; at sha1_temp + 3), then add difference
-                                              ; to get to sha1_k + 3.
-            add hl, de
+            ld de, 3 + (sha1_k + 3) - sha1_temp ; Undo the three DECs we just did (HL now
+                                                ; at sha1_temp + 3), then add difference
+            add hl, de                          ; to get to sha1_k + 3.
         pop de
         call sha1AddToTemp ; k
         call sha1AddToTemp ; f
@@ -337,13 +335,12 @@ sha1Do20Rounds:
         ld bc, sha1_d + 3
         add hl, bc
         push hl \ pop de
-        inc de \ inc de \ inc de \ inc de
+        inc de \ inc de \ inc de \ inc de ; sha1_e - sha1_d = 4 bytes
         ld bc, 20
         lddr
         ld a, (ix + sha1_c + 3)
         ld b, 2
 .ror2:
-        ; This could maybe be combined with the above instructions somehow
         push bc
             push ix \ pop hl
             ld bc, sha1_c
@@ -361,8 +358,8 @@ sha1Do20Rounds:
     ret
 
 .do_f_operation:
-    push iy
-        push ix \ pop iy
+    push ix
+        ex (sp), iy
         ex de, hl
         ld de, sha1_a
         add iy, de
@@ -415,11 +412,12 @@ sha1Operation_done:
     ret
 
 sha1AddToTemp:
+    ld de, sha1_temp+3
     push ix
-        ld de, sha1_temp + 3
-        add ix, de
-        push ix \ pop de
-    pop ix
+      ex (sp), hl
+        add hl, de
+        ex de, hl
+    pop hl
 
 sha1_32BitAdd:
     ld b, 4
@@ -431,6 +429,3 @@ _:  ld a, (de)
     dec hl
     djnz -_
     ret
-
-;sha1_block:
-;    .block 320
