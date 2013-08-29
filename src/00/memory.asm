@@ -24,6 +24,36 @@ allocScreenBuffer:
     pop ix
     pop bc
     ret
+
+;; calloc [System]
+;;  Allocates memory for a given number of elements
+;;  of a given size (that is, BC * A bytes total),
+;;  then fills it with zeros.
+;; Inputs:
+;;  BC: Number of elements
+;;  A: Size of element
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+;;  IX: First byte of allocated and zeroed memory (on success)
+calloc:
+    push af
+    push bc
+    push de
+    push hl
+        push bc \ pop de
+        call DEMulA
+        push hl \ pop bc
+        call malloc
+        jr nz, .fail
+        xor a
+        call memset
+.fail:
+    pop hl
+    pop de
+    pop bc
+    pop af
+    ret
     
 ; Sets the entire allocated section to A
 memset:
@@ -36,6 +66,7 @@ memset:
         inc de
         ld (hl), a
         ld c, (IX + -2) \ ld b, (IX + -1)
+        dec bc
         ldir
     pop de
     pop hl
