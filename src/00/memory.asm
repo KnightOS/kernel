@@ -66,6 +66,7 @@ memset:
         inc de
         ld (hl), a
         ld c, (IX + -2) \ ld b, (IX + -1)
+        dec bc
         ldir
     pop de
     pop hl
