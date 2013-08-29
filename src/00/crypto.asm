@@ -211,7 +211,7 @@ sha1ProcessBlock:
         ;ld de, sha1_hash
         ;add hl, de
         push hl
-            ld de, sha1_a
+            ld de, sha1_a - sha1_hash
             add hl, de
             ex de, hl
         pop hl
@@ -238,12 +238,11 @@ sha1ProcessBlock:
         push bc
             ; Perhaps this could be improved.
             push ix \ pop de \ push de \ pop hl
-            ld bc, 19 + sha1_a
-            add hl, bc
-            ex de, hl
             ld bc, 19 + sha1_hash
             add hl, bc
             ex de, hl
+            ld bc, 19 + sha1_a
+            add hl, bc
         pop bc
         ld c, 5
 .add_result:
@@ -290,20 +289,16 @@ ldir
         rrca
         rrca
         rrca
-        push de
-            ld de, sha1_temp + 3
-            push ix \ pop hl
-            add hl, de
-        pop de
+        ld de, sha1_temp + 3
+        push ix \ pop hl
+        add hl, de
         rld \ rl (hl) \ dec hl
         rld \ rl (hl) \ dec hl
         rld \ rl (hl) \ dec hl
         rld \ rl (hl)
-        push de
-            ld de, 3 + (sha1_k - sha1_temp) ; Undo the three DECs we just did (HL now
-                                            ; at sha1_temp + 3), then add difference
-            add hl, de                      ; to get to sha1_k + 3.
-        pop de
+        ld de, 3 + (sha1_k - sha1_temp) ; Undo the three DECs we just did (HL now
+                                        ; at sha1_temp + 3), then add difference
+        add hl, de                      ; to get to sha1_k + 3.
         call sha1AddToTemp ; k
         call sha1AddToTemp ; f
         call sha1AddToTemp ; e
