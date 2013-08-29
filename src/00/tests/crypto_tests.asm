@@ -24,13 +24,10 @@ test_crc16:
     call sha1Init
     ld hl, dataPtr
     ld b, dataSize
-_:  push de
-    push bc
+_:  ld a, (hl)
     push hl ; Registers need fixing
         call sha1AddByte
     pop hl
-    pop bc
-    pop de
     inc hl
     djnz -_
     call sha1Pad
@@ -48,13 +45,13 @@ _:  ld a, (de)
 .endmacro
 
 test_sha1:
-    assert(.test1, 44, .hash1)
+    assert(.test1, 43, .hash1)
     assert_pass()
 .fail:
     call sha1Clean
     assert_fail()
 .test1:
-    .db "The quick brown fox jumps over the lazy dog."
+    .db "The quick brown fox jumps over the lazy dog"
 .hash1:
     .db 0x2f, 0xd4, 0xe1, 0xc6
     .db 0x7a, 0x2d, 0x28, 0xfc

@@ -206,7 +206,7 @@ sha1ProcessBlock:
         ;    c = h2
         ;    d = h3
         ;    e = h4
-        push iy \ pop hl
+        push ix \ pop hl
         ; Unneeded because the sha1_hash offset is 0!
         ;ld de, sha1_hash
         ;add hl, de
@@ -238,10 +238,10 @@ sha1ProcessBlock:
         push bc
             ; Perhaps this could be improved.
             push ix \ pop de \ push de \ pop hl
-            ld bc, 19 + sha1_hash
+            ld bc, 19 + sha1_a
             add hl, bc
             ex de, hl
-            ld bc, 19 + sha1_a
+            ld bc, 19 + sha1_hash
             add hl, bc
             ex de, hl
         pop bc
@@ -284,7 +284,6 @@ ldir
         add hl, de
         push hl \ pop de
         add hl, bc ; HACK!  This is the correct value to get HL to sha1_a
-        ex de, hl
         ldir
         ld a, (ix + sha1_temp)
         rrca
@@ -301,9 +300,9 @@ ldir
         rld \ rl (hl) \ dec hl
         rld \ rl (hl)
         push de
-            ld de, 3 + (sha1_k + 3) - sha1_temp ; Undo the three DECs we just did (HL now
-                                                ; at sha1_temp + 3), then add difference
-            add hl, de                          ; to get to sha1_k + 3.
+            ld de, 3 + (sha1_k - sha1_temp) ; Undo the three DECs we just did (HL now
+                                            ; at sha1_temp + 3), then add difference
+            add hl, de                      ; to get to sha1_k + 3.
         pop de
         call sha1AddToTemp ; k
         call sha1AddToTemp ; f
