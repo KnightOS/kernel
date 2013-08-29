@@ -175,7 +175,7 @@ sha1ProcessBlock:
     ;        w[i] = (w[i-3] xor w[i-8] xor w[i-14] xor w[i-16]) leftrotate 1
     ld l, (ix + sha1_block_front_ptr)
     ld h, (ix + sha1_block_front_ptr + 1)
-    ld bc, 6
+    ld bc, 63
     add hl, bc
     push hl \ ex (sp), iy
 
