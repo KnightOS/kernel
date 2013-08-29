@@ -35,7 +35,8 @@ _:          djnz .rotlp
 
 ;; sha1Init [Crypto]
 ;;  Allocates a memory block to keep the state and result of
-;;  a SHA1 hash operation.
+;;  a SHA1 hash operation.  The result is kept in the first 20 bytes
+;;  of the allocated block.
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
@@ -44,8 +45,9 @@ sha1Init:
     push bc
     push de
     push hl
-        ld bc, .defaultMemblock_end - .defaultMemblock
-        call malloc
+        ld bc, sha1Memblock_size
+        ld a, 1
+        call calloc
         jr nz, .fail
         push ix \ pop de
         ld bc, .defaultMemblock_copy_end - .defaultMemblock
@@ -55,7 +57,8 @@ sha1Init:
         ; Possibly this could be improved
         push ix
             ld bc, 320 ; SHA1 block is this size
-            call malloc
+            ld a, 1
+            call calloc
             ; Store the pointers
             push ix \ pop hl
         pop ix
@@ -73,42 +76,34 @@ sha1Init:
 ; This is the default memblock.  Its
 ; state will be changed by the algorithm.
 .defaultMemblock:
+
+; Holds the completed hash.
 sha1_hash .equ $ - .defaultMemblock
     .db 0x67,0x45,0x23,0x01
     .db 0xEF,0xCD,0xAB,0x89
     .db 0x98,0xBA,0xDC,0xFE
     .db 0x10,0x32,0x54,0x76
     .db 0xC3,0xD2,0xE1,0xF0
+.defaultMemblock_copy_end:
+
 ; The length of the input is kept here
 sha1_length .equ $ - .defaultMemblock
-    .db 0x00,0x00,0x00,0x00
-    .db 0x00,0x00,0x00,0x00
+
 ; Keep these contiguous
-sha1_temp .equ $ - .defaultMemblock
-    .block 4
-sha1_a .equ $ - .defaultMemblock
-    .block 4
-sha1_b .equ $ - .defaultMemblock
-    .block 4
-sha1_c .equ $ - .defaultMemblock
-    .block 4
-sha1_d .equ $ - .defaultMemblock
-    .block 4
-sha1_e .equ $ - .defaultMemblock
-    .block 4
-sha1_f .equ $ - .defaultMemblock
-    .block 4
-sha1_k .equ $ - .defaultMemblock
-    .block 4
-sha1_f_op_ptr .equ $ - .defaultMemblock
-    .dw $0000
-.defaultMemblock_copy_end:
+sha1_temp .equ sha1_length + 8
+sha1_a .equ sha1_temp + 4
+sha1_b .equ sha1_a + 4
+sha1_c .equ sha1_b + 4
+sha1_d .equ sha1_c + 4
+sha1_e .equ sha1_d + 4
+sha1_f .equ sha1_e + 4
+sha1_k .equ sha1_f + 4
+sha1_f_op_ptr .equ sha1_k + 4
+
 ; Pointers to the SHA1 block are kept here
-sha1_block_ptr .equ $ - .defaultMemblock
-    .dw $0000
-sha1_block_front_ptr .equ $ - .defaultMemblock
-    .dw $0000
-.defaultMemblock_end:
+sha1_block_ptr .equ sha1_f_op_ptr + 2
+sha1_block_front_ptr .equ sha1_block_ptr + 2
+sha1Memblock_size .equ sha1_block_front_ptr + 2
 
 ;; sha1Crypto [Crypto]
 ;;  Safely deallocates a SHA1 state block allocated by
