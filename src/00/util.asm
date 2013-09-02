@@ -7,12 +7,14 @@ suspendDevice:
     out (0x10), a ; Disable LCD
     di ; And interrupts, for now
     im 1 ; interrupt mode 1, for cleanliness
-    ld a, 1
-    out (3), a ; ON
-    ei ; Enable interrupting when ON is pressed
-    halt ; and halt
-    di
-    ld a, 0xB ; Reset the interrupts
+    in a, (3)
+    push af
+        ld a, 1
+        out (3), a ; ON
+        ei ; Enable interrupting when ON is pressed
+        halt ; and halt
+        di
+    pop af
     out (3), a
     ld a, 3
     out (0x10), a ; Enable the screen

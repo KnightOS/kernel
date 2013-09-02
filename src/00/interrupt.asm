@@ -159,13 +159,10 @@ sysInterruptDone:
     ret
 
 handleKeyboard:
-    ld a, 0xFF
-    out (1), a
-    ; Try ON+MODE
-    ld a, 0xBF
-    out (1), a
-    in a, (1)
-    bit 6, a
+    call getKey_skipCheck
+    cp kK
+    jr z, handleOnK
+    cp kMODE
     jr z, handleOnMODE
     jr sysInterruptDone
 
@@ -175,6 +172,11 @@ handleOnMODE:
     ld h, 1
     call setInitialA
     jr sysInterruptDone
+
+handleOnK:
+    ld a, (hwLockLCD)
+    call killThread
+    jp contextSwitch_manual
 
 #ifdef USB
 usbInterrupt:
