@@ -44,7 +44,7 @@ reboot:
     di
 
     ld sp, userMemory ; end of kernel garbage
-    
+
     ; Re-map memory
     ld a, 6
     out (4), a
@@ -55,7 +55,7 @@ reboot:
     ld a, 0x41
     out (7), a
     #endif
-    
+
     ; Manipulate protection states
     #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
         call unlockFlash
@@ -73,10 +73,10 @@ reboot:
         ; Set CPU speed to 15 MHz
         ld a, 1
         out (0x20), a
-    
+
     #else ; TI-73, TI-83+
         #ifndef TI73 ; RAM does not have protection on the TI-73
-        
+
         ; Remove RAM/Flash protection
         call unlockFlash
             xor a
@@ -113,7 +113,7 @@ reboot:
     ldir
 
     call formatMem
-        
+
     ; Initialize LCD
     ld a, 0x05
     call lcdDelay
@@ -148,30 +148,30 @@ reboot:
     ld (currentContrast), a
     call lcdDelay
     out (0x10), a ; Contrast
-    
+
     ; Set all file handles to unused
     ld hl, fileHandleTable
     ld (hl), 0xFF
     ld de, fileHandleTable + 1
     ld bc, 8 * maxFileStreams
     ldir
-    
+
     ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
     ld (lastThreadId), a
-    
+
 #ifdef TEST
     jp testrunner
 #endif
 
     ld de, bootFile
     call fileExists
-    ld a, 0b011001100
+    ld a, kerr_init_not_found
     jp nz, kernelError
     call launchProgram
     ld h, 0
     call setInitialA
-    
-    jp contextSwitch_search
-    
+
+    jp contextSwitch_manual
+
 bootFile:
     .db "/bin/init", 0
