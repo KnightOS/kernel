@@ -84,7 +84,8 @@ contextSwitch_search:
     inc a \ ld (currentThreadIndex), a
     ld b, a
     ld a, (activeThreads)
-    or a \ jp z, boot ; Reboot when there are no active threads
+    or a \ jp z, noThreads ; Error out when there are no active threads
+    ; TODO: Error when all threads are suspended
     dec a \ cp b
     jr nc, _
     xor a
@@ -112,6 +113,9 @@ _:  dec hl
     ld sp, hl
     
     jr sysInterruptDone
+noThreads:
+    ld a, kerr_no_threads
+    jp kernelError
 intHandleTimer2:
     in a, (0x03)
     res 2, a

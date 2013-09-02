@@ -44,7 +44,8 @@ _:  ld e, (hl)
     ex de, hl
     ld de, 0x0006
     call drawStr
-    ld de, 0x000C
+    ld a, '\n'
+    call drawChar
     ld hl, continueMessage
     call drawStr
     ; We could just directly output to the screen and maybe be a
@@ -62,6 +63,9 @@ continueMessage:
     .db "\nPress any key to shutdown", 0
 errorTable:
     .dw init_not_found_text
+    .dw no_threads_text
 
 init_not_found_text:
     .db "/bin/init not found", 0
+no_threads_text:
+    .db "There are no running threads", 0
