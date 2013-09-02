@@ -12,6 +12,7 @@ _:  call getKey
 flushkeys:
     call hasKeypadLock
     ret nz
+flushkeys_skipCheck:
     push af
     push bc
     ; Done in a loop; runs far too fast on actual hardware

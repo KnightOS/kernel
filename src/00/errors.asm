@@ -44,23 +44,23 @@ _:  ld e, (hl)
     ex de, hl
     ld de, 0x0006
     call drawStr
-    ld a, '\n'
-    call drawChar
     ld hl, continueMessage
     call drawStr
     ; We could just directly output to the screen and maybe be a
     ; little safer, but we need to clear the screen as well and
     ; this saves enough space to make it worth doing.
     call fastCopy_skipCheck
+    call flushkeys_skipCheck
 _:  call getKey_skipCheck
     or a
     jr z, -_
-    jp shutdown
+    call flushkeys_skipCheck
+    jp boot
 
 errorMessage:
     .db "==Kernel Error ", 0
 continueMessage:
-    .db "\nPress any key to shutdown", 0
+    .db "\n\nPress any key to shut down", 0
 errorTable:
     .dw init_not_found_text
     .dw no_threads_text

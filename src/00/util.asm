@@ -7,9 +7,9 @@ suspendDevice:
     out (0x10), a ; Disable LCD
     di ; And interrupts, for now
     im 1 ; interrupt mode 1, for cleanliness
-    ei ; Enable interrupting when ON is pressed
     ld a, 1
     out (3), a ; ON
+    ei ; Enable interrupting when ON is pressed
     halt ; and halt
     di
     ld a, 0xB ; Reset the interrupts
@@ -20,7 +20,7 @@ suspendDevice:
     ret po
     ei
     ret
-    
+
 ; TODO: This could use some improvement
 ;; hexToHL [Miscellaneous]
 ;;  Converts a hexadecimal string to a number.
@@ -61,7 +61,7 @@ hexToHL:
     pop af
     pop de
     ret
-    
+
 ;; hexToA [Miscellaneous]
 ;;  Converts a hexadecimal string to a number.
 ;; Inputs:
@@ -75,20 +75,20 @@ hexToA:
 _:      ld a, (hl)
         or a
         jr z, hexToA_ret
-        
+
         rl b \ rl b \ rl b \ rl b
         call hexToA_doConvert
         or b
         ld b, a
         inc hl
         jr -_
-        
+
 hexToA_ret:
         ld a, b
     pop hl
     pop bc
     ret
-        
+
 hexToA_doConvert:
     cp 'a' ; Convert to lowercase
     jr c, _
@@ -98,7 +98,7 @@ _:  cp 'A' ; Close gap between numbers and letter
         sub 'A'-('9'+1)
 _:  sub '0' ; To number
     ret
-    
+
 lcdDelay:
     push af
 _:    in a,(0x10)
@@ -134,7 +134,7 @@ cpHLBC:
 cpBCDE:
     push hl
     ld h, b
-    ld l, c 
+    ld l, c
     or a
     sbc hl, de
     pop hl
@@ -158,7 +158,7 @@ stringLength:
     pop hl
     pop af
     ret
-    
+
 ;; getBatteryLevel [Miscellaneous]
 ;;  Determines the approximate battery level.
 ;; Outputs:
@@ -402,7 +402,7 @@ div32By16:
     inc ixl
     djnz .loop
     ret
-    
+
 ;; sub16From32 [Miscellaneous]
 ;;  Performs `ACIX = ACIX - DE`
 sub16from32:
@@ -414,7 +414,7 @@ sub16from32:
             ld d, a
             ld e, c
         pop bc
-        
+
         or a
         sbc hl, bc
         jr nc, _
@@ -425,7 +425,7 @@ _:  push hl \ pop ix
     pop de
     pop hl
     ret
-    
+
 ;; add16To32 [Miscellaneous]
 ;;  Performs `ACIX = ACIX + DE`
 add16to32:
@@ -444,7 +444,7 @@ _:  push hl \ pop ix
     pop de
     pop bc
     ret
-    
+
 ;; divHLByC [Miscellaneous]
 ;;  Performs `HL = HL / C`
 ;; Outputs:
@@ -461,7 +461,7 @@ _: add hl, hl
    inc l
    djnz -_
    ret
- 
+
 ;; divACByDE [Miscellaneous]
 ;;  Performs `AC = AC / DE`
 ;; Outputs:
@@ -479,7 +479,7 @@ _: srl c
    dec c
    djnz -_
    ret
-   
+
 ;; getBootCodeVersionString [Miscellaneous]
 ;;  Gets the version string from the device's boot code.
 ;; Outputs:
