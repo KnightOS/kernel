@@ -1,4 +1,3 @@
-; openFileRead
 test_openFileRead:
     xor a
     ld (currentThreadIndex), a
@@ -36,7 +35,6 @@ test_openFileRead:
 .testPath3:
     .db "/does/not/exist", 0
 
-; closeStream
 test_closeStream:
     ld d, 0xFF
     call closeStream
@@ -58,7 +56,6 @@ test_closeStream:
 .testPath1:
     .db "/test.txt", 0
 
-; streamReadByte
 test_streamReadByte:
     ld d, 0xFF
     call streamReadByte
@@ -128,7 +125,6 @@ _:  jr nz, .fail
 .testPath2:
     .db "/large.txt", 0
 
-; streamReadWord
 test_streamReadWord:
     ; Since this one just uses streamReadByte, we can get away with minimal testing
     ld de, .testPath
@@ -148,7 +144,6 @@ test_streamReadWord:
 .testPath:
     .db "/test.txt", 0
 
-; streamReadBuffer
 test_streamReadBuffer:
     ; Test reading the beginning of a small file
     ld de, .testPath
@@ -200,7 +195,6 @@ test_streamReadBuffer:
 .testString:
     .db "Test", 0
 
-; getStreamInfo
 test_getStreamInfo:
     ld de, .testPath
     call openFileRead
@@ -248,3 +242,24 @@ test_getStreamInfo:
     .db "/test.txt", 0 ; 10 bytes
 .testPath2:
     .db "/large.txt", 0 ; 524 bytes
+
+test_streamReadToEnd:
+    ld de, .testPath
+    call openFileRead
+    call getStreamInfo
+    inc bc
+    call malloc
+    call streamReadToEnd
+    call closeStream
+    ld (ix + 10), 0 ; Terminate string
+    push ix \ pop hl
+    ld de, .expected
+    call compareStrings
+    jr nz, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.testPath:
+    .db "/test.txt", 0
+.expected:
+    .db "Test file!", 0

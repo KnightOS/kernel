@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x000C
+.equ defaultTest 0x000D
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -26,11 +26,12 @@ test_collection:
     .dw test_streamReadWord                 ; 000A test_streamReadWord
     .dw test_streamReadBuffer               ; 000B test_streamReadBuffer
     .dw test_getStreamInfo                  ; 000C test_getStreamInfo
+    .dw test_streamReadToEnd                ; 000D test_streamReadToEnd
 
-    .dw test_rleCompress                    ; 000D test_rleCompress
-    .dw test_rleDecompress                  ; 000E test_rleDecompress
-    .dw test_rleCalculateCompressedLength   ; 000F test_rlePredictCompress
-    .dw test_rleCalculateDecompressedLength ; 0010 test_rlePredictDecompress
+    .dw test_rleCompress                    ; 000E test_rleCompress
+    .dw test_rleDecompress                  ; 000F test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 0010 test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 0011 test_rlePredictDecompress
 
     .dw 0xFFFF
 explicit_only:

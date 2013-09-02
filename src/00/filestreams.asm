@@ -555,7 +555,7 @@ getStreamInfo:
     ld bc, 0
     ret
         ; Start with what remains in the current block
-_:      push de \ push hl \ push af
+_:      push af \ push af \ push de
             ld e, 0
             ld b, 0
             ; Get size of current block
