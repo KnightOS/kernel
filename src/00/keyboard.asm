@@ -2,6 +2,7 @@
 waitKey:
 _:  call hasKeypadLock
     jr nz, -_ ; Loop until a lock is acquired
+waitKey_skipCheck:
 _:  call getKey
     or a
     jr z, -_
@@ -31,7 +32,9 @@ getKey:
     jr z, _
     xor a
     ret
-_:  push bc
+_:  
+getKey_skipCheck:
+    push bc
     ld a, i
     push af
     di

@@ -26,3 +26,5 @@ fsModifiedDirectory .equ 0x04
 fsDeletedSymLink .equ 0x08
 s_readable .equ 0
 s_writable .equ 0b10000000
+
+kerr_init_not_found .equ 0
