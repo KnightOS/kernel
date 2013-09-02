@@ -399,7 +399,7 @@ streamReadWord:
 ;;  If BC is greater than the remaining space in the stream, the stream will be advanced to the end
 ;;  before returning an error.
 streamReadBuffer:
-    push hl \ push bc \ push de \ push af \ push ix
+    push hl \ push bc \ push de \ push af \ push ix ; Chance for optimization - skip all these if not found
         call getStreamEntry
         jr z, .streamFound
     pop ix \ pop de \ pop de \ pop bc \ pop hl
@@ -540,108 +540,105 @@ _:          ; Handle any other buffer
 ;; Ouptuts:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
-;;  DBC: Remaining space in stream (on success)
+;;  EBC: Remaining space in stream (on success)
 getStreamInfo:
-    push hl
+    push ix
         call getStreamEntry
+        jr z, .streamFound
+    pop ix
+    ret
+.streamFound:
+        bit 5, (ix)
         jr z, _
-    pop hl
+    pop ix
+    ld e, 0
+    ld bc, 0
     ret
-_:        push af
-        ld a, i
-        push af
-        di
-        push ix
-        push de
-            push hl \ pop ix
-            ld bc, 0 \ ld d, 0
-            ld a, (ix + 6)
-            sub (ix + 5)
-            ; Update with remaining space in current block
-            or a \ jr z, _
-            add c \ ld c, a
-            jr nc, ++_
-_:              inc b
-                ld a, b \ or a
-                jr nz, _
-                inc d
-_:          ; Loop through remaining blocks
-            ld a, (ix + 3) \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-            ld h, (ix + 4) \ sla h \ sla h \ sla h \ or h
-            out (6), a
-            ld a, (ix + 3) \ and 0b011111 \ rla \ rla \ ld l, a
-            ld h, 0x40
-            ; Check for early exit
-            push de
-                inc hl \ inc hl ; Skip "prior block" entry
-                ld e, (hl)
-                inc hl
-                ld d, (hl)
-                dec hl \ dec hl \ dec hl
-                ld a, 0xFF
-                cp e \ jr nz, _
-                cp d \ jr nz, _
-                ; Current block is last block, exit
-            pop de
-        inc sp \ inc sp
-        pop ix
-        pop af
-        jp po, $+4
-        ei
-        pop af
-    pop hl
-    cp a
-    ret
-            ; Continue into mid-block loop
-_:          pop de
-            ; Loop conditions:
-            ; HL: Address of current block header
-            ; DBC: Working size
-            ; Memory bank 1: Flash page of current block
-.loop:      ; Locate next block
-            push de
-                inc hl \ inc hl
-                ld e, (hl)
-                inc hl
-                ld d, (hl)
-                ld a, 0xFF
-                cp e \ jr nz, ++_
-                cp d \ jr nz, ++_
-                ; Last block, update accordingly and return
-                dec b
-                ld a, (ix + 6)
-                add c \ ld c, a
-                jr nc, _
-                inc b
-                xor a
-                cp b
-                jr nz, _
-            pop de
-            inc d
-            jr $+3
-_:          pop de
-            ; DBC is now correct to return
-        inc sp \ inc sp
-        pop ix
-        pop af
-        jp po, $+4
-        ei
-        pop af
-    pop hl
-    cp a
-    ret
-_:              ; Navigate to new block and update working size
-                push de
-                    ld a, e
-                    or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
-                    sla d \ sla d \ sla d \ or d
-                pop de
-                out (6), a
-                ld a, e \ and 0b011111 \ rla \ rla \ ld l, a
+        ; Start with what remains in the current block
+_:      push de \ push hl \ push af
+            ld e, 0
+            ld b, 0
+            ; Get size of current block
+            bit 7, (ix)
+            jr nz, _
+            ld a, 0 ; 0x100 bytes
+            jr ++_
+_:          ld a, (ix + 6)
+_:          ; Subtract amount already read from this block
+            sub (ix + 3)
+            ; And A is now the length left in this block
+            ld c, a
+            or a ; cp 0
+            jr nz, _ \ inc b
+_:          bit 7, (ix)
+            jr nz, .done ; Leave eary for final block
+            ; Loop through remaining blocks
+            ld a, i
+            push af \ di
+                ld l, (ix + 4)
+                ld h, (ix + 5)
+                ; HL is section ID
+                dec b ; Reset B to zero
+.loop:
+                push hl
+                    ld a, l
+                    rra \ rra \ rra \ rra \ rra \ and 0b111
+                    ld l, a
+                    ld a, h
+                    rla \ rla \ rla \ and 0b11111000
+                    or l
+                    out (6), a ; A is flash page of section
+                pop hl
+                ld a, l
+                and 0b11111
+                rlca \ rlca \ inc a \ inc a
                 ld h, 0x40
-            pop de
-            inc b
-            jr .loop
+                ld l, a
+                ; (HL) is the section header
+                push de
+                    ld e, (hl)
+                    inc hl
+                    ld d, (hl)
+                    ex de, hl
+                pop de
+                ; HL is the next section ID
+                ; Check if it's 0xFFFF - if it is, we're done.
+                ld a, 0xFF
+                cp h
+                jr nz, .continue
+                cp l
+                jr nz, .continue
+                ; All done, add the final block length and exit
+                ld a, (ix + 6)
+                add c
+                ld c, a
+                jr nc, .done_ei
+                ld a, b
+                add a, 1
+                ld b, a
+                jr nc, .done_ei
+                inc d
+                jr .done_ei
+.continue:
+                ld a, b ; Update length and continue
+                add a, 1
+                ld b, a
+                jr nc, .loop
+                inc d
+                jr .loop
+.done_ei:
+                pop af
+            jp po, .done
+            ei
+.done:
+        ; We have to preserve DE through this
+        ld a, e
+        pop de
+        ld e, a
+        pop hl \ pop af
+    pop ix
+    cp a
+    ret
 
 ;; streamReadToEnd [File Stream]
 ;;  Reads the remainder of a file stream into memory.

@@ -1,4 +1,4 @@
-; hexToA 0000
+; hexToA
 .macro assert(testString, expected)
     ld hl, testString
     call hexToA
@@ -23,7 +23,7 @@ test_hexToA:
     .db "A4", 0
 .undefine assert
 
-; cpHLDE 0001
+; cpHLDE
 test_cpHLDE:
     ld hl, 0
     ld de, 20
@@ -34,7 +34,7 @@ test_cpHLDE:
 .fail:
     assert_fail()
 
-; cpHLBC 0002
+; cpHLBC
 test_cpHLBC:
     ld hl, 0
     ld bc, 20
@@ -45,7 +45,7 @@ test_cpHLBC:
 .fail:
     assert_fail()
 
-; cpBCDE 0003
+; cpBCDE
 test_cpBCDE:
     ld bc, 0
     ld de, 20
@@ -56,7 +56,7 @@ test_cpBCDE:
 .fail:
     assert_fail()
 
-; stringLength 0004
+; stringLength
 .macro assert(testString, expected)
     ld hl, testString
     call stringLength
@@ -95,7 +95,7 @@ test_stringLength:
     .db "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0
 .undefine assert
 
-; DEMulA 0005
+; DEMulA
 .macro assert(valDE, valA)
     ld de, valDE
     ld a, valA
@@ -118,7 +118,7 @@ test_DEMulA:
     assert_fail()
 .undefine assert
 
-; compareStrings 0006
+; compareStrings
 .macro assert_equal(stringA, stringB)
     ld hl, stringA
     ld de, stringB
@@ -152,7 +152,7 @@ test_compareStrings:
     .db 0
 .undefine assert_equal assert_notequal
 
-; rleCompress 0008
+; rleCompress
 test_rleCompress:
     ld bc, 0x0010
     call malloc
@@ -186,7 +186,7 @@ _:  ld a, (de)
 .check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
 
-; rleDecompress 0009
+; rleDecompress
 test_rleDecompress:
     ld bc, 0x0010
     call malloc
@@ -220,7 +220,7 @@ _:  ld a, (de)
 .check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
 
-; rleCalculateCompressedLength 000A
+; rleCalculateCompressedLength
 test_rleCalculateCompressedLength:
     ld hl, .src1
     ld bc, 16
@@ -236,7 +236,7 @@ _:  assert_pass()
 .check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
 
-; rleCalculateDecompressedLength 000B
+; rleCalculateDecompressedLength
 test_rleCalculateDecompressedLength:
     ld hl, .check1
     ld bc, 11

@@ -1,4 +1,4 @@
-; openFileRead 0007
+; openFileRead
 test_openFileRead:
     xor a
     ld (currentThreadIndex), a
@@ -36,7 +36,7 @@ test_openFileRead:
 .testPath3:
     .db "/does/not/exist", 0
 
-; closeStream 0008
+; closeStream
 test_closeStream:
     ld d, 0xFF
     call closeStream
@@ -58,7 +58,7 @@ test_closeStream:
 .testPath1:
     .db "/test.txt", 0
 
-; streamReadByte 0009
+; streamReadByte
 test_streamReadByte:
     ld d, 0xFF
     call streamReadByte
@@ -128,7 +128,7 @@ _:  jr nz, .fail
 .testPath2:
     .db "/large.txt", 0
 
-; streamReadWord 000A
+; streamReadWord
 test_streamReadWord:
     ; Since this one just uses streamReadByte, we can get away with minimal testing
     ld de, .testPath
@@ -148,7 +148,7 @@ test_streamReadWord:
 .testPath:
     .db "/test.txt", 0
 
-; streamReadBuffer 000B
+; streamReadBuffer
 test_streamReadBuffer:
     ; Test reading the beginning of a small file
     ld de, .testPath
@@ -199,3 +199,52 @@ test_streamReadBuffer:
     .db "/large.txt", 0
 .testString:
     .db "Test", 0
+
+; getStreamInfo
+test_getStreamInfo:
+    ld de, .testPath
+    call openFileRead
+    call getStreamInfo
+    call closeStream
+    xor a
+    cp b
+    jr nz, .fail
+    cp e
+    jr nz, .fail
+    ld a, 10
+    cp c
+    jr nz, .fail
+    ld de, .testPath2
+    call openFileRead
+    call getStreamInfo
+    call closeStream
+    xor a
+    cp e
+    jr nz, .fail
+    ld a, 524 >> 8
+    cp b
+    jr nz, .fail
+    ld a, 524 & 0xFF
+    cp c
+    jr nz, .fail
+    ld de, .testPath2
+    call openFileRead
+    call streamReadByte
+    call getStreamInfo
+    call closeStream
+    xor a
+    cp e
+    jr nz, .fail
+    ld a, 523 >> 8
+    cp b
+    jr nz, .fail
+    ld a, 523 & 0xFF
+    cp c
+    jr nz, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.testPath:
+    .db "/test.txt", 0 ; 10 bytes
+.testPath2:
+    .db "/large.txt", 0 ; 524 bytes

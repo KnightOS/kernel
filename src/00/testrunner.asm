@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x000B
+.equ defaultTest 0x000C
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -12,28 +12,30 @@
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
 test_collection:
-    .dw test_hexToA             ; 0000 test_hexToA
-    .dw test_cpHLDE             ; 0001 test_cpHLDE
-    .dw test_cpHLBC             ; 0002 test_cpHLBC
-    .dw test_cpBCDE             ; 0003 test_cpBCDE
-    .dw test_stringLength       ; 0004 test_stringLength
-    .dw test_DEMulA             ; 0005 test_DEMulA
-    .dw test_compareStrings     ; 0006 test_compareStrings
+    .dw test_hexToA                         ; 0000 test_hexToA
+    .dw test_cpHLDE                         ; 0001 test_cpHLDE
+    .dw test_cpHLBC                         ; 0002 test_cpHLBC
+    .dw test_cpBCDE                         ; 0003 test_cpBCDE
+    .dw test_stringLength                   ; 0004 test_stringLength
+    .dw test_DEMulA                         ; 0005 test_DEMulA
+    .dw test_compareStrings                 ; 0006 test_compareStrings
 
-    .dw test_openFileRead       ; 0007 test_openFileRead
-    .dw test_closeStream        ; 0008 test_closeStream
-    .dw test_streamReadByte     ; 0009 test_streamReadByte
-    .dw test_streamReadWord     ; 000A test_streamReadWord
-    .dw test_streamReadBuffer   ; 000B test_streamReadBuffer
+    .dw test_openFileRead                   ; 0007 test_openFileRead
+    .dw test_closeStream                    ; 0008 test_closeStream
+    .dw test_streamReadByte                 ; 0009 test_streamReadByte
+    .dw test_streamReadWord                 ; 000A test_streamReadWord
+    .dw test_streamReadBuffer               ; 000B test_streamReadBuffer
+    .dw test_getStreamInfo                  ; 000C test_getStreamInfo
 
-    .dw test_rleCompress                    ; 000C test_rleCompress
-    .dw test_rleDecompress                  ; 000D test_rleDecompress
-    .dw test_rleCalculateCompressedLength   ; 000E test_rlePredictCompress
+    .dw test_rleCompress                    ; 000D test_rleCompress
+    .dw test_rleDecompress                  ; 000E test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 000F test_rlePredictCompress
     .dw test_rleCalculateDecompressedLength ; 0010 test_rlePredictDecompress
 
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
+    ; That number starts at (last implicit test) + 1
 test_collection_end:
 
 testrunner:
