@@ -29,3 +29,4 @@ s_writable .equ 0b10000000
 
 kerr_init_not_found .equ 0
 kerr_no_threads .equ 1
+kerr_no_active_threads .equ 2

@@ -171,7 +171,7 @@ reboot:
     ld h, 0
     call setInitialA
 
-    jp contextSwitch_search
+    jp contextSwitch_manual
 
 bootFile:
     .db "/bin/init", 0

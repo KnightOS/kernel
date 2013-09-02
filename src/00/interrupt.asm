@@ -30,12 +30,12 @@ sysInterrupt:
     push bc
     push de
     push hl
-    
+
 #ifdef USB
     jp usbInterrupt
 interruptResume:
 #endif
-    
+
     in a, (0x04)
     bit 0, a
     jr nz, intHandleON
@@ -52,7 +52,7 @@ intHandleON:
     out (0x03), a
     set 0, a
     out (0x03), a
-    
+
     ; Check for special keycodes
     jp handleKeyboard
 intHandleTimer1:
@@ -78,14 +78,20 @@ doContextSwitch:
     ld (hl), e
     inc hl
     ld (hl), d
-  
+
+contextSwitch_manual:
+    ld a, (activeThreads)
+    or a \ jr z, noThreads ; Error out when there are no active threads
+    ld c, a \ inc c
 contextSwitch_search:
+    dec c
+    xor a
+    cp c
+    jr z, noActiveThreads
     ld a, (currentThreadIndex)
     inc a \ ld (currentThreadIndex), a
     ld b, a
     ld a, (activeThreads)
-    or a \ jp z, noThreads ; Error out when there are no active threads
-    ; TODO: Error when all threads are suspended
     dec a \ cp b
     jr nc, _
     xor a
@@ -95,7 +101,7 @@ _:  ld a, b
     add a, a
     add a, a
     add a, a
-    
+
     ld hl, threadTable + 5
     add a, l
     ld l, a
@@ -104,17 +110,21 @@ _:  ld a, b
     jr nz, _
     bit 2, a
     jr nz, contextSwitch_search ; Suspended
-    
+
 _:  dec hl
     ld d, (hl)
     dec hl
     ld e, (hl)
     ex de, hl
     ld sp, hl
-    
+
     jr sysInterruptDone
 noThreads:
     ld a, kerr_no_threads
+    jp kernelError
+noActiveThreads:
+    ld a, kerr_no_active_threads
+    set 7, a
     jp kernelError
 intHandleTimer2:
     in a, (0x03)
@@ -124,7 +134,7 @@ intHandleTimer2:
     out (0x03), a
     ; Timer 2 interrupt
     jr sysInterruptDone
-    
+
 intHandleLink:
     in a, (0x03)
     res 4, a
@@ -147,7 +157,7 @@ sysInterruptDone:
     pop af
     ei
     ret
-    
+
 handleKeyboard:
     ld a, 0xFF
     out (1), a
@@ -158,14 +168,14 @@ handleKeyboard:
     bit 6, a
     jr z, handleOnMODE
     jr sysInterruptDone
-    
+
 handleOnMODE:
     ld de, bootFile
     call launchProgram
     ld h, 1
     call setInitialA
     jr sysInterruptDone
-    
+
 #ifdef USB
 usbInterrupt:
     in a, (0x55) ; USB Interrupt status
@@ -176,16 +186,16 @@ usbInterrupt:
     bit 4, a
     jr z, usbProtocolEvent
     jp interruptResume
-    
+
 usbUnknownEvent:
     jp interruptResume
-    
+
 usbLineEvent:
     in a, (0x56) ; USB Line Events
     xor 0xFF
     out (0x57), a ; Acknowledge interrupt and disable further interrupts
     jp interruptResume
-    
+
 usbProtocolEvent:
     in a, (0x82)
     in a, (0x83)
