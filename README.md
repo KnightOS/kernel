@@ -21,16 +21,18 @@ Windows systems, build the kernel with cygwin and Microsoft.NET (you may also be
 on Windows).
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
-supported calculator model, use the given make target (in parenthesis):
+supported calculator model, use the given make target:
 
-* TI-73 (TI73)
-* TI-73 Explorer (TI73)
-* TI-83+ (TI83p)
-* TI-83+ SE (TI83pSE)
-* TI-84+ (TI84p)
-* TI-84+ SE (TI84pSE)
-* TI-84 Pocket.fr (TI84p)
-* TI-84 Plus Pocket SE (TI84pSE)
+| Model                | `make` Target |
+| -------------------- | ------------- |
+| TI-73                | TI73          |
+| TI-73 Explorer       | TI73          |
+| TI-83+               | TI83p         |
+| TI-83+ SE            | TI83pSE       |
+| TI-84+               | TI84p         |
+| TI-84+ SE            | TI84pSE       |
+| TI-84 Pocket.fr      | TI84p         |
+| TI-84 Plus Pocket SE | TI84pSE       |
 
 Simply run `make [target]` to build the kernel. The default target, when omitted, is `TI84pSE`. This will
 produce a kernel image in the `bin/` directory. This will also generate a `kernel.inc` file, which you
@@ -89,11 +91,13 @@ Then, you can patch the kernel image with your filesystem like so:
 Note the use of `77` here - BuildFS accepts a page number to start the FAT on here. You
 should use these page numbers:
 
-* TI73: 17
-* TI83p: 17
-* TI83pSE: 77
-* TI84p: 37
-* TI84pSE: 77
+Model   | Page Number
+------- | -----------
+TI73    | 17
+TI83p   | 17
+TI83pSE | 77
+TI84p   | 37
+TI84pSE | 77
 
 After this completes, you'll get a ROM file you can use with emulators. Read the CreateUpgrade
 documentation if you'd like to turn this into an upgrade file for use on real calculators.
