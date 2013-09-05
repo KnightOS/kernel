@@ -131,6 +131,13 @@ sha1Clean:
 ;; Inputs:
 ;;  IX: location of SHA1 state block
 sha1Pad:
+    push af
+    push de
+    push hl
+        call sha1Pad_noPush
+        jr sha1AddByte_pop
+
+sha1Pad_noPush:
     ; append the bit '1' to the message
     ; append 0 <= k < 512 bits '0', so that the resulting message length (in bits)
     ;    is congruent to 448 = -64 (mod 512)
@@ -160,6 +167,17 @@ sha1Pad:
 ;;  IX: location of SHA1 state block
 ;;  A: Byte to add
 sha1AddByte:
+    push af
+    push de
+    push hl
+        call sha1AddByte_noPush
+sha1AddByte_pop:
+    pop hl
+    pop de
+    pop af
+    ret
+
+sha1AddByte_noPush:
     push af
         ld a, (ix + sha1_length + 7)
         add a, 8

@@ -25,9 +25,7 @@ test_crc16:
     ld hl, dataPtr
     ld b, dataSize
 _:  ld a, (hl)
-    push hl ; Registers need fixing
-        call sha1AddByte
-    pop hl
+    call sha1AddByte
     inc hl
     djnz -_
     call sha1Pad
