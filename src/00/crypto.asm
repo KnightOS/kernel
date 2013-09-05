@@ -289,9 +289,11 @@ ldir
         rrca
         rrca
         rrca
-        ld de, sha1_temp + 3
-        push ix \ pop hl
-        add hl, de
+        push af
+            ld de, sha1_temp + 3
+            push ix \ pop hl
+            add hl, de
+        pop af
         rld \ rl (hl) \ dec hl
         rld \ rl (hl) \ dec hl
         rld \ rl (hl) \ dec hl
@@ -340,7 +342,8 @@ ldir
         djnz .ror2
 
     pop bc
-    djnz .rounds
+    dec b
+    jp nz, .rounds
     ret
 
 .do_f_operation:
