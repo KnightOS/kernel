@@ -24,7 +24,6 @@ test_crc16:
     call sha1Init
     ld hl, dataPtr
     ld bc, dataSize
-_:  ld a, (hl)
     call sha1AddRange
     call sha1Pad
 
