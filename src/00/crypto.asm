@@ -122,6 +122,14 @@ sha1Clean:
     pop hl
     ret
 
+;; sha1Pad [Crypto]
+;;  Finishes the SHA1 computation by appending the
+;;  required bits to the input.  Call this routine once after
+;;  calling sha1AddByte for each input byte.  After this routine,
+;;  the 8 bytes pointed to by IX will contain the big-endian
+;;  SHA1 hash.
+;; Inputs:
+;;  IX: location of SHA1 state block
 sha1Pad:
     ; append the bit '1' to the message
     ; append 0 <= k < 512 bits '0', so that the resulting message length (in bits)
@@ -144,6 +152,13 @@ sha1Pad:
     ldir
     jr sha1ProcessBlock
 
+;; sha1AddByte [Crypto]
+;;  Adds a single byte to the SHA1 hash input stream.
+;;  Call this function once for each byte in the input
+;;  stream, then call sha1Pad.
+;; Inputs:
+;;  IX: location of SHA1 state block
+;;  A: Byte to add
 sha1AddByte:
     push af
         ld a, (ix + sha1_length + 7)
