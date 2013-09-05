@@ -23,11 +23,9 @@ test_crc16:
 .macro assert(dataPtr, dataSize, expectedHashPtr)
     call sha1Init
     ld hl, dataPtr
-    ld b, dataSize
+    ld bc, dataSize
 _:  ld a, (hl)
-    call sha1AddByte
-    inc hl
-    djnz -_
+    call sha1AddRange
     call sha1Pad
 
     push ix \ pop de

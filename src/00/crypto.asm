@@ -449,3 +449,29 @@ _:  ld a, (de)
     dec hl
     djnz -_
     ret
+
+;; sha1AddRange [Crypto]
+;;  Adds a range of bytes to a SHA1 hash.  This
+;;  routine is equivalent to, but faster than, calling
+;;  sha1AddByte many times.
+;; Inputs:
+;;  IX: location of SHA1 state block
+;;  HL: location of range to add
+;;  BC: number of bytes to add
+sha1AddRange:
+    push hl
+    push de
+    push bc
+    push af
+_:      ld a, (hl)
+        push hl
+            call sha1AddByte_noPush
+        pop hl
+        dec bc
+        inc hl
+        ld a, b \ or c \ jr nz, -_
+    pop af
+    pop bc
+    pop de
+    pop hl
+    ret
