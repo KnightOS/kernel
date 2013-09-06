@@ -35,7 +35,7 @@ fastCopy_skipCheck:
         push de
             ld a, i
             push af
-                di                 ;DI is only required if an interrupt will alter the lcd.
+                di                    ;DI is only required if an interrupt will alter the lcd.
                 push iy \ pop hl
     
                 ld c, 0x10
@@ -231,7 +231,7 @@ _drawLine:
             add hl, de
             add hl, de
             ld e, a
-            and 0b000000111
+            and 0b00000111
             srl e
             srl e
             srl e
@@ -284,7 +284,7 @@ _drawLine:
         set 5, (ix)
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX3
@@ -293,7 +293,7 @@ _drawLine:
         set 4, (ix)
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX4
@@ -302,7 +302,7 @@ _drawLine:
         set 3, (ix)
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX5
@@ -311,7 +311,7 @@ _drawLine:
         set 2, (ix)
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX6
@@ -320,7 +320,7 @@ _drawLine:
         set 1, (ix)
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX7
@@ -330,7 +330,7 @@ _drawLine:
         inc ix
         add a, c
         cp h
-        jp c, $+3+2+1
+        jp c, $ + 3 + 2 + 1
         add ix, de
         sub h
         djnz .drawX0
@@ -458,49 +458,49 @@ putSpriteXOR:
     
 _clipSprXOR:
         ; Start by doing vertical clipping
-        ld a, 0b011111111         ; Reset clipping mask
+        ld a, 0b11111111            ; Reset clipping mask
         ld (clip_mask), a
-        ld a, e                 ; If ypos is negative
+        ld a, e                    ; If ypos is negative
         or a                    ; try clipping the top
-        jp m, clipTop           ;
-        sub 64                  ; If ypos is >= 64
-        ret nc                  ; sprite is off-screen
-        neg                     ; If (64 - ypos) > height
+        jp m, clipTop            ;
+        sub 64                    ; If ypos is >= 64
+        ret nc                    ; sprite is off-screen
+        neg                        ; If (64 - ypos) > height
         cp b                    ; don't need to clip
-        jr nc, vertClipDone     ;
-        ld b, a                 ; Do bottom clipping by
-        jr vertClipDone         ; setting height to (64 - ypos)
+        jr nc, vertClipDone        ;
+        ld b, a                    ; Do bottom clipping by
+        jr vertClipDone            ; setting height to (64 - ypos)
 
 clipTop:
-        ld a, b                 ; If ypos <= -height
-        neg                     ; sprite is off-screen
-        sub e                   ;
-        ret nc                  ;
-            push af
+        ld a, b                    ; If ypos <= -height
+        neg                        ; sprite is off-screen
+        sub e                    ;
+        ret nc                    ;
+        push af
             add a, b            ; Get the number of clipped rows
-            ld e, 0             ; Set ypos to 0 (top of screen)
-            ld b, e             ; Advance image data pointer
+            ld e, 0                ; Set ypos to 0 (top of screen)
+            ld b, e                ; Advance image data pointer
             ld c, a
             add ix, bc
         pop af
-        neg                     ; Get the number of visible rows
-        ld b, a                 ; and set as height
+        neg                        ; Get the number of visible rows
+        ld b, a                    ; and set as height
 
 vertClipDone:
         ; Now we're doing horizontal clipping
-        ld c, 0                 ; Reset correction factor
+        ld c, 0                    ; Reset correction factor
         ld a, d
-        cp -7                   ; If 0 > xpos >= -7
-        jr nc, clipLeft         ; clip the left side
-        cp 96                   ; If xpos >= 96
-        ret nc                  ; sprite is off-screen
-        cp 89                   ; If 0 <= xpos < 89
-        jr c, horizClipDone     ; don't need to clip
+        cp -7                    ; If 0 > xpos >= -7
+        jr nc, clipLeft            ; clip the left side
+        cp 96                    ; If xpos >= 96
+        ret nc                    ; sprite is off-screen
+        cp 89                    ; If 0 <= xpos < 89
+        jr c, horizClipDone        ; don't need to clip
 
 clipRight:
-        and 7                   ; Determine the clipping mask
-        LD C, A
-        LD A, 0b011111111
+        and 7                    ; Determine the clipping mask
+        ld c,a
+        ld a, 0b11111111
 findRightMask:
         add a, a
         dec c
@@ -512,7 +512,7 @@ findRightMask:
 clipLeft:
         and 7                    ; Determine the clipping mask
         ld c, a
-        ld a, 0b011111111
+        ld a, 0b11111111
 findLeftMask:
         add a, a
         dec c
@@ -521,7 +521,7 @@ findLeftMask:
         ld (clip_mask), A
         ld a, d
         add a, 96                ; Set xpos so sprite will "spill over"
-        ld c, 12                 ; Set correction
+        ld c, 12                ; Set correction
 
 horizClipDone:
         ; A = xpos
@@ -544,11 +544,11 @@ horizClipDone:
         srl e
         add hl, de
 
-        push iy \ pop de ; LD     DE, PlotSScreen
+        push iy \ pop de        ; ld de, plotSScreen
         add hl, de
 
-        ld d, 0                 ; Correct graph buffer address
-        ld e, c                 ; if clipping the left side
+        ld d, 0                    ; Correct graph buffer address
+        ld e, c                    ; if clipping the left side
         sbc hl, de
 
         and 7
@@ -559,26 +559,26 @@ horizClipDone:
 
 _rowLoop:
         push bc
-        ld b, c
-        ld a, (clip_mask)       ; Mask out the part of the sprite
-        and (ix)                 ; to be horizontally clipped
-        ld c, 0
+            ld b, c
+            ld a, (clip_mask)        ; Mask out the part of the sprite
+            and (ix)                ; to be horizontally clipped
+            ld c, 0
 
 _shiftLoop:
-        srl a
-        rr c
-        djnz _shiftLoop
+            srl a
+            rr c
+            djnz _shiftLoop
 
-        xor (hl)
-        ld (hl), a
+            xor (hl)
+            ld (hl), a
 
-        inc hl
-        ld a, c
-        xor (hl)
-        ld (hl), a
+            inc hl
+            ld a, c
+            xor (hl)
+            ld (hl), a
 
-        add    hl, de
-        inc    ix
+            add    hl, de
+            inc    ix
         pop    bc
         djnz   _rowLoop
         ret
@@ -619,77 +619,77 @@ PutSpriteAND:
     
 _ClipSprAND:
         ; Start by doing vertical clipping
-        LD     A, 0b011111111         ; Reset clipping mask
-        LD     (clip_mask), A
-        LD     A, E                 ; If ypos is negative
-        OR     A                    ; try clipping the top
-        JP     M, ClipTop2
+        ld a,0b11111111            ; Reset clipping mask
+        ld     (clip_mask), a
+        ld     a, e                ; If ypos is negative
+        or     a                    ; try clipping the top
+        jp     m, ClipTop2
 
-        SUB    64                   ; If ypos is >= 64
-        RET    NC                   ; sprite is off-screen
+        sub    64                    ; If ypos is >= 64
+        ret nc                    ; sprite is off-screen
 
-        NEG                         ; If (64 - ypos) > height
-        CP     B                    ; don't need to clip
-        JR     NC, VertClipDone2
+        neg                        ; If (64 - ypos) > height
+        cp b                    ; don't need to clip
+        jr nc, VertClipDone2
 
-        LD     B, A                 ; Do bottom clipping by
-        JR     VertClipDone2        ; setting height to (64 - ypos)
+        ld b, a                    ; Do bottom clipping by
+        jr     VertClipDone2        ; setting height to (64 - ypos)
 
 ClipTop2:
-        LD     A, B                 ; If ypos <= -height
-        NEG                         ; sprite is off-screen
-        SUB    E                    ;
-        RET    NC                   ;
+        ld     a, b                 ; If ypos <= -height
+        neg                         ; sprite is off-screen
+        sub    e                    ;
+        ret    nc                   ;
 
-        PUSH   AF
-        ADD    A, B                 ; Get the number of clipped rows
-        LD     E, 0                 ; Set ypos to 0 (top of screen)
-        LD     B, E                 ; Advance image data pointer
-        LD     C, A                 ;
-        ADD    IX, BC               ;
-        POP    AF
-        NEG                         ; Get the number of visible rows
-        LD     B, A                 ; and set as height
+        push   af
+            add    a, b                 ; Get the number of clipped rows
+            ld     e,0                 ; Set ypos to 0 (top of screen)
+            ld     b, e                 ; Advance image data pointer
+            ld     c, a                 ;
+            add    ix, bc               ;
+        pop    af
+        neg                         ; Get the number of visible rows
+        ld     b, a                 ; and set as height
 
 VertClipDone2:
         ; Now we're doing horizontal clipping
-        LD     C, 0                 ; Reset correction factor
-        LD     A, D
+        ld     c, 0                 ; Reset correction factor
+        ld     a, d
 
-        CP     -7                   ; If 0 > xpos >= -7
-        JR     NC, ClipLeft2         ; clip the left side
+        cp     -7                   ; If 0 > xpos >= -7
+        jr     nc, ClipLeft2         ; clip the left side
 
-        CP     96                   ; If xpos >= 96
-        RET    NC                   ; sprite is off-screen
+        cp     96                   ; If xpos >= 96
+        ret    nc                   ; sprite is off-screen
 
-        CP     89                   ; If 0 <= xpos < 89
-        JR     C, HorizClipDone2     ; don't need to clip
+        cp     89                   ; If 0 <= xpos < 89
+        jr     c, HorizClipDone2     ; don't need to clip
 
 ClipRight2:
-        AND    7                    ; Determine the clipping mask
-        LD     C, A
-        LD     A, 0b011111111
+        and    7                    ; Determine the clipping mask
+        ld     c, a
+        ld     a, 0b11111111
 FindRightMask2:
-        ADD    A, A
-        DEC    C
-        JR     NZ, FindRightMask2
-        LD     (clip_mask), A
-        LD     A, D
-        JR     HorizClipDone2
+        add    a, a
+        dec    c
+        jr     nz, FindRightMask2
+        ld     (clip_mask), a
+        ld     a, d
+        jr     HorizClipDone2
 
 ClipLeft2:
-        AND    7                    ; Determine the clipping mask
-        LD     C, A
-        LD     A, 0b011111111
+        and    7                    ; Determine the clipping mask
+        ld     c, a
+        ld     a, 0b11111111
 FindLeftMask2:
-        ADD    A, A
-        DEC    C
-        JR     NZ, FindLeftMask2
-        CPL
-        LD     (clip_mask), A
-        LD     A, D
-        ADD    A, 96                ; Set xpos so sprite will "spill over"
-        LD     C, 12                ; Set correction
+        add    a, a
+        dec    c
+        jr     nz, FindLeftMask2
+        cpl
+        ld     (clip_mask), a
+        ld     a, d
+        add    a, 96                ; Set xpos so sprite will "spill over"
+        ld     c, 12                ; Set correction
 
 HorizClipDone2:
         ; A = xpos
@@ -698,73 +698,73 @@ HorizClipDone2:
         ; IX = image address
 
         ; Now we can finally display the sprite.
-        LD     H, 0
-        LD     D, H
-        LD     L, E
-        ADD    HL, HL
-        ADD    HL, DE
-        ADD    HL, HL
-        ADD    HL, HL
+        ld     h, 0
+        ld     d, h
+        ld     l, e
+        add    hl, hl
+        add    hl, de
+        add    hl, hl
+        add    hl, hl
 
-        LD     E, A
-        SRL    E
-        SRL    E
-        SRL    E
-        ADD    HL, DE
+        ld     e, a
+        srl    e
+        srl    e
+        srl    e
+        add    hl, de
 
         push iy \ pop de            ; LD DE, PlotSScreen
-        ADD    HL, DE
+        add    hl, de
 
-        LD     D, 0                 ; Correct graph buffer address
-        LD     E, C                 ; if clipping the left side
-        SBC    HL, DE
+        ld     d, 0                 ; Correct graph buffer address
+        ld     e, c                 ; if clipping the left side
+        sbc    hl, de
 
-        AND    7
-        JR     Z, _Aligned2
+        and    7
+        jr     z, _Aligned2
 
-        LD     C, A
-        LD     DE, 11
+        ld     c, a
+        ld     de, 11
 
 _RowLoop2:
-        PUSH   BC
-        LD     B, C
-        LD     A, (clip_mask)       ; Mask out the part of the sprite
-        AND    (IX)                 ; to be horizontally clipped
-        LD     C, 0
+        push   bc
+            ld     b, c
+            ld     a, (clip_mask)       ; Mask out the part of the sprite
+            and    (ix)                 ; to be horizontally clipped
+            ld     c, 0
 
 _ShiftLoop2:
-        SRL    A
-        RR     C
-        DJNZ   _ShiftLoop2
+            srl    a
+            rr     c
+            djnz   _ShiftLoop2
 
-        CPL
-        AND    (HL)
-        LD     (HL), A
+            cpl
+            and    (hl)
+            ld     (hl), a
 
-        INC    HL
-        LD     A, C
-        CPL
-        AND    (HL)
-        LD     (HL), A
-
-        ADD    HL, DE
-        INC    IX
-        POP    BC
-        DJNZ   _RowLoop2
-        RET
+            inc    hl
+            ld     a, c
+            cpl
+            and    (hl)
+            ld     (hl), a
+            
+            add    hl, de
+            inc    ix
+        pop    bc
+        djnz   _RowLoop2
+        ret
 
 _Aligned2:
-        LD     DE, 12
+        ld     de, 12
 
 _PutLoop2:
-        LD     A, (IX)
-        CPL
-        AND    (HL)
-        LD     (HL), A
-        INC    IX
-        ADD    HL, DE
-        DJNZ   _PutLoop2
-        RET
+        ld     a, (ix)
+        cpl
+        and    (hl)
+        ld     (hl), a
+        inc    ix
+        add    hl, de
+        djnz   _PutLoop2
+        ret
     
 ;; putSpriteOR [Display]
 ;;  Draws an 8xB sprite on the screen buffer using OR (turns pixels ON) logic.
@@ -790,77 +790,77 @@ PutSpriteOR:
     
 _ClipSprOR:
         ; Start by doing vertical clipping
-        LD     A, 0b011111111         ; Reset clipping mask
-        LD     (clip_mask), A
-        LD     A, E                 ; If ypos is negative
-        OR     A                    ; try clipping the top
-        JP     M, ClipTop3           ;
+        ld     a, 0b11111111         ; Reset clipping mask
+        ld     (clip_mask), a
+        ld     a, e                 ; If ypos is negative
+        or     a                    ; try clipping the top
+        jp     m, ClipTop3           ;
 
-        SUB    64                   ; If ypos is >= 64
-        RET    NC                   ; sprite is off-screen
+        sub    64                   ; If ypos is >= 64
+        ret    nc                   ; sprite is off-screen
 
-        NEG                         ; If (64 - ypos) > height
-        CP     B                    ; don't need to clip
-        JR     NC, VertClipDone3     ;
+        neg                         ; If (64 - ypos) > height
+        cp     b                    ; don't need to clip
+        jr     nc, VertClipDone3     ;
 
-        LD     B, A                 ; Do bottom clipping by
-        JR     VertClipDone3         ; setting height to (64 - ypos)
+        ld     b, a                 ; Do bottom clipping by
+        jr     VertClipDone3         ; setting height to (64 - ypos)
 
 ClipTop3:
-        LD     A, B                 ; If ypos <= -height
-        NEG                         ; sprite is off-screen
-        SUB    E                    ;
-        RET    NC                   ;
+        ld     a, b                 ; If ypos <= -height
+        neg                         ; sprite is off-screen
+        sub    e                    ;
+        ret    nc                   ;
 
-        PUSH   AF
-        ADD    A, B                 ; Get the number of clipped rows
-        LD     E, 0                 ; Set ypos to 0 (top of screen)
-        LD     B, E                 ; Advance image data pointer
-        LD     C, A                 ;
-        ADD    IX, BC               ;
-        POP    AF
-        NEG                         ; Get the number of visible rows
-        LD     B, A                 ; and set as height
+        push   af
+            add    a, b                 ; Get the number of clipped rows
+            ld     e, 0                 ; Set ypos to 0 (top of screen)
+            ld     b, e                 ; Advance image data pointer
+            ld     c, a                 ;
+            add    ix, bc               ;
+        pop    af
+        neg                         ; Get the number of visible rows
+        ld     b, a                 ; and set as height
 
 VertClipDone3:
         ; Now we're doing horizontal clipping
-        LD     C, 0                 ; Reset correction factor
-        LD     A, D
+        ld     c, 0                 ; Reset correction factor
+        ld     a, d
 
-        CP     -7                   ; If 0 > xpos >= -7
-        JR     NC, ClipLeft3         ; clip the left side
+        cp     -7                   ; If 0 > xpos >= -7
+        jr     nc, ClipLeft3         ; clip the left side
 
-        CP     96                   ; If xpos >= 96
-        RET    NC                   ; sprite is off-screen
+        cp     96                   ; If xpos >= 96
+        ret    nc                   ; sprite is off-screen
 
-        CP     89                   ; If 0 <= xpos < 89
-        JR     C, HorizClipDone3     ; don't need to clip
+        cp     89                   ; If 0 <= xpos < 89
+        jr     c, HorizClipDone3     ; don't need to clip
 
 ClipRight3:
-        AND    7                    ; Determine the clipping mask
-        LD     C, A
-        LD     A, 0b011111111
+        and    7                    ; Determine the clipping mask
+        ld     c, a
+        ld     a, 0b11111111
 FindRightMask3:
-        ADD    A, A
-        DEC    C
-        JR     NZ, FindRightMask3
-        LD     (clip_mask), A
-        LD     A, D
-        JR     HorizClipDone3
+        add    a, a
+        dec    c
+        jr     nz, FindRightMask3
+        ld     (clip_mask), a
+        ld     a, d
+        jr     HorizClipDone3
 
 ClipLeft3:
-        AND    7                    ; Determine the clipping mask
-        LD     C, A
-        LD     A, 0b011111111
+        and    7                    ; Determine the clipping mask
+        ld     c, a
+        ld     a, 0b11111111
 FindLeftMask3:
-        ADD    A, A
-        DEC    C
-        JR     NZ, FindLeftMask3
-        CPL
-        LD     (clip_mask), A
-        LD     A, D
-        ADD    A, 96                ; Set xpos so sprite will "spill over"
-        LD     C, 12                ; Set correction
+        add    a, a
+        dec    c
+        jr     nz, FindLeftMask3
+        cpl
+        ld     (clip_mask), a
+        ld     a, d
+        add    a, 96                ; Set xpos so sprite will "spill over"
+        ld     c, 12                ; Set correction
 
 HorizClipDone3:
         ; A = xpos
@@ -869,70 +869,70 @@ HorizClipDone3:
         ; IX = image address
 
         ; Now we can finally display the sprite.
-        LD     H, 0
-        LD     D, H
-        LD     L, E
-        ADD    HL, HL
-        ADD    HL, DE
-        ADD    HL, HL
-        ADD    HL, HL
+        ld     h, 0
+        ld     d, h
+        ld     l, e
+        add    hl, hl
+        add    hl, de
+        add    hl, hl
+        add    hl, hl
 
-        LD     E, A
-        SRL    E
-        SRL    E
-        SRL    E
-        ADD    HL, DE
+        ld     e, a
+        srl    e
+        srl    e
+        srl    e
+        add    hl, de
 
         push iy \ pop de ; LD     DE, PlotSScreen
-        ADD    HL, DE
+        add    hl, de
 
-        LD     D, 0                 ; Correct graph buffer address
-        LD     E, C                 ; if clipping the left side
-        SBC    HL, DE               ;
+        ld     d, 0                 ; Correct graph buffer address
+        ld     e, c                 ; if clipping the left side
+        sbc    hl, de               ;
 
-        AND    7
-        JR     Z, _Aligned3
+        and    7
+        jr     z, _Aligned3
 
-        LD     C, A
-        LD     DE, 11
+        ld     c, a
+        ld     de, 11
 
 _RowLoop3:
-        PUSH   BC
-            LD     B, C
-            LD     A, (clip_mask)       ; Mask out the part of the sprite
-            AND    (IX)                 ; to be horizontally clipped
-            LD     C, 0
+        push   bc
+            ld     b, c
+            ld     a, (clip_mask)       ; Mask out the part of the sprite
+            and    (ix)                 ; to be horizontally clipped
+            ld     c, 0
 
 _ShiftLoop3:
-            SRL    A
-            RR     C
-            DJNZ   _ShiftLoop3
+            srl    a
+            rr     c
+            djnz   _ShiftLoop3
 
-            OR    (HL)
-            LD     (HL), A
+            or    (hl)
+            ld     (hl), a
 
-            INC    HL
-            LD     A, C
-            OR    (HL)
-            LD     (HL), A
+            inc    hl
+            ld     a, c
+            or    (hl)
+            ld     (hl), a
 
-            ADD    HL, DE
-            INC    IX
-        POP    BC
-        DJNZ   _RowLoop3
-        RET
+            add    hl, de
+            inc    ix
+        pop    bc
+        djnz   _RowLoop3
+        ret
 
 _Aligned3:
-        LD     DE, 12
+        ld     de, 12
 
 _PutLoop3:
-        LD     A, (IX)
-        OR    (HL)
-        LD     (HL), A
-        INC    IX
-        ADD    HL, DE
-        DJNZ   _PutLoop3
-        RET
+        ld     a, (ix)
+        or    (hl)
+        ld     (hl), a
+        inc    ix
+        add    hl, de
+        djnz   _PutLoop3
+        ret
     
 ;; rectXOR [Display]
 ;;  Draws a filled rectangle on the screen buffer using XOR (invert) logic.
@@ -941,20 +941,20 @@ _PutLoop3:
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 RectXOR: ; by Quigibo
-    ld    a,96        ;Clip Top
+    ld    a, 96        ;Clip Top
     sub    e
     ret    c
     ret    z
     cp    c        ;Clip Bottom
-    jr    nc,$+3
-    ld    c,a
-    ld    a,64        ;Clip Left
+    jr    nc, $ + 3
+    ld    c, a
+    ld    a, 64        ;Clip Left
     sub    l
     ret    c
     ret    z
     cp    b        ;Clip Right
-    jr    nc,$+3
-    ld    b,a
+    jr    nc, $ + 3
+    ld    b, a
 
     xor    a        ;More clipping...
     cp    b
@@ -966,41 +966,41 @@ RectXOR: ; by Quigibo
 
     push    bc
         push    iy \ pop    bc
-        ld    a,l
-        add    a,a
-        add    a,l
-        ld    l,a
-        add    hl,hl
-        add    hl,hl        ;(e,_) = (X,Y)
-        add    hl,bc        ;(_,_) = (width,height)
+        ld    a, l
+        add    a, a
+        add    a, l
+        ld    l, a
+        add    hl, hl
+        add    hl, hl        ;(e,_) = (X,Y)
+        add    hl, bc        ;(_,_) = (width,height)
 
-        ld    a,e
+        ld    a, e
         srl    e
         srl    e
         srl    e
-        add    hl,de
-        and    0b000000111    ;(a,_) = (X^8,Y)
+        add    hl, de
+        and    0b00000111    ;(a,_) = (X^8,Y)
     pop    de        ;(e,d) = (width,height)
 
-    ld    b,a
-    add    a,e
+    ld    b, a
+    add    a, e
     sub    8
-    ld    e,0
-    jr    c,__BoxInvSkip
-    ld    e,a
+    ld    e, 0
+    jr    c, __BoxInvSkip
+    ld    e, a
     xor    a
 __BoxInvSkip:
 
 __BoxInvShift:            ;Input:  b = Left shift
-    add    a,8        ;Input:  a = negative right shift
+    add    a, 8        ;Input:  a = negative right shift
     sub    b        ;Output: a = mask
-    ld    c,0
+    ld    c, 0
 __BoxInvShift1:
     scf
     rr    c
     dec    a
-    jr    nz,__BoxInvShift1
-    ld    a,c
+    jr    nz, __BoxInvShift1
+    ld    a, c
     inc    b
     rlca
 __BoxInvShift2:
@@ -1009,27 +1009,27 @@ __BoxInvShift2:
 
 __BoxInvLoop1:            ;(e,d) = (width,height)
     push    hl        ;    a = bitmask
-        ld    b,d
-        ld    c,a
+        ld    b, d
+        ld    c, a
         push    de
-            ld    de,12
+            ld    de, 12
 __BoxInvLoop2:
-            ld    a,c
+            ld    a, c
             xor    (hl)
-            ld    (hl),a
-            add    hl,de
+            ld    (hl), a
+            add    hl, de
             djnz    __BoxInvLoop2
         pop    de
     pop    hl
     inc    hl
-    ld    a,e
+    ld    a, e
     or    a
     ret    z
     sub    8
-    ld    e,b
-    jr    c,__BoxInvShift
-    ld    e,a
-    ld    a,0b011111111
+    ld    e, b
+    jr    c, __BoxInvShift
+    ld    e, a
+    ld    a, 0b11111111
     jr    __BoxInvLoop1
 __BoxInvEnd:
 
@@ -1040,66 +1040,66 @@ __BoxInvEnd:
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 RectOR:
-    ld    a,96        ;Clip Top
+    ld    a, 96        ;Clip Top
     sub    e
     ret    c
     ret    z
     cp    c        ;Clip Bottom
-    jr    nc,$+3
-    ld    c,a
-    ld    a,64        ;Clip Left
+    jr    nc, $ + 3
+    ld    c, a
+    ld    a, 64        ;Clip Left
     sub    l
     ret    c
     ret    z
     cp    b        ;Clip Right
-    jr    nc,$+3
-    ld    b,a
+    jr    nc, $ + 3
+    ld    b, a
 
     xor    a        ;More clipping...
     cp    b
     ret    z
     cp    c
     ret    z
-    ld    h,a
-    ld    d,a
+    ld    h, a
+    ld    d, a
 
     push    bc
         push iy \ pop bc
-        ld    a,l
-        add    a,a
-        add    a,l
-        ld    l,a
-        add    hl,hl
-        add    hl,hl        ;(e,_) = (X,Y)
-        add    hl,bc        ;(_,_) = (width,height)
+        ld    a, l
+        add    a, a
+        add    a, l
+        ld    l, a
+        add    hl, hl
+        add    hl, hl        ;(e,_) = (X,Y)
+        add    hl, bc        ;(_,_) = (width,height)
 
-        ld    a,e
+        ld    a, e
         srl    e
         srl    e
         srl    e
-        add    hl,de
-        and    0b000000111    ;(a,_) = (X^8,Y)
+        add    hl, de
+        and    0b00000111    ;(a,_) = (X^8,Y)
     pop    de        ;(e,d) = (width,height)
 
-    ld    b,a
-    add    a,e
+    ld    b, a
+    add    a, e
     sub    8
-    ld    e,0
-    jr    c,__BoxORSkip
-    ld    e,a
+    ld    e, 0
+    jr    c, __BoxORSkip
+    ld    e, a
     xor    a
 __BoxORSkip:
 
 __BoxORShift:            ;Input:  b = Left shift
-    add    a,8        ;Input:  a = negative right shift
+    add    a, 8        ;Input:  a = negative right shift
     sub    b        ;Output: a = mask
-    ld    c,0
+    ld    c, 0
 __BoxORShift1:
     scf
     rr    c
     dec    a
-    jr    nz,__BoxORShift1
-    ld    a,c
+    jr    nz, __BoxORShift1
+    ld    a, c
     inc    b
     rlca
 __BoxORShift2:
@@ -1108,15 +1108,15 @@ __BoxORShift2:
 
 __BoxORLoop1:            ;(e,d) = (width,height)
     push    hl        ;    a = bitmask
-        ld    b,d
-        ld    c,a
+        ld    b, d
+        ld    c, a
         push    de
-            ld    de,12
+            ld    de, 12
 __BoxORLoop2:
-            ld    a,c
+            ld    a, c
             or    (hl)
-            ld    (hl),a
-            add    hl,de
+            ld    (hl), a
+            add    hl, de
             djnz    __BoxORLoop2
         pop    de
     pop    hl
@@ -1125,10 +1125,10 @@ __BoxORLoop2:
     or    a
     ret    z
     sub    8
-    ld    e,b
-    jr    c,__BoxORShift
-    ld    e,a
-    ld    a,0b011111111
+    ld    e, b
+    jr    c, __BoxORShift
+    ld    e, a
+    ld    a, 0b11111111
     jr    __BoxORLoop1
 __BoxOREnd:
 
@@ -1139,19 +1139,19 @@ __BoxOREnd:
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 RectAND:
-    ld    a,96        ;Clip Top
+    ld    a, 96        ;Clip Top
     sub    e
     ret    c
     ret    z
     cp    c        ;Clip Bottom
-    jr    nc,$+3
-    ld    c,a
-    ld    a,64        ;Clip Left
+    jr    nc, $ + 3
+    ld    c, a
+    ld    a, 64        ;Clip Left
     sub    l
     ret    c
     ret    z
     cp    b        ;Clip Right
-    jr    nc,$+3
+    jr    nc, $ + 3
     ld    b,a
 
     xor    a        ;More clipping...
@@ -1159,46 +1159,46 @@ RectAND:
     ret    z
     cp    c
     ret    z
-    ld    h,a
-    ld    d,a
+    ld    h, a
+    ld    d, a
 
     push    bc
         push iy \ pop bc
-        ld    a,l
-        add    a,a
-        add    a,l
-        ld    l,a
-        add    hl,hl
-        add    hl,hl        ;(e,_) = (X,Y)
-        add    hl,bc        ;(_,_) = (width,height)
+        ld    a, l
+        add    a, a
+        add    a, l
+        ld    l, a
+        add    hl, hl
+        add    hl, hl        ;(e,_) = (X,Y)
+        add    hl, bc        ;(_,_) = (width,height)
 
-        ld    a,e
+        ld    a, e
         srl    e
         srl    e
         srl    e
-        add    hl,de
-        and    0b000000111    ;(a,_) = (X^8,Y)
+        add    hl, de
+        and    0b00000111    ;(a,_) = (X^8,Y)
     pop    de        ;(e,d) = (width,height)
 
-    ld    b,a
-    add    a,e
+    ld    b, a
+    add    a, e
     sub    8
-    ld    e,0
-    jr    c,__BoxANDSkip
-    ld    e,a
+    ld    e, 0
+    jr    c, __BoxANDSkip
+    ld    e, a
     xor    a
 __BoxANDSkip:
 
 __BoxANDShift:            ;Input:  b = Left shift
-    add    a,8        ;Input:  a = negative right shift
+    add    a, 8        ;Input:  a = negative right shift
     sub    b        ;Output: a = mask
-    ld    c,0
+    ld    c, 0
 __BoxANDShift1:
     scf
     rr    c
     dec    a
-    jr    nz,__BoxANDShift1
-    ld    a,c
+    jr    nz, __BoxANDShift1
+    ld    a, c
     inc    b
     rlca
 __BoxANDShift2:
@@ -1207,28 +1207,28 @@ __BoxANDShift2:
 
 __BoxANDLoop1:            ;(e,d) = (width,height)
     push    hl        ;    a = bitmask
-        ld    b,d
-        ld    c,a
+        ld    b, d
+        ld    c, a
         push    de
-            ld    de,12
+            ld    de, 12
 __BoxANDLoop2:
-            ld    a,c
+            ld    a, c
             cpl
             and    (hl)
-            ld    (hl),a
-            add    hl,de
+            ld    (hl), a
+            add    hl, de
             djnz    __BoxANDLoop2
         pop    de
     pop    hl
     inc    hl
-    ld    a,e
+    ld    a, e
     or    a
     ret    z
     sub    8
-    ld    e,b
-    jr    c,__BoxANDShift
-    ld    e,a
-    ld    a,0b011111111
+    ld    e, b
+    jr    c, __BoxANDShift
+    ld    e, a
+    ld    a, 0b11111111
     jr    __BoxANDLoop1
 __BoxANDEnd:
 
@@ -1258,33 +1258,33 @@ PutSprite16XOR: ; By Jon Martin
     ret
 
 _PutSprite16XOR:                
-    ld h,0             ;7
-    ld l,e            ;4
-    ld d,h         ;4
-    add hl,hl        ;11
-    add hl,de        ;11
-    add hl,hl        ;11
-    add hl,hl        ;11
+    ld h, 0             ;7
+    ld l, e            ;4
+    ld d, h         ;4
+    add hl, hl        ;11
+    add hl, de        ;11
+    add hl, hl        ;11
+    add hl, hl        ;11
     push iy \ pop de    ;10
-    add hl,de        ;11
-    ld e,a            ;4
+    add hl, de        ;11
+    ld e, a            ;4
     srl e            ;8
     srl e            ;8
     srl e            ;8
-    ld d,0            ;7
-    add hl,de        ;11
-    ld d,h            ;4
-    ld e,l            ;4
+    ld d, 0            ;7
+    add hl, de        ;11
+    ld d, h            ;4
+    ld e, l            ;4
     and 7            ;4
-    jp z,aligned        ;10
-    ld c,a            ;4
-    ld de,12        ;10
+    jp z, aligned        ;10
+    ld c, a            ;4
+    ld de, 12        ;10
 rowloop:        ;total: 194
     push bc        ;11
-        ld b,c         ;4
+        ld b, c         ;4
         xor a            ;4
-        ld d,(ix)        ;19
-        ld e,(ix+1)        ;19
+        ld d, (ix)        ;19
+        ld e, (ix+1)        ;19
 shiftloop:        ;60 per loop
         srl d            ;8
         rr e            ;8
@@ -1293,33 +1293,33 @@ shiftloop:        ;60 per loop
         inc hl
         inc hl
         xor (hl)
-        ld (hl),a
-        ld a,e
+        ld (hl), a
+        ld a, e
         dec hl
         xor (hl)
-        ld (hl),a
-        ld a,d
+        ld (hl), a
+        ld a, d
         dec hl
         xor (hl)
-        ld (hl),a    
+        ld (hl), a    
     pop bc            ;10
-    ld de,12        ;10
-    add hl,de        ;11
+    ld de, 12        ;10
+    add hl, de        ;11
     inc ix            ;10
     inc ix            ;10
     djnz rowloop        ;13/8
     ret            ;10
 aligned:
-    ld de,11 
+    ld de, 11 
 alignedloop:
-    ld a,(ix)
+    ld a, (ix)
     xor (hl)
-    ld (hl),a
-    ld a,(ix+1)
+    ld (hl), a
+    ld a, (ix+1)
     inc hl
     xor (hl)
-    ld (hl),a
-    add hl,de
+    ld (hl), a
+    add hl, de
     inc ix
     inc ix
     djnz alignedloop
@@ -1351,33 +1351,33 @@ PutSprite16OR:
     ret
 
 _PutSprite16OR:                
-        ld h,0             ;7
-        ld l,e            ;4
-        ld d,h         ;4
-        add hl,hl        ;11
-        add hl,de        ;11
-        add hl,hl        ;11
-        add hl,hl        ;11
+        ld h, 0             ;7
+        ld l, e            ;4
+        ld d, h         ;4
+        add hl, hl        ;11
+        add hl, de        ;11
+        add hl, hl        ;11
+        add hl, hl        ;11
         push iy \ pop de    ;10
-        add hl,de        ;11
-        ld e,a            ;4
+        add hl, de        ;11
+        ld e, a            ;4
         srl e            ;8
         srl e            ;8
         srl e            ;8
-        ld d,0            ;7
-        add hl,de        ;11
-        ld d,h            ;4
-        ld e,l            ;4
+        ld d, 0            ;7
+        add hl, de        ;11
+        ld d, h            ;4
+        ld e, l            ;4
         and 7            ;4
-        jp z,alignedOR        ;10
-        ld c,a            ;4
-        ld de,12        ;10
+        jp z, alignedOR        ;10
+        ld c, a            ;4
+        ld de, 12        ;10
 rowloopOR:        ;total: 194
         push bc        ;11
-            ld b,c         ;4
+            ld b, c         ;4
             xor a            ;4
-            ld d,(ix)        ;19
-            ld e,(ix+1)        ;19
+            ld d, (ix)        ;19
+            ld e, (ix+1)        ;19
 shiftloopOR:        ;60 per loop
             srl d            ;8
             rr e            ;8
@@ -1386,33 +1386,33 @@ shiftloopOR:        ;60 per loop
             inc hl
             inc hl
             xor (hl)
-            ld (hl),a
-            ld a,e
+            ld (hl), a
+            ld a, e
             dec hl
             or (hl)
-            ld (hl),a
-            ld a,d
+            ld (hl), a
+            ld a, d
             dec hl
             or (hl)
-            ld (hl),a    
+            ld (hl), a    
         pop bc            ;10
-        ld de,12        ;10
-        add hl,de        ;11
+        ld de, 12        ;10
+        add hl, de        ;11
         inc ix            ;10
         inc ix            ;10
         djnz rowloopOR        ;13/8
         ret            ;10
 alignedOR:
-        ld de,11 
+        ld de, 11 
 alignedloopOR:
-        ld a,(ix)
+        ld a, (ix)
         or (hl)
-        ld (hl),a
-        ld a,(ix+1)
+        ld (hl), a
+        ld a, (ix+1)
         inc hl
         or (hl)
-        ld (hl),a
-        add hl,de
+        ld (hl), a
+        add hl, de
         inc ix
         inc ix
         djnz alignedloopOR
@@ -1444,33 +1444,33 @@ PutSprite16AND:
     ret
 
 _PutSprite16AND:                
-        ld h,0             ;7
-        ld l,e            ;4
-        ld d,h         ;4
-        add hl,hl        ;11
-        add hl,de        ;11
-        add hl,hl        ;11
-        add hl,hl        ;11
+        ld h, 0             ;7
+        ld l, e            ;4
+        ld d, h         ;4
+        add hl, hl        ;11
+        add hl, de        ;11
+        add hl, hl        ;11
+        add hl, hl        ;11
         push iy \ pop de    ;10
-        add hl,de        ;11
-        ld e,a            ;4
+        add hl, de        ;11
+        ld e, a            ;4
         srl e            ;8
         srl e            ;8
         srl e            ;8
-        ld d,0            ;7
-        add hl,de        ;11
-        ld d,h            ;4
-        ld e,l            ;4
+        ld d, 0            ;7
+        add hl, de        ;11
+        ld d, h            ;4
+        ld e, l            ;4
         and 7            ;4
-        jp z,alignedAND        ;10
-        ld c,a            ;4
-        ld de,12        ;10
+        jp z, alignedAND        ;10
+        ld c, a            ;4
+        ld de, 12        ;10
 rowloopAND:        ;total: 194
         push bc        ;11
-            ld b,c         ;4
+            ld b, c         ;4
             xor a            ;4
-            ld d,(ix)        ;19
-            ld e,(ix+1)        ;19
+            ld d, (ix)        ;19
+            ld e, (ix+1)        ;19
 shiftloopAND:        ;60 per loop
             srl d            ;8
             rr e            ;8
@@ -1479,37 +1479,37 @@ shiftloopAND:        ;60 per loop
             inc hl
             inc hl
             xor (hl)
-            ld (hl),a
-            ld a,e
+            ld (hl), a
+            ld a, e
             dec hl
             cpl
             and (hl)
-            ld (hl),a
-            ld a,d
+            ld (hl), a
+            ld a, d
             dec hl
             cpl
             and (hl)
-            ld (hl),a
+            ld (hl), a
         pop bc            ;10
-        ld de,12        ;10
-        add hl,de        ;11
+        ld de, 12        ;10
+        add hl, de        ;11
         inc ix            ;10
         inc ix            ;10
         djnz rowloopAND        ;13/8
         ret            ;10
 alignedAND:
-        ld de,11
+        ld de, 11
 alignedloopAND:
-        ld a,(ix)
+        ld a, (ix)
         cpl
         and (hl)
-        ld (hl),a
-        ld a,(ix+1)
+        ld (hl), a
+        ld a, (ix+1)
         inc hl
         cpl
         and (hl)
-        ld (hl),a
-        add hl,de
+        ld (hl), a
+        add hl, de
         inc ix
         inc ix
         djnz alignedloopAND
