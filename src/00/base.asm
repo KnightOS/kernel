@@ -2,6 +2,7 @@
 
 #include "platforms.inc"
 #include "defines.inc"
+#include "keys.inc"
 
 #include "header.asm"
 #include "boot.asm"
@@ -25,6 +26,7 @@
 #include "time.asm"
 
 #include "util.asm"
+#include "crypto.asm"
 
 #ifdef TEST
 #include "testrunner.asm"
