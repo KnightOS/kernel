@@ -36,7 +36,8 @@ _:          djnz .rotlp
 ;; sha1Init [Crypto]
 ;;  Allocates a memory block to keep the state and result of
 ;;  a SHA1 hash operation.  The result is kept in the first 20 bytes
-;;  of the allocated block.
+;;  of the allocated block.  You must use [[sha1Clean]] to deallocate
+;;  the block; simply using [[free]] will result in a memory leak!
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
@@ -125,7 +126,7 @@ sha1Clean:
 ;; sha1Pad [Crypto]
 ;;  Finishes the SHA1 computation by appending the
 ;;  required bits to the input.  Call this routine once after
-;;  calling sha1AddByte for each input byte.  After this routine,
+;;  calling [[sha1AddByte]] for each input byte.  After this routine,
 ;;  the 8 bytes pointed to by IX will contain the big-endian
 ;;  SHA1 hash.
 ;; Inputs:
@@ -162,7 +163,7 @@ sha1Pad_noPush:
 ;; sha1AddByte [Crypto]
 ;;  Adds a single byte to the SHA1 hash input stream.
 ;;  Call this function once for each byte in the input
-;;  stream, then call sha1Pad.
+;;  stream, then call [[sha1Pad]].
 ;; Inputs:
 ;;  IX: location of SHA1 state block
 ;;  A: Byte to add
@@ -453,7 +454,7 @@ _:  ld a, (de)
 ;; sha1AddRange [Crypto]
 ;;  Adds a range of bytes to a SHA1 hash.  This
 ;;  routine is equivalent to, but faster than, calling
-;;  sha1AddByte many times.
+;;  [[sha1AddByte]] many times.
 ;; Inputs:
 ;;  IX: location of SHA1 state block
 ;;  HL: location of range to add
