@@ -28,7 +28,7 @@ clearBuffer:
 fastCopy:
         call hasLCDLock
         ret nz
-.fastCopy_skipCheck:
+fastCopy_skipCheck:
         push hl
         push bc
         push af
