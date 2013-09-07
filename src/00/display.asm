@@ -460,45 +460,45 @@ putSpriteXOR:
         ; Start by doing vertical clipping
         ld a, 0b11111111            ; Reset clipping mask
         ld (clip_mask), a
-        ld a, e                    ; If ypos is negative
-        or a                    ; try clipping the top
-        jp m, .clipTop            ;
-        sub 64                    ; If ypos is >= 64
-        ret nc                    ; sprite is off-screen
-        neg                        ; If (64 - ypos) > height
-        cp b                    ; don't need to clip
-        jr nc, .vertClipDone        ;
-        ld b, a                    ; Do bottom clipping by
+        ld a, e                     ; If ypos is negative
+        or a                        ; try clipping the top
+        jp m, .clipTop
+        sub 64                      ; If ypos is >= 64
+        ret nc                      ; sprite is off-screen
+        neg                         ; If (64 - ypos) > height
+        cp b                        ; don't need to clip
+        jr nc, .vertClipDone
+        ld b, a                     ; Do bottom clipping by
         jr .vertClipDone            ; setting height to (64 - ypos)
 
 .clipTop:
-        ld a, b                    ; If ypos <= -height
-        neg                        ; sprite is off-screen
-        sub e                    ;
-        ret nc                    ;
+        ld a, b                     ; If ypos <= -height
+        neg                         ; sprite is off-screen
+        sub e
+        ret nc
         push af
-            add a, b            ; Get the number of clipped rows
-            ld e, 0                ; Set ypos to 0 (top of screen)
-            ld b, e                ; Advance image data pointer
+            add a, b                ; Get the number of clipped rows
+            ld e, 0                 ; Set ypos to 0 (top of screen)
+            ld b, e                 ; Advance image data pointer
             ld c, a
             add ix, bc
         pop af
-        neg                        ; Get the number of visible rows
-        ld b, a                    ; and set as height
+        neg                         ; Get the number of visible rows
+        ld b, a                     ; and set as height
 
 .vertClipDone:
         ; Now we're doing horizontal clipping
-        ld c, 0                    ; Reset correction factor
+        ld c, 0                     ; Reset correction factor
         ld a, d
-        cp -7                    ; If 0 > xpos >= -7
+        cp -7                       ; If 0 > xpos >= -7
         jr nc, .clipLeft            ; clip the left side
-        cp 96                    ; If xpos >= 96
-        ret nc                    ; sprite is off-screen
-        cp 89                    ; If 0 <= xpos < 89
+        cp 96                       ; If xpos >= 96
+        ret nc                      ; sprite is off-screen
+        cp 89                       ; If 0 <= xpos < 89
         jr c, .horizClipDone        ; don't need to clip
 
 .clipRight:
-        and 7                    ; Determine the clipping mask
+        and 7                       ; Determine the clipping mask
         ld c,a
         ld a, 0b11111111
 .findRightMask:
@@ -510,7 +510,7 @@ putSpriteXOR:
         jr .horizClipDone
     
 .clipLeft:
-        and 7                    ; Determine the clipping mask
+        and 7                       ; Determine the clipping mask
         ld c, a
         ld a, 0b11111111
 .findLeftMask:
@@ -520,8 +520,8 @@ putSpriteXOR:
         cpl
         ld (clip_mask), A
         ld a, d
-        add a, 96                ; Set xpos so sprite will "spill over"
-        ld c, 12                ; Set correction
+        add a, 96                   ; Set xpos so sprite will "spill over"
+        ld c, 12                    ; Set correction
 
 .horizClipDone:
         ; A = xpos
@@ -544,7 +544,7 @@ putSpriteXOR:
         srl e
         add hl, de
 
-        push iy \ pop de        ; ld de, plotSScreen
+        push iy \ pop de
         add hl, de
 
         ld d, 0                    ; Correct graph buffer address
@@ -561,7 +561,7 @@ putSpriteXOR:
         push bc
             ld b, c
             ld a, (clip_mask)        ; Mask out the part of the sprite
-            and (ix)                ; to be horizontally clipped
+            and (ix)                 ; to be horizontally clipped
             ld c, 0
 
 .shiftLoop:
@@ -621,52 +621,52 @@ putSpriteAND:
         ; Start by doing vertical clipping
         ld a, 0b11111111            ; Reset clipping mask
         ld (clip_mask), a
-        ld a, e                ; If ypos is negative
-        or a                    ; try clipping the top
+        ld a, e                     ; If ypos is negative
+        or a                        ; try clipping the top
         jp m, .clipTop2
 
-        sub 64                    ; If ypos is >= 64
-        ret nc                    ; sprite is off-screen
+        sub 64                      ; If ypos is >= 64
+        ret nc                      ; sprite is off-screen
 
-        neg                        ; If (64 - ypos) > height
-        cp b                    ; don't need to clip
+        neg                         ; If (64 - ypos) > height
+        cp b                        ; don't need to clip
         jr nc, .vertClipDone2
 
-        ld b, a                    ; Do bottom clipping by
-        jr .vertClipDone2        ; setting height to (64 - ypos)
+        ld b, a                     ; Do bottom clipping by
+        jr .vertClipDone2           ; setting height to (64 - ypos)
 
 .clipTop2:
-        ld a, b                  ; If ypos <= -height
-        neg                      ; sprite is off-screen
-        sub e                    ;
-        ret nc                   ;
+        ld a, b                     ; If ypos <= -height
+        neg                         ; sprite is off-screen
+        sub e
+        ret nc
 
         push af
-            add a, b                 ; Get the number of clipped rows
-            ld e,0                 ; Set ypos to 0 (top of screen)
+            add a, b                ; Get the number of clipped rows
+            ld e,0                  ; Set ypos to 0 (top of screen)
             ld b, e                 ; Advance image data pointer
             ld c, a                 ;
-            add ix, bc               ;
+            add ix, bc
         pop af
         neg                         ; Get the number of visible rows
-        ld b, a                 ; and set as height
+        ld b, a                     ; and set as height
 
 .vertClipDone2:
         ; Now we're doing horizontal clipping
-        ld c, 0                 ; Reset correction factor
+        ld c, 0                     ; Reset correction factor
         ld a, d
 
-        cp -7                   ; If 0 > xpos >= -7
-        jr nc, .clipLeft2         ; clip the left side
+        cp -7                       ; If 0 > xpos >= -7
+        jr nc, .clipLeft2           ; clip the left side
 
-        cp 96                   ; If xpos >= 96
-        ret nc                   ; sprite is off-screen
+        cp 96                       ; If xpos >= 96
+        ret nc                      ; sprite is off-screen
 
-        cp 89                   ; If 0 <= xpos < 89
-        jr c, .horizClipDone2     ; don't need to clip
+        cp 89                       ; If 0 <= xpos < 89
+        jr c, .horizClipDone2       ; don't need to clip
 
 .clipRight2:
-        and 7                    ; Determine the clipping mask
+        and 7                       ; Determine the clipping mask
         ld c, a
         ld a, 0b11111111
 .findRightMask2:
@@ -678,7 +678,7 @@ putSpriteAND:
         jr .horizClipDone2
 
 .clipLeft2:
-        and 7                    ; Determine the clipping mask
+        and 7                       ; Determine the clipping mask
         ld c, a
         ld a, 0b11111111
 .findLeftMask2:
@@ -688,8 +688,8 @@ putSpriteAND:
         cpl
         ld (clip_mask), a
         ld a, d
-        add a, 96                ; Set xpos so sprite will "spill over"
-        ld c, 12                ; Set correction
+        add a, 96                   ; Set xpos so sprite will "spill over"
+        ld c, 12                    ; Set correction
 
 .horizClipDone2:
         ; A = xpos
@@ -712,7 +712,7 @@ putSpriteAND:
         srl e
         add hl, de
 
-        push iy \ pop de            ; LD DE, PlotSScreen
+        push iy \ pop de
         add hl, de
 
         ld d, 0                 ; Correct graph buffer address
@@ -728,7 +728,7 @@ putSpriteAND:
 .rowLoop2:
         push bc
             ld b, c
-            ld a, (clip_mask)       ; Mask out the part of the sprite
+            ld a, (clip_mask)        ; Mask out the part of the sprite
             and (ix)                 ; to be horizontally clipped
             ld c, 0
 
@@ -792,49 +792,49 @@ putSpriteOR:
         ; Start by doing vertical clipping
         ld a, 0b11111111         ; Reset clipping mask
         ld (clip_mask), a
-        ld a, e                 ; If ypos is negative
-        or a                    ; try clipping the top
-        jp m, .clipTop3           ;
+        ld a, e                  ; If ypos is negative
+        or a                     ; try clipping the top
+        jp m, .clipTop3
 
         sub 64                   ; If ypos is >= 64
         ret nc                   ; sprite is off-screen
 
-        neg                         ; If (64 - ypos) > height
-        cp b                    ; don't need to clip
-        jr nc, .vertClipDone3     ;
+        neg                      ; If (64 - ypos) > height
+        cp b                     ; don't need to clip
+        jr nc, .vertClipDone3
 
-        ld b, a                 ; Do bottom clipping by
-        jr .vertClipDone3         ; setting height to (64 - ypos)
+        ld b, a                  ; Do bottom clipping by
+        jr .vertClipDone3        ; setting height to (64 - ypos)
 
 .clipTop3:
-        ld a, b                 ; If ypos <= -height
-        neg                         ; sprite is off-screen
-        sub e                    ;
-        ret nc                   ;
+        ld a, b                  ; If ypos <= -height
+        neg                      ; sprite is off-screen
+        sub e
+        ret nc
 
         push af
-            add a, b                 ; Get the number of clipped rows
-            ld e, 0                 ; Set ypos to 0 (top of screen)
-            ld b, e                 ; Advance image data pointer
-            ld c, a                 ;
-            add ix, bc               ;
+            add a, b             ; Get the number of clipped rows
+            ld e, 0              ; Set ypos to 0 (top of screen)
+            ld b, e              ; Advance image data pointer
+            ld c, a
+            add ix, bc
         pop af
-        neg                         ; Get the number of visible rows
-        ld b, a                 ; and set as height
+        neg                      ; Get the number of visible rows
+        ld b, a                  ; and set as height
 
 .vertClipDone3:
         ; Now we're doing horizontal clipping
-        ld c, 0                 ; Reset correction factor
+        ld c, 0                  ; Reset correction factor
         ld a, d
 
-        cp -7                   ; If 0 > xpos >= -7
-        jr nc, .clipLeft3         ; clip the left side
+        cp -7                    ; If 0 > xpos >= -7
+        jr nc, .clipLeft3        ; clip the left side
 
-        cp 96                   ; If xpos >= 96
+        cp 96                    ; If xpos >= 96
         ret nc                   ; sprite is off-screen
 
-        cp 89                   ; If 0 <= xpos < 89
-        jr c, .horizClipDone3     ; don't need to clip
+        cp 89                    ; If 0 <= xpos < 89
+        jr c, .horizClipDone3    ; don't need to clip
 
 .clipRight3:
         and 7                    ; Determine the clipping mask
@@ -860,7 +860,7 @@ putSpriteOR:
         ld (clip_mask), a
         ld a, d
         add a, 96                ; Set xpos so sprite will "spill over"
-        ld c, 12                ; Set correction
+        ld c, 12                 ; Set correction
 
 .horizClipDone3:
         ; A = xpos
@@ -883,12 +883,12 @@ putSpriteOR:
         srl e
         add hl, de
 
-        push iy \ pop de ; LD     DE, PlotSScreen
+        push iy \ pop de
         add hl, de
 
         ld d, 0                 ; Correct graph buffer address
         ld e, c                 ; if clipping the left side
-        sbc hl, de               ;
+        sbc hl, de
 
         and 7
         jr z, .aligned3
@@ -899,7 +899,7 @@ putSpriteOR:
 .rowLoop3:
         push bc
             ld b, c
-            ld a, (clip_mask)       ; Mask out the part of the sprite
+            ld a, (clip_mask)        ; Mask out the part of the sprite
             and (ix)                 ; to be horizontally clipped
             ld c, 0
 
@@ -945,18 +945,18 @@ rectXOR: ; by Quigibo
     sub e
     ret c
     ret z
-    cp c        ;Clip Bottom
+    cp c            ;Clip Bottom
     jr nc, $ + 3
     ld c, a
     ld a, 64        ;Clip Left
     sub l
     ret c
     ret z
-    cp b        ;Clip Right
+    cp b            ;Clip Right
     jr nc, $ + 3
     ld b, a
 
-    xor a        ;More clipping...
+    xor a           ;More clipping...
     cp b
     ret z
     cp c
@@ -980,7 +980,7 @@ rectXOR: ; by Quigibo
         srl e
         add hl, de
         and 0b00000111    ;(a,_) = (X^8,Y)
-    pop de        ;(e,d) = (width,height)
+    pop de                ;(e,d) = (width,height)
 
     ld b, a
     add a, e
@@ -992,8 +992,8 @@ rectXOR: ; by Quigibo
 .boxInvSkip:
 
 .boxInvShift:            ;Input:  b = Left shift
-    add a, 8        ;Input:  a = negative right shift
-    sub b        ;Output: a = mask
+    add a, 8             ;Input:  a = negative right shift
+    sub b                ;Output: a = mask
     ld c, 0
 .boxInvShift1:
     scf
@@ -1007,8 +1007,8 @@ rectXOR: ; by Quigibo
     rrca
     djnz .boxInvShift2
 
-.boxInvLoop1:            ;(e,d) = (width,height)
-    push hl        ;    a = bitmask
+.boxInvLoop1:            ;(e, d) = (width, height)
+    push hl              ;     a = bitmask
         ld b, d
         ld c, a
         push de
@@ -1044,18 +1044,18 @@ rectOR:
     sub e
     ret c
     ret z
-    cp c        ;Clip Bottom
+    cp c            ;Clip Bottom
     jr nc, $ + 3
     ld c, a
     ld a, 64        ;Clip Left
     sub l
     ret c
     ret z
-    cp b        ;Clip Right
+    cp b            ;Clip Right
     jr nc, $ + 3
     ld b, a
 
-    xor a        ;More clipping...
+    xor a           ;More clipping...
     cp b
     ret z
     cp c
@@ -1079,7 +1079,7 @@ rectOR:
         srl e
         add hl, de
         and 0b00000111    ;(a,_) = (X^8,Y)
-    pop de        ;(e,d) = (width,height)
+    pop de                ;(e,d) = (width,height)
 
     ld b, a
     add a, e
@@ -1091,8 +1091,8 @@ rectOR:
 .boxORskip:
 
 .boxORshift:            ;Input:  b = Left shift
-    add a, 8        ;Input:  a = negative right shift
-    sub b        ;Output: a = mask
+    add a, 8            ;Input:  a = negative right shift
+    sub b               ;Output: a = mask
     ld c, 0
 .boxORshift1:
     scf
@@ -1107,7 +1107,7 @@ rectOR:
     djnz .boxORshift2
 
 .boxORloop1:            ;(e,d) = (width,height)
-    push hl        ;    a = bitmask
+    push hl             ;    a = bitmask
         ld b, d
         ld c, a
         push de
@@ -1143,18 +1143,18 @@ rectAND:
     sub e
     ret c
     ret z
-    cp c        ;Clip Bottom
+    cp c            ;Clip Bottom
     jr nc, $ + 3
     ld c, a
     ld a, 64        ;Clip Left
     sub l
     ret c
     ret z
-    cp b        ;Clip Right
+    cp b            ;Clip Right
     jr nc, $ + 3
     ld b,a
 
-    xor a        ;More clipping...
+    xor a           ;More clipping...
     cp b
     ret z
     cp c
@@ -1178,7 +1178,7 @@ rectAND:
         srl e
         add hl, de
         and 0b00000111    ;(a,_) = (X^8,Y)
-    pop de        ;(e,d) = (width,height)
+    pop de                ;(e,d) = (width,height)
 
     ld b, a
     add a, e
@@ -1190,8 +1190,8 @@ rectAND:
 .boxANDskip:
 
 .boxANDshift:            ;Input:  b = Left shift
-    add a, 8        ;Input:  a = negative right shift
-    sub b        ;Output: a = mask
+    add a, 8             ;Input:  a = negative right shift
+    sub b                ;Output: a = mask
     ld c, 0
 .boxANDshift1:
     scf
@@ -1206,7 +1206,7 @@ rectAND:
     djnz .boxANDshift2
 
 .boxANDloop1:            ;(e,d) = (width,height)
-    push hl        ;    a = bitmask
+    push hl              ;    a = bitmask
         ld b, d
         ld c, a
         push de
