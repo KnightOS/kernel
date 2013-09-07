@@ -42,9 +42,13 @@ hwLockUSB               .equ hwLockKeypad + 1           ; 1 byte
 currentContrast         .equ hwLockUSB + 1              ; 1 byte
 bcallHook               .equ currentContrast + 1        ; 2 bytes
 
+; Points to the font table used by the kernel.
+; To reset, write kernel_font to it.
+fontTablePtr            .equ currentContrast + 2        ; 2 bytes
+
 ; Used for line drawing
 ; TODO: Phase this out
-clip_mask               .equ bcallHook + 2              ; 1 byte
+clip_mask               .equ fontTablePtr + 2           ; 1 byte
 
 kernelGarbage           .equ stateMemory + stateMemorySize
 

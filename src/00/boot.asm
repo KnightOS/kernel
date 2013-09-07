@@ -159,6 +159,10 @@ reboot:
     ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
     ld (lastThreadId), a
 
+    ; Initialize the font table pointer
+    ld hl, kernel_font
+    ld (fontTablePtr), hl
+
 #ifdef TEST
     jp testrunner
 #endif
