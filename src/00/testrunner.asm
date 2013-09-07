@@ -33,6 +33,9 @@ test_collection:
     .dw test_rleCalculateCompressedLength   ; 0010 test_rlePredictCompress
     .dw test_rleCalculateDecompressedLength ; 0011 test_rlePredictDecompress
 
+    .dw test_crc16                          ; 0012 test_crc16
+    .dw test_sha1                           ; 0013 test_sha1
+
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number

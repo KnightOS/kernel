@@ -55,7 +55,11 @@ calloc:
     pop af
     ret
     
-; Sets the entire allocated section to A
+;; memset [System]
+;;  Sets the value of an entire allocated section of memory.
+;; Inputs:
+;;  A: Value to set
+;;  IX: Pointer to anywhere in allocated section
 memset:
     push ix
     push bc
@@ -74,8 +78,12 @@ memset:
     pop ix
     ret
 
-; Inputs:    IX is somewhere within pre-allocated memory
-; Outputs:    IX points to the start of that memory
+;; memSeekToStart [System]
+;;  Move IX to the beginning of the memory section it points to.
+;; Inputs:
+;;  IX: Pointer to anywhere in a section of allocated memory
+;; Outputs:
+;;  IX: Pointer to first byte of section
 memSeekToStart:
     push hl
     push bc
@@ -103,8 +111,12 @@ _:  pop de
     pop hl
     ret
     
-; Input: IX is somewhere in pre-allocated memory
-; Outputs: IX is the last byte of that memory
+;; memSeekToEnd [System]
+;;  Move IX to the end of the memory section it points to.
+;; Inputs:
+;;  IX: Pointer to anywhere in a section of allocated memory
+;; Outputs:
+;;  IX: Pointer to last byte of section
 memSeekToEnd:
     call memSeekToStart
     push hl
@@ -281,8 +293,10 @@ _:  pop af
     ld a, errOutOfMem
     ret
     
-; Inputs:    IX: Pointer to first byte of previously allocated memory
-; Outputs:    None
+;; free [System]
+;;  Frees a previously allocated section of memory
+;; Inputs:
+;;  IX: Pointer to first byte of section
 free:
     push af
     ld a, i

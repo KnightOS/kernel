@@ -29,7 +29,7 @@ _:      push de
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, kernel_font
+            ld hl, (fontTablePtr)
             add hl, de
             ld a, (hl)
             inc hl
@@ -73,7 +73,7 @@ _:      push de
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, kernel_font
+            ld hl, (fontTablePtr)
             add hl, de
             ld a, (hl)
             inc hl
@@ -117,7 +117,7 @@ _:        push de
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, kernel_font
+            ld hl, (fontTablePtr)
             add hl, de
             ld a, (hl)
             inc hl
@@ -285,7 +285,7 @@ measureChar:
         sub 0x20
         call DEMulA
         ex de, hl
-        ld hl, kernel_font
+        ld hl, (fontTablePtr)
         add hl, de
         ld a, (hl)
     pop de
