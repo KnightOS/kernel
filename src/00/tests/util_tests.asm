@@ -247,3 +247,34 @@ _:  assert_pass()
     .db 0x28,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x0A,0x41,0x9B,0x6C
 .check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
+
+; sort 000E
+test_sort:
+    ld bc, 5
+    call malloc
+    jr nz, .failMem
+    ld hl, .test
+    ld bc, 5
+        push ix \ pop de \ push de
+        ldir
+        pop hl \ push hl
+        ld de, 3
+        add hl, de
+        pop de \ push de
+        ex de, hl
+        call sort
+        pop hl \ push hl
+        ld de, .expected
+        call compareStrings
+    pop ix
+    jr nz, .fail
+    call free
+    assert_pass()
+.fail:
+    call free
+.failMem:
+    assert_fail()
+.test:
+    .db 7, 4, 8, 6, 0
+.expected:
+    .db 4, 6, 7, 8, 0
