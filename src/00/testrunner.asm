@@ -27,6 +27,7 @@ test_collection:
     .dw test_rleCalculateDecompressedLength ; 000B test_rlePredictDecompress
     .dw test_crc16                          ; 000C test_crc16
     .dw test_sha1                           ; 000D test_sha1
+    .dw test_sort                           ; 000E test_sort
 
     .dw 0xFFFF
 explicit_only:
