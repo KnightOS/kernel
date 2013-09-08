@@ -256,10 +256,36 @@ test_streamReadToEnd:
     ld de, .expected
     call compareStrings
     jr nz, .fail
+    call free
+    ; Test large file
+    ld de, .testPath2
+    call openFileRead
+    call getStreamInfo
+    call malloc
+    call streamReadToEnd
+    call closeStream
+    ; Calculate SHA-1 of that file
+    push ix \ pop hl
+    call sha1Init
+    call sha1AddRange
+    call sha1Pad
+    ; Compare
+    push ix \ pop de
+    ld (ix + 20), 0 ; Terminate hash "string"
+    ld hl, .largeFileSum
+    call compareStrings
+    jr nz, .fail
+    call sha1Clean
     assert_pass()
 .fail:
     assert_fail()
 .testPath:
     .db "/test.txt", 0
+.testPath2:
+    .db "/large.txt", 0
 .expected:
     .db "Test file!", 0
+.largeFileSum:
+    .db 0x7c, 0xdd, 0x93, 0x3a, 0x7a, 0x2d, 0x86, 0xbf
+    .db 0xf0, 0x4d, 0xcf, 0x21, 0xcc, 0x86, 0x5f, 0xc2
+    .db 0x18, 0xbf, 0x6e, 0x17, 0

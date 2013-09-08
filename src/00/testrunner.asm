@@ -214,5 +214,6 @@ characterMap:
 
 #include "tests/util_tests.asm"
 #include "tests/filestreams_tests.asm"
+#include "tests/crypto_tests.asm"
 
 .undefine assert_pass assert_fail
