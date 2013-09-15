@@ -691,3 +691,33 @@ _:      inc hl
     pop hl
     xor a
     ret
+
+;; randA [Miscellaneous]
+;;  Returns a random byte in A.
+;; Inputs:
+;;  A' is used as a seed.
+;; Outputs:
+;;  Random byte in A
+;;  A' set to A.
+randA:
+    push hl \ push bc
+        ex af, af'
+        ld a, i
+        add a, (hl)
+        inc hl
+        sbc a, (hl)
+        inc hl
+        ld c, a
+        ld a, r
+        xor (hl)
+        and 7
+        ld b, a
+        ld a, c
+_:
+        rra
+        djnz -_
+        ld b, a
+        ex af, af'
+        ld a, b
+    pop bc \ pop hl
+    ret
