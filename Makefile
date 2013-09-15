@@ -17,6 +17,7 @@ all:
 	make TI83pSE
 	make TI84p
 	make TI84pSE
+	make TI84pCSE
 
 # Platforms:
 # Variables (all in hex):
@@ -52,6 +53,13 @@ TI84pSE: PRIVILEGED := 1F0000
 TI84pSE: BOOT := 1FC000
 TI84pSE: LENGTH := 200000
 TI84pSE: directories kernel
+
+# TODO: Fix these probably broken values
+TI84pCSE: PLATFORM := TI84pSE
+TI84pCSE: PRIVILEGED := 1F0000
+TI84pCSE: BOOT := 1FC000
+TI84pCSE: LENGTH := 200000
+TI84pCSE: directories kernel
 
 DEFINES=$(PLATFORM)
 
