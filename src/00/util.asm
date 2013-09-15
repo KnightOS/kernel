@@ -695,10 +695,10 @@ _:      inc hl
 ;; randA [Miscellaneous]
 ;;  Returns a random byte in A.
 ;; Inputs:
-;;  A' is used as a seed.
+;;  A': seed
 ;; Outputs:
-;;  Random byte in A
-;;  A' set to A.
+;;  A: random byte
+;;  A': reseeded
 randA:
     push hl \ push bc
         ex af, af'
