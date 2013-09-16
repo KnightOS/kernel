@@ -1,5 +1,33 @@
 ; Calculator boot-up code
 boot:
+
+; Temporary proof of concept
+#ifdef COLOR
+    di
+    ; Set GPIO config
+    ld a, 0b11111000
+    out (0x39), a
+    
+    ; Test loop, toggle backlight back and forth
+_:  in a, (0x3A)
+    xor 0b00100000
+    out (0x3A), a
+    ld b, 0xFF
+    djnz $
+    jr -_
+
+    ; Initialize 84+ CSE LCD
+    ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
+    ; This code is not fully understood
+    lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
+    call colorLcdOn
+
+    ; halt
+    jr $
+#endif
+; /Temporary
+
     di
     jr _
 ;; shutdown [System]
