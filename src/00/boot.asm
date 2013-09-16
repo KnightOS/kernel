@@ -13,16 +13,32 @@ boot:
     ; This code is not fully understood
     lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
     lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
+    ; Sleep...
+    im 1 ; interrupt mode 1, for cleanliness
+    in a, (3)
+    push af
+        ld a, 1
+        out (3), a ; ON
+        ei ; Enable interrupting when ON is pressed
+        halt ; and halt
+        di
+    pop af
+    out (3), a
+    ; ...sleep
     call colorLcdOn
 
     call setLcdCompatibleMode
     ld iy, 0x8000
-    ld (iy + 12), 0xFF
+    call clearBuffer
+    ld (iy + 12), 0x0F
     ;ld hl, testMessage
     ;ld de, 0x0010
     ;call drawStr
     call fastCopy
-    jr $
+    
+    call flushKeys
+    call waitKey
+    jp boot
 
 testMessage:
     .db "Hello, KnightOS!", 0

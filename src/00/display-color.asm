@@ -15,6 +15,8 @@ colorLcdOn:
     ; TODO: Research this more, it's probably not all required and we might want some of it done different.
     ; Could also probably be optimized if we didn't use this lcdout macro, but I'll save that for when the
     ; LCD is more well understood and everything is working.
+    ld a, 7
+    out (0x2A), a ; LCD delay
     lcdout(0x01, 0x0000) ; Reset Out.Ctrl.1: Ensure scan directions are not reversed
     lcdout(0x02, 0x0200) ; LCD Driving Control: Sets inversion mode=line inversion and disables it
     lcdout(0x03, 0x1038) ; Init. Entry Mode: Cursor moves up/down, down, left, disable
@@ -33,7 +35,7 @@ colorLcdOn:
     lcdout(0x12, 0x008C) ; Pwr.Ctrl.3: More voltages
     call colorLcdWait
     lcdout(0x13, 0x1800) ; Pwr.Ctrl.4: Take a wild guess
-    lcdout(0x30, 0x0030) ; Pwr.Ctrl.7: I'm not an LCD engineer, don't ask me.
+    lcdout(0x29, 0x0030) ; Pwr.Ctrl.7: I'm not an LCD engineer, don't ask me.
     lcdout(0x2B, 0x000B) ; Set frame rate to 70
     call colorLcdWait
     ; Don't touch the gamma control ones, no one knows what they mean
@@ -47,7 +49,7 @@ colorLcdOn:
     lcdout(0x39, 0x0707) ; Gamma Control 8
     lcdout(0x3C, 0x0103) ; Gamma Control 9
     lcdout(0x3D, 0x0004) ; Gamma Control 10
-    call colorLcdWait
+    
     lcdout(0x50, 0x0000) ; Horiz.Win.Start: 0
     lcdout(0x51, 0x00EF) ; Horiz.Win.End: 239 = 240-1
     lcdout(0x52, 0x0000) ; Vert.Win.Start: 0
@@ -58,7 +60,14 @@ colorLcdOn:
     in a, (0x3A)
     set 5, a
     out (0x3A), a
-    call initLcd
+    ; Values found in TIOS, but not wikiti:
+    lcdout(0x07, 0x0000) ; Settings modes, clears it for some reason?
+    call colorLcdWait
+    lcdout(0x10, 0x07F0) ; More power control
+    call colorLcdWait
+    lcdout(0x10, 0x07F1) ; Ditto
+    call colorLcdWait
+    lcdout(0x03, 0b1000000010111000) ; Entry mode the way we want it
     call clearLcd
     ret
 
@@ -76,10 +85,22 @@ colorLcdOff:
 
 ; 40 milliseconds-ish @ 6 MHz
 colorLcdWait:
+    ld b, 0x7F
+    ld c, 0xFF
+    ld hl, 0x8000
+.loop:
+    ld a, (hl)
+    ld (hl), a
+    dec bc
+    ld a, c
+    or b
+    jp nz, .loop
+    ret
+; TODO: This one might not work, the above is stolen from TIOS
     push hl
     push bc
         ld bc, 0x0080
-_:      ; Waste 2560 cycles, 100 times
+_:      ; Waste 2560 cycles, 256 times
         ld hl, 0x1234
         djnz -_
         dec c
@@ -151,25 +172,6 @@ clearLcd:
     djnz .innerLoop
     dec c
     jr nz, .outerLoop
-    ret
-
-initLcd:
-    ld hl, 0b1000000010111000
-    ld a, 0x03
-    call setLcdRegister
-    
-    ld hl, 0
-    ld a, 0x50
-    call setLcdRegister
-    ld hl, 239
-    inc a
-    call setLcdRegister
-    ld hl, 0
-    inc a
-    call setLcdRegister
-    ld hl, 319
-    inc a
-    call setLcdRegister
     ret
 
 ; Emulate a 96x68 monochrome screen, assuming you use the fastCopy provided above

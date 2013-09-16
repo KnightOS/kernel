@@ -56,8 +56,8 @@ TI84pSE: directories kernel
 
 # TODO: Fix these probably broken values
 TI84pCSE: PLATFORM := TI84pCSE
-TI84pCSE: PRIVILEGED := 1F0000
-TI84pCSE: BOOT := 1FF000
+TI84pCSE: PRIVILEGED := 3B0000
+TI84pCSE: BOOT := 3FC000
 TI84pCSE: LENGTH := 400000
 TI84pCSE: directories kernel
 
