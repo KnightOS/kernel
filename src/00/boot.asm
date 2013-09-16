@@ -7,14 +7,6 @@ boot:
     ; Set GPIO config
     ld a, 0b11111000
     out (0x39), a
-    
-    ; Test loop, toggle backlight back and forth
-_:  in a, (0x3A)
-    xor 0b00100000
-    out (0x3A), a
-    ld b, 0xFF
-    djnz $
-    jr -_
 
     ; Initialize 84+ CSE LCD
     ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
@@ -23,8 +15,17 @@ _:  in a, (0x3A)
     lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
     call colorLcdOn
 
-    ; halt
+    call setLcdCompatibleMode
+    ld iy, 0x8000
+    ld (iy + 12), 0xFF
+    ;ld hl, testMessage
+    ;ld de, 0x0010
+    ;call drawStr
+    call fastCopy
     jr $
+
+testMessage:
+    .db "Hello, KnightOS!", 0
 #endif
 ; /Temporary
 

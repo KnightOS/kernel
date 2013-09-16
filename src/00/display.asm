@@ -18,6 +18,7 @@ clearBuffer:
     pop hl
     ret
 
+#ifndef COLOR
 ;; fastCopy [Display]
 ;;  Copies the screen buffer to the LCD.
 ;; Inputs:
@@ -76,6 +77,7 @@ _:  pop de
     pop bc
     pop hl
     ret
+#endif
     
 ;; getPixel [Display]
 ;;  Finds the address of and mask for a pixel on the screen buffer.

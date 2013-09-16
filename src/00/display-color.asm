@@ -1,4 +1,6 @@
+; Screen is 320x240
 #ifdef COLOR
+
 ; Destroys C
 ; A: Register
 ; HL: Value
@@ -56,6 +58,8 @@ colorLcdOn:
     in a, (0x3A)
     set 5, a
     out (0x3A), a
+    call initLcd
+    call clearLcd
     ret
 
 colorLcdOff:
@@ -70,7 +74,117 @@ colorLcdOff:
     out (0x3A), a
     ret
 
+; 40 milliseconds-ish @ 6 MHz
 colorLcdWait:
-    ; TODO: Wait about 40ms
+    push hl
+    push bc
+        ld bc, 0x0080
+_:      ; Waste 2560 cycles, 100 times
+        ld hl, 0x1234
+        djnz -_
+        dec c
+        jr nz, -_
+    pop bc
+    pop hl
+    ret
+
+fastCopy: ; Draws a 96x64 monochrome buffer on the screen
+fastCopy_skipCheck:
+    ld a, 0x20
+    ld hl, 0
+    call setLcdRegister
+    inc a
+    call setLcdRegister
+    inc a
+    out (0x10), a \ out (0x10), a
+    
+    push iy \ pop hl
+    
+    ld bc, 3 ; 0x300 (768) iterations
+    ld de, 0xFF00
+.outerLoop:
+    ld a, (hl)
+    push bc
+        ld bc, 0x0811
+.innerLoop: ; Draw 8 pixels
+        bit 7, a
+        jr z, .white
+.black:
+        out (c), e \ out (c), e
+        rla
+        djnz .innerLoop
+        jr .endLoop
+.white:
+        out (c), d \ out (c), d
+        rla
+        djnz .innerLoop
+.endLoop:
+    pop bc
+    inc hl
+    djnz .outerLoop
+    dec c
+    jr nz, .outerLoop
+    ret
+
+clearLcd:
+    ld a, 0x20
+    ld hl, 0
+    call setLcdRegister
+    inc a
+    call setLcdRegister
+    inc a
+    out (0x10), a \ out (0x10), a
+    
+    ld c, 240
+.outerLoop:
+    ld b, 160
+.innerLoop:
+    ; Two pixels per iteration
+    ld a, 0b00000100
+    out (0x11), a
+    ld a, 0b01111111
+    out (0x11), a
+    ld a, 0b00000100
+    out (0x11), a
+    ld a, 0b01111111
+    out (0x11), a
+    djnz .innerLoop
+    dec c
+    jr nz, .outerLoop
+    ret
+
+initLcd:
+    ld hl, 0b1000000010111000
+    ld a, 0x03
+    call setLcdRegister
+    
+    ld hl, 0
+    ld a, 0x50
+    call setLcdRegister
+    ld hl, 239
+    inc a
+    call setLcdRegister
+    ld hl, 0
+    inc a
+    call setLcdRegister
+    ld hl, 319
+    inc a
+    call setLcdRegister
+    ret
+
+; Emulate a 96x68 monochrome screen, assuming you use the fastCopy provided above
+setLcdCompatibleMode:
+    ld hl, 0
+    ld a, 0x50
+    call setLcdRegister
+    ld hl, 63
+    inc a
+    call setLcdRegister
+    ld hl, 0
+    inc a
+    call setLcdRegister
+    ld hl, 95
+    inc a
+    call setLcdRegister
     ret
 #endif
