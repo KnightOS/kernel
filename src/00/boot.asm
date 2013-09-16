@@ -1,51 +1,13 @@
 ; Calculator boot-up code
 boot:
-
-; Temporary proof of concept
-#ifdef COLOR
     di
+    #ifdef COLOR
+    ; TODO: We don't need to do this so early on in the boot process
+    ; But we do so anyway since we need the backlight working for debugging purposes
     ; Set GPIO config
     ld a, 0b11111000
     out (0x39), a
-
-    ; Initialize 84+ CSE LCD
-    ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
-    ; This code is not fully understood
-    lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
-    lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
-    ; Sleep...
-    im 1 ; interrupt mode 1, for cleanliness
-    in a, (3)
-    push af
-        ld a, 1
-        out (3), a ; ON
-        ei ; Enable interrupting when ON is pressed
-        halt ; and halt
-        di
-    pop af
-    out (3), a
-    ; ...sleep
-    call colorLcdOn
-
-    call setLcdCompatibleMode
-    ld iy, 0x8000
-    call clearBuffer
-    ld (iy + 12), 0x0F
-    ;ld hl, testMessage
-    ;ld de, 0x0010
-    ;call drawStr
-    call fastCopy
-    
-    call flushKeys
-    call waitKey
-    jp boot
-
-testMessage:
-    .db "Hello, KnightOS!", 0
-#endif
-; /Temporary
-
-    di
+    #endif
     jr _
 ;; shutdown [System]
 ;;  Shuts off the device.
@@ -57,6 +19,12 @@ _:  di
 
     ld a, 6
     out (4), a ; Memory mode 0
+
+    #ifdef FLASH4MB
+    ld a, 3
+    out (0x0E), a
+    out (0x0F), a
+    #endif
 
     #ifdef CPU15
     ; Set memory mapping
@@ -78,6 +46,7 @@ _:  di
 
     ld sp, userMemory ; end of kernel garbage
 
+    call debug_blink
 #ifndef TEST
     call suspendDevice
 #endif
@@ -90,6 +59,11 @@ reboot:
 
     ld sp, userMemory ; end of kernel garbage
 
+    #ifdef FLASH4MB
+    ld a, 3
+    out (0x0E), a
+    out (0x0F), a
+    #endif
     ; Re-map memory
     ld a, 6
     out (4), a
@@ -102,6 +76,7 @@ reboot:
     #endif
 
     ; Manipulate protection states
+    #ifndef COLOR ; TODO
     #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
         call unlockFlash
             ; Remove RAM Execution Protection
@@ -145,6 +120,7 @@ reboot:
         call lockFlash
         #endif
     #endif
+    #endif
 
     ; Set intterupt mode
     ld a, 0b000001111
@@ -159,6 +135,11 @@ reboot:
 
     call formatMem
 
+    call debug_blink
+
+    #ifdef COLOR
+    jp colorTest
+    #else
     ; Initialize LCD
     ld a, 0x05
     call lcdDelay
@@ -190,9 +171,11 @@ reboot:
             ld a, 0xF4
         #endif
     #endif
+
     ld (currentContrast), a
     call lcdDelay
     out (0x10), a ; Contrast
+    #endif
 
     ; Set all file handles to unused
     ld hl, fileHandleTable
@@ -224,3 +207,57 @@ reboot:
 
 bootFile:
     .db "/bin/init", 0
+
+colorTest:
+; Temporary proof of concept
+#ifdef COLOR
+    di
+
+    ; Test if the keyboard works right
+_:  call flushKeys
+    call waitKey
+    cp kA
+    jr z, .bkOn
+    cp kB
+    jr z, .bkOff
+    cp kC
+    jr z, .lcdInit
+    cp kD
+    jr z, .turnOff
+    jr -_
+.bkOn:
+    in a, (0x3A)
+    set 5, a
+    out (0x3A), a
+    jr -_
+.bkOff:
+    in a, (0x3A)
+    res 5, a
+    out (0x3A), a
+    jr -_
+.lcdInit:
+    ; Initialize 84+ CSE LCD
+    ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
+    ; This code is not fully understood
+    ld a, 7
+    out (0x2A), a ; LCD delay
+    lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
+
+    call colorLcdOn
+    call clearLcd
+    jr -_
+.turnOff:
+    im 1 ; interrupt mode 1, for cleanliness
+    in a, (3)
+    push af
+        ld a, 1
+        out (3), a ; ON
+        ei ; Enable interrupting when ON is pressed
+        halt ; and halt
+        di
+    pop af
+    out (3), a
+    jp boot
+#endif
+; /Temporary

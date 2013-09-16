@@ -3,8 +3,16 @@
 suspendDevice:
     ld a, i
     push af
+    #ifdef COLOR
+    ; Backlight off
+    in a, (0x3A)
+    res 5, a
+    out (0x3A), a
+    ; TODO: Turn off LCD, too
+    #else
     ld a, 2
     out (0x10), a ; Disable LCD
+    #endif
     di ; And interrupts, for now
     im 1 ; interrupt mode 1, for cleanliness
     in a, (3)
@@ -16,8 +24,15 @@ suspendDevice:
         di
     pop af
     out (3), a
+    #ifdef COLOR
+    ; Backlight on
+    in a, (0x3A)
+    set 5, a
+    out (0x3A), a
+    #else
     ld a, 3
     out (0x10), a ; Enable the screen
+    #endif
     pop af
     ret po
     ei

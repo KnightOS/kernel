@@ -1,6 +1,28 @@
 ; Screen is 320x240
 #ifdef COLOR
 
+; Blinks the LCD backlight 10 times, then pauses
+; For debugging
+debug_blink:
+    ld b, 10
+.loop:
+    push bc
+        in a, (0x3A)
+        set 5, a
+        out (0x3A), a ; off
+        call colorLcdWait
+        in a, (0x3A)
+        res 5, a
+        out (0x3A), a ; on
+        call colorLcdWait
+    pop bc
+    djnz .loop
+    ld b, 10
+.wait:
+    call colorLcdWait
+    djnz .wait
+    ret
+
 ; Destroys C
 ; A: Register
 ; HL: Value
@@ -15,8 +37,6 @@ colorLcdOn:
     ; TODO: Research this more, it's probably not all required and we might want some of it done different.
     ; Could also probably be optimized if we didn't use this lcdout macro, but I'll save that for when the
     ; LCD is more well understood and everything is working.
-    ld a, 7
-    out (0x2A), a ; LCD delay
     lcdout(0x01, 0x0000) ; Reset Out.Ctrl.1: Ensure scan directions are not reversed
     lcdout(0x02, 0x0200) ; LCD Driving Control: Sets inversion mode=line inversion and disables it
     lcdout(0x03, 0x1038) ; Init. Entry Mode: Cursor moves up/down, down, left, disable
@@ -61,14 +81,13 @@ colorLcdOn:
     set 5, a
     out (0x3A), a
     ; Values found in TIOS, but not wikiti:
-    lcdout(0x07, 0x0000) ; Settings modes, clears it for some reason?
-    call colorLcdWait
-    lcdout(0x10, 0x07F0) ; More power control
-    call colorLcdWait
-    lcdout(0x10, 0x07F1) ; Ditto
-    call colorLcdWait
+    ;lcdout(0x07, 0x0000) ; Settings modes, clears it for some reason?
+    ;call colorLcdWait
+    ;lcdout(0x10, 0x07F0) ; More power control
+    ;call colorLcdWait
+    ;lcdout(0x10, 0x07F1) ; Ditto
+    ;call colorLcdWait
     lcdout(0x03, 0b1000000010111000) ; Entry mode the way we want it
-    call clearLcd
     ret
 
 colorLcdOff:

@@ -46,6 +46,7 @@ bootPage .equ 0x7F
 #define USB
 #define CLOCK
 #define COLOR
+#define FLASH4MB
 privledgedPage .equ 0xEC
 swapSector .equ 0xE8
 fatStart .equ 0xE7
