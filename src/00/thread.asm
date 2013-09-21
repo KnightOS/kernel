@@ -13,6 +13,10 @@ _:          inc a
     pop hl
     ret
 
+;; getCurrentThreadID [Threading]
+;;  Gets the ID of the currently executing thread.
+;; Outputs:
+;;  A: Thread ID
 getCurrentThreadID:
     push hl
         ld a, (currentThreadIndex)
@@ -34,12 +38,21 @@ _:  pop hl
     ld a, 0xFE ; TODO: Dynamic library deallocation
     ret
     
-; Inputs:
-; HL: Pointer to code
-; B: Stack size to allocate / 2
-; A: Thread flags
-; Outputs:
-; A: Thread ID of new thread, or error (with Z reset)
+;; startThread [Threading]
+;;  Starts a new thread.
+;; Inputs:
+;;  HL: Pointer to thread executable
+;;  B: Desired stack size / 2
+;;  A: Thread flags
+;; Outputs:
+;;  A: ID of new thread (on success); Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Notes:
+;;  If you wish to manipulate this thread before it executes (to set the initial value
+;;  of the registers, for instance), disable interrupts before calling startThread, and
+;;  re-enable them when you're ready to start the thread. If you want to postpone
+;;  starting the thread for an extended period of time, call [[suspendThread]] before
+;;  re-enabling interrupts, and [[resumeThread]] when you're ready to start it.
 startThread:
     push af
         ld a, (activeThreads)
@@ -114,7 +127,15 @@ startThread_mem: ; Out of memory
     or 1
     ret
     
-; Kills the executing thread
+;; killCurrentThread [Threading]
+;;  Kills the currently executing thread.
+;; Notes:
+;;  In most cases, it is preferrable to call [[exitThread]], which will use
+;;  the exit function specified by the caller.
+;;  
+;;  This function cleans up all resources owned by that thread, including
+;;  allocated memory, loaded libraries, file handles, etc. This function
+;;  will never return; invoke it with `jp killCurrentThread`.
 killCurrentThread:
     di
     ; The stack is going to be deallocated, so let's move it
@@ -183,8 +204,16 @@ killCurrentThread_DeallocationDone:
     ld (currentThreadIndex), a
     jp contextSwitch_search
     
-; Inputs:    A: Thread ID
-; Kills a specific thread
+;; killThread [Threading]
+;;  Kills the specified thread.
+;; Inputs:
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Notes:
+;;  This function cleans up all resources owned by that thread, including
+;;  allocated memory, loaded libraries, file handles, etc.
 killThread:
     push bc
     ld c, a
@@ -287,9 +316,14 @@ _:  pop af
     cp a
     ret
 
-; Inputs:    DE: Pointer to full path of program
-; Outputs:     A: Thread ID
-; Launches program in new thread
+;; launchProgram [Threading]
+;;  Loads the specified file into memory as a program and starts a
+;;  new thread for it.
+;; Inputs:
+;;  DE: Path to executable file
+;; Outputs:
+;;  A: Thread ID (on success), error code (on failure)
+;;  Z: Set if successful, reset otherwise
 launchProgram:
     push bc
     ld a, i
@@ -357,10 +391,13 @@ _:  ld a, b
     pop bc
     ret
 
-;; exitThread [Thread]
-;;  Immediately terminates the running thread.  This routine
-;;  does not return, so it is acceptable to JP to it instead
-;;  of CALLing it.  It also passes AF to the calling program.
+;; exitThread [Threading]
+;;  Immediately terminates the running thread. This function will never return;
+;;  call it with `jp exitThread`.
+;; Notes:
+;;  This is preferred to [[killThread]], since it will go through the caller-set
+;;  exit function. This is often [[killThread]] anyway, but it may be set to a
+;;  custom value by the code that intitialized the thread.
 exitThread:
     ; Not returning; we can clobber registers at will!
     push af
@@ -380,6 +417,15 @@ exitThread:
     
 ; Input:  A: Thread ID
 ; Output: HL: Thread entry
+;; getThreadEntry [Threading]
+;;  Gets a pointer to the specified thread's entry in the thread table.
+;; Inputs:
+;;  A: Thread ID
+;; Outputs:
+;;  HL: Thread entry
+;; Notes:
+;;  You must disable interrupts while manipulating the thread table to
+;;  guarantee that it will not change while you do so.
 getThreadEntry:
     push bc
         ld c, a
@@ -399,8 +445,15 @@ _:      ld a, 8
     ld a, errNoSuchThread
     ret
 
-; Input: HL: Return address
-;        A: Thread Id    
+;; setReturnPoint [Threading]
+;;  Sets the return point for the specified thread. This is set to
+;;  [[killThread]] by default.
+;; Inputs:
+;;  A: Thread ID
+;;  HL: Return point
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
 setReturnPoint:
     push de
     push bc
@@ -423,10 +476,19 @@ _:      inc hl \ inc hl \ inc hl
     pop de
     ret
 
-
-; Sets the initial value of BC on start up.
-; Input: HL: Start value
-;        A: Thread Id
+;; setInitialBC [Threading]
+;;  Sets the initial value of the BC register for the specified thread.
+;; Inputs:
+;;  HL: Initial value of BC
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialBC:
     push hl
         push de
@@ -451,9 +513,19 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
 
-; Sets the initial value of DE on start up.
-; Input: HL: Start value
-;        A: Thread Id
+;; setInitialDE [Threading]
+;;  Sets the initial value of the DE register for the specified thread.
+;; Inputs:
+;;  HL: Initial value of DE
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialDE:
     push hl
         push de
@@ -478,9 +550,19 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
     
-; Sets the initial value of HL on start up.
-; Input: HL: Start value
-;        A: Thread Id
+;; setInitialHL [Threading]
+;;  Sets the initial value of the HL register for the specified thread.
+;; Inputs:
+;;  HL: Initial value of HL
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialHL:
     push hl
         push de
@@ -505,9 +587,19 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
     
-; Sets the initial value of A on start up.
-; Input: H: Start value
-;        A: Thread Id
+;; setInitialA [Threading]
+;;  Sets the initial value of the A register for the specified thread.
+;; Inputs:
+;;  H: Initial value of A
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialA:
     push hl
         push de
@@ -531,9 +623,19 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
 
-; Sets the initial value of IX on start up.
-; Input: HL: Start value
-;        A: Thread Id
+;; setInitialIX [Threading]
+;;  Sets the initial value of the IX register for the specified thread.
+;; Inputs:
+;;  HL: Initial value of IX
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialIX:
     push hl
         push de
@@ -558,9 +660,19 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
 
-; Sets the initial value of IY on start up.
-; Input: HL: Start value
-;        A: Thread Id
+;; setInitialIY [Threading]
+;;  Sets the initial value of the IY register for the specified thread.
+;; Inputs:
+;;  HL: Initial value of IY
+;;  A: Thread ID
+;; Outputs:
+;;  A: Error code (on failure)
+;;  Z: Set if successful, reset otherwise
+;; Note:
+;;  Do **not** call this function on a thread that has already been started.
+;;  You must have interrupts disabled when you call [[startThread]], and
+;;  leave them disabled until after you have finished setting the initial
+;;  state.
 setInitialIY:
     push hl
         push de
@@ -570,8 +682,7 @@ setInitialIY:
         pop de
     pop hl
     ret
-_:          inc hl \ inc hl \ inc hl
-            push bc
+_:          inc hl \ inc hl \ inc hl push bc
                 ld c, (hl) \ inc hl \ ld b, (hl)
                 push bc \ pop ix
                 call memSeekToStart
@@ -585,6 +696,12 @@ _:          inc hl \ inc hl \ inc hl
     pop hl
     ret
     
+; TODO: suspendThread
+;; suspendCurrentThread [Threading]
+;;  Suspends the currently executing thread.
+;; Notes:
+;;  This function will not return until a second thread resumes the
+;;  current thread.
 suspendCurrentThread:
     push hl
     push af
@@ -599,6 +716,10 @@ suspendCurrentThread:
     pop hl
     ret
     
+;; resumeThread [Threading]
+;;  Resumes the specified thread.
+;; Inputs:
+;;  A: Thread ID
 ; TODO: Errors
 resumeThread:
     push hl
