@@ -682,7 +682,7 @@ setInitialIY:
         pop de
     pop hl
     ret
-_:          inc hl \ inc hl \ inc hl push bc
+_:  inc hl \ inc hl \ inc hl \ push bc
                 ld c, (hl) \ inc hl \ ld b, (hl)
                 push bc \ pop ix
                 call memSeekToStart
