@@ -164,11 +164,12 @@ stringLength:
 ;; Outputs:
 ;;  B: Battery level
 ;; Notes:
-;;  B is a value from 0 to 4, where 0 is critical and 4 is full.
+;;  For 15MHz CPUs, B is a value from 0 to 4, where 0 is critical and 4 is full.
+;;  For 6MHz CPUs, B is either 0 or 1, where 0 is critical and 1 is good.
 getBatteryLevel:
 #ifdef CPU15
     push af
-        ld bc, 0x0403
+        ld bc, 0x0000
         ; Reset battery threshold
         in a, (4)
         or 0b11000000
@@ -176,21 +177,27 @@ getBatteryLevel:
 _:      push bc
             rrc c \ rrc c
             in a, (4)
-            and 0b11000000
+            and 0b00111111
             or c
             out (4), a
             in a, (2)
             bit 0, a
-            jr z, _
+            jr z, +_
         pop bc
-        dec c
-        djnz _
+        inc c
+        inc b
+        ld a, b
+        cp 4
+        jr nz, -_
+        
 _:  pop af
     ret
-#else
+ #else
     push af
         in a, (2)
-        and 0b11111110
+        and 0x1
+        add a, a
+        add a, a
         ld b, a
     pop af
     ret
@@ -690,4 +697,34 @@ _:      inc hl
     pop de
     pop hl
     xor a
+    ret
+
+;; randA [Miscellaneous]
+;;  Returns a random byte in A.
+;; Inputs:
+;;  A': seed
+;; Outputs:
+;;  A: random byte
+;;  A': reseeded
+randA:
+    push hl \ push bc
+        ex af, af'
+        ld a, i
+        add a, (hl)
+        inc hl
+        sbc a, (hl)
+        inc hl
+        ld c, a
+        ld a, r
+        xor (hl)
+        and 7
+        ld b, a
+        ld a, c
+_:
+        rra
+        djnz -_
+        ld b, a
+        ex af, af'
+        ld a, b
+    pop bc \ pop hl
     ret
