@@ -243,10 +243,6 @@ _:  call flushKeys
 .lcdInit:
     ; Initialize 84+ CSE LCD
     ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
-    ; This code is not fully understood
-    ld a, 7
-    out (0x2A), a ; LCD delay
-
     call colorLcdOn
     call clearColorLcd
     jr -_
@@ -266,7 +262,7 @@ _:  call flushKeys
     call setLegacyLcdMode
     jr -_
 .legacyTestB:
-    ld iy, kernelGarbage
+    ld iy, 0xC000 ; Somewhere inconspicuous
     call clearBuffer
     ld hl, .message
     ld de, 0
@@ -277,9 +273,6 @@ _:  call flushKeys
     call fastCopy
     jr -_
 .message:
-    .db "KnightOS 84+ CSE Kernel Test\n"
-    .db "2013-10-03\n"
-    .db "Special thanks to Runer112,\n"
-    .db "and to DrDnar.", 0
+    .db "KnightOS 84+ CSE Kernel Test", 0
 #endif
 ; /Temporary
