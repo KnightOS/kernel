@@ -259,10 +259,11 @@ colorLcdWait:
     jp nz, .loop
     ret
 
-fastCopy: ; Draws a 96x64 monochrome buffer on the screen
+fastCopy: ; Draws a 96x64 monochrome buffer on a color screen
 fastCopy_skipCheck:
     ; TODO: Indent according to stack
     ; TODO: Thread locking
+    ; TODO: Update original fastCopy docs
     push hl \ push bc \ push de \ push af
     ; Draws a 96x64 monochrome LCD buffer (legacy buffer) to the color LCD
     ld bc, 64 << 8 | 0x11 ; 64 rows in b, and the data port in c
@@ -346,6 +347,13 @@ clearColorLcd:
     jr nz, .outerLoop
     ret
 
+;; setLegacyLcdMode [Color]
+;;  Sets up the LCD for use with the legacy [[fastCopy]] function on
+;;  color models.
+;; Notes:
+;;  This function sets the display to use interlaced partial images, so
+;; that each pixel written is two pixels wide (for the sake of speed).
+;; It also prepares the windowing and entry modes for fastCopy.
 setLegacyLcdMode:
     call clearColorLcd
     push af
@@ -353,16 +361,16 @@ setLegacyLcdMode:
     push hl
         ; Set up partial images
         ld a, 0x80
-        ld hl, 0 ; (160 - 96) / 2
+        ld hl, 0
         call setLcdRegister
         inc a
         ; ld hl, 0
         call setLcdRegister
         inc a
-        ld hl, 159 ; 95
+        ld hl, 159
         call setLcdRegister
         inc a
-        ld hl, 160 ; 160 + (160 - 96) / 2
+        ld hl, 160
         call setLcdRegister
         inc a
         ld hl, 0
@@ -382,8 +390,8 @@ setLegacyLcdMode:
         ; Set interlacing on
         lcdout(0x01, 0b0000010000000000)
         ; Set window rows
-        lcdout(0x52, (160 - 96) / 2) ; lcdout(0x52, 0)
-        lcdout(0x53, 159 - (160 - 96) / 2); lcdout(0x53, 95)
+        lcdout(0x52, (160 - 96) / 2)
+        lcdout(0x53, 159 - (160 - 96) / 2)
         ; Set entry mode (down-then-right)
         lcdout(0x03, 0b0001000000110000)
     pop hl

@@ -224,7 +224,11 @@ _:  call flushKeys
     cp kD
     jr z, .turnOff
     cp kE
-    jr z, .legacyTest
+    jr z, .legacyTestA
+    cp kF
+    jr z, .legacyTestB
+    cp kG
+    jr z, .legacyTestC
     jr -_
 .bkOn:
     in a, (0x3A)
@@ -258,14 +262,18 @@ _:  call flushKeys
     pop af
     out (3), a
     jp boot
-.legacyTest:
+.legacyTestA:
     call setLegacyLcdMode
+    jr -_
+.legacyTestB:
     ld iy, kernelGarbage
     call clearBuffer
     ld hl, .message
     ld de, 0
     ld b, 0
     call drawStr
+    jr -_
+.legacyTestC:
     call fastCopy
     jr -_
 .message:
