@@ -5,7 +5,7 @@ boot:
     ; TODO: We don't need to do this so early on in the boot process
     ; But we do so anyway since we need the backlight working for debugging purposes
     ; Set GPIO config
-    ld a, 0b11111000
+    ld a, 0xE0
     out (0x39), a
     #endif
     jr _
@@ -46,7 +46,6 @@ _:  di
 
     ld sp, userMemory ; end of kernel garbage
 
-    call debug_blink
 #ifndef TEST
     call suspendDevice
 #endif
@@ -224,6 +223,8 @@ _:  call flushKeys
     jr z, .lcdInit
     cp kD
     jr z, .turnOff
+    cp kE
+    jr z, .legacyTest
     jr -_
 .bkOn:
     in a, (0x3A)
@@ -241,11 +242,9 @@ _:  call flushKeys
     ; This code is not fully understood
     ld a, 7
     out (0x2A), a ; LCD delay
-    lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
-    lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
 
     call colorLcdOn
-    call clearLcd
+    call clearColorLcd
     jr -_
 .turnOff:
     im 1 ; interrupt mode 1, for cleanliness
@@ -259,5 +258,20 @@ _:  call flushKeys
     pop af
     out (3), a
     jp boot
+.legacyTest:
+    call setLegacyLcdMode
+    ld iy, kernelGarbage
+    call clearBuffer
+    ld hl, .message
+    ld de, 0
+    ld b, 0
+    call drawStr
+    call fastCopy
+    jr -_
+.message:
+    .db "KnightOS 84+ CSE Kernel Test\n"
+    .db "2013-10-03\n"
+    .db "Special thanks to Runer112,\n"
+    .db "and to DrDnar.", 0
 #endif
 ; /Temporary
