@@ -55,6 +55,6 @@ bootPage .equ 0xFF
 .macro lcdout(reg, value)
     ld a, reg
     ld hl, value
-    call setLcdRegister
+    call writeLcdRegister
 .endmacro
 #endif

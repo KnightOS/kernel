@@ -5,7 +5,7 @@ boot:
     ; TODO: We don't need to do this so early on in the boot process
     ; But we do so anyway since we need the backlight working for debugging purposes
     ; Set GPIO config
-    ld a, 0b11111000
+    ld a, 0xE0
     out (0x39), a
     #endif
     jr _
@@ -46,7 +46,6 @@ _:  di
 
     ld sp, userMemory ; end of kernel garbage
 
-    call debug_blink
 #ifndef TEST
     call suspendDevice
 #endif
@@ -224,6 +223,12 @@ _:  call flushKeys
     jr z, .lcdInit
     cp kD
     jr z, .turnOff
+    cp kE
+    jr z, .legacyTestA
+    cp kF
+    jr z, .legacyTestB
+    cp kG
+    jr z, .legacyTestC
     jr -_
 .bkOn:
     in a, (0x3A)
@@ -238,38 +243,8 @@ _:  call flushKeys
 .lcdInit:
     ; Initialize 84+ CSE LCD
     ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
-    ; This code is not fully understood
-    
-    
-    
-    
-    
-    
-    
-    
-; call ColorInit
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ld a, 7
-    out (0x2A), a ; LCD delay
-
     call colorLcdOn
-    call clearLcd
-    in a, (0x3A)
-    set 5, a
-    out (0x3A), a
+    call clearColorLcd
     jr -_
 .turnOff:
     im 1 ; interrupt mode 1, for cleanliness
@@ -283,5 +258,21 @@ _:  call flushKeys
     pop af
     out (3), a
     jp boot
+.legacyTestA:
+    call setLegacyLcdMode
+    jr -_
+.legacyTestB:
+    ld iy, 0xC000 ; Somewhere inconspicuous
+    call clearBuffer
+    ld hl, .message
+    ld de, 0
+    ld b, 0
+    call drawStr
+    jr -_
+.legacyTestC:
+    call fastCopy
+    jr -_
+.message:
+    .db "KnightOS 84+ CSE Kernel Test", 0
 #endif
 ; /Temporary
