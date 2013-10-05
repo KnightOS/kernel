@@ -1,13 +1,6 @@
 ; Calculator boot-up code
 boot:
     di
-    #ifdef COLOR
-    ; TODO: We don't need to do this so early on in the boot process
-    ; But we do so anyway since we need the backlight working for debugging purposes
-    ; Set GPIO config
-    ld a, 0xE0
-    out (0x39), a
-    #endif
     jr _
 ;; shutdown [System]
 ;;  Shuts off the device.
@@ -59,9 +52,11 @@ reboot:
     ld sp, userMemory ; end of kernel garbage
 
     #ifdef FLASH4MB
-    ld a, 3
+    xor a
     out (0x0E), a
     out (0x0F), a
+    ld a, 1
+    out (0x20), a
     #endif
     ; Re-map memory
     ld a, 6
@@ -76,49 +71,49 @@ reboot:
 
     ; Manipulate protection states
     #ifndef COLOR ; TODO
-    #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
-        call unlockFlash
-            ; Remove RAM Execution Protection
-            xor a
-            out (0x25), a ; RAM Lower Limit ; out (25), 0
-            dec a
-            out (0x26), a ; RAM Upper Limit ; out (26), $FF
+        #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
+            call unlockFlash
+                ; Remove RAM Execution Protection
+                xor a
+                out (0x25), a ; RAM Lower Limit ; out (25), 0
+                dec a
+                out (0x26), a ; RAM Upper Limit ; out (26), $FF
 
-            ; Remove Flash Execution Protection
-            out (0x23), a ; Flash Upper Limit ; out (23), $FF
-            out (0x22), a ; Flash Lower Limit ; out (22), $FF
-        call lockFlash
+                ; Remove Flash Execution Protection
+                out (0x23), a ; Flash Upper Limit ; out (23), $FF
+                out (0x22), a ; Flash Lower Limit ; out (22), $FF
+            call lockFlash
 
-        ; Set CPU speed to 15 MHz
-        ld a, 1
-        out (0x20), a
+            ; Set CPU speed to 15 MHz
+            ld a, 1
+            out (0x20), a
 
-    #else ; TI-73, TI-83+
-        #ifndef TI73 ; RAM does not have protection on the TI-73
+        #else ; TI-73, TI-83+
+            #ifndef TI73 ; RAM does not have protection on the TI-73
 
-        ; Remove RAM/Flash protection
-        call unlockFlash
-            xor a
-            out (5), a
-            out (0x16), a
+            ; Remove RAM/Flash protection
+            call unlockFlash
+                xor a
+                out (5), a
+                out (0x16), a
 
-            ld a, 0b000000001
-            out (5), a
-            xor a
-            out (0x16), a
+                ld a, 0b000000001
+                out (5), a
+                xor a
+                out (0x16), a
 
-            ld a, 0b000000010
-            out (5), a
-            xor a
-            out (0x16), a
+                ld a, 0b000000010
+                out (5), a
+                xor a
+                out (0x16), a
 
-            ld a, 0b000000111
-            out (5), a
-            xor a
-            out (0x16), a
-        call lockFlash
+                ld a, 0b000000111
+                out (5), a
+                xor a
+                out (0x16), a
+            call lockFlash
+            #endif
         #endif
-    #endif
     #endif
 
     ; Set intterupt mode
@@ -134,10 +129,31 @@ reboot:
 
     call formatMem
 
-    call debug_blink
+    ; Initialize the font table pointer
+    ld hl, kernel_font
+    ld (fontTablePtr), hl
+
+    ; Set all file handles to unused
+    ld hl, fileHandleTable
+    ld (hl), 0xFF
+    ld de, fileHandleTable + 1
+    ld bc, 8 * maxFileStreams
+    ldir
+
+    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
+    ld (lastThreadId), a
 
     #ifdef COLOR
-    jp colorTest
+        ; Set CPU speed to 15 MHz
+        ; TODO: Fold this into the other CPU speed setup
+        ld a, 1
+        out (0x20), a
+        ; Set GPIO config
+        ld a, 0xE0
+        out (0x39), a
+        call colorLcdOn
+        call clearColorLcd
+        call setLegacyLcdMode
     #else
     ; Initialize LCD
     ld a, 0x05
@@ -176,20 +192,6 @@ reboot:
     out (0x10), a ; Contrast
     #endif
 
-    ; Set all file handles to unused
-    ld hl, fileHandleTable
-    ld (hl), 0xFF
-    ld de, fileHandleTable + 1
-    ld bc, 8 * maxFileStreams
-    ldir
-
-    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
-    ld (lastThreadId), a
-
-    ; Initialize the font table pointer
-    ld hl, kernel_font
-    ld (fontTablePtr), hl
-
 #ifdef TEST
     jp testrunner
 #endif
@@ -206,73 +208,3 @@ reboot:
 
 bootFile:
     .db "/bin/init", 0
-
-colorTest:
-; Temporary proof of concept
-#ifdef COLOR
-    di
-
-    ; Test if the keyboard works right
-_:  call flushKeys
-    call waitKey
-    cp kA
-    jr z, .bkOn
-    cp kB
-    jr z, .bkOff
-    cp kC
-    jr z, .lcdInit
-    cp kD
-    jr z, .turnOff
-    cp kE
-    jr z, .legacyTestA
-    cp kF
-    jr z, .legacyTestB
-    cp kG
-    jr z, .legacyTestC
-    jr -_
-.bkOn:
-    in a, (0x3A)
-    set 5, a
-    out (0x3A), a
-    jr -_
-.bkOff:
-    in a, (0x3A)
-    res 5, a
-    out (0x3A), a
-    jr -_
-.lcdInit:
-    ; Initialize 84+ CSE LCD
-    ; http://wikiti.brandonw.net/index.php?title=84PCSE:LCD_Controller
-    call colorLcdOn
-    call clearColorLcd
-    jr -_
-.turnOff:
-    im 1 ; interrupt mode 1, for cleanliness
-    in a, (3)
-    push af
-        ld a, 1
-        out (3), a ; ON
-        ei ; Enable interrupting when ON is pressed
-        halt ; and halt
-        di
-    pop af
-    out (3), a
-    jp boot
-.legacyTestA:
-    call setLegacyLcdMode
-    jr -_
-.legacyTestB:
-    ld iy, 0xC000 ; Somewhere inconspicuous
-    call clearBuffer
-    ld hl, .message
-    ld de, 0
-    ld b, 0
-    call drawStr
-    jr -_
-.legacyTestC:
-    call fastCopy
-    jr -_
-.message:
-    .db "KnightOS 84+ CSE Kernel Test", 0
-#endif
-; /Temporary

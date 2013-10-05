@@ -5,7 +5,7 @@
 clearBuffer:
     push hl
     push de
-        push bc
+    push bc
         push iy \ pop hl
         ld (hl), 0
         ld d, h
