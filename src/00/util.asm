@@ -260,8 +260,9 @@ _:  pop de
     pop hl
     ret
 
-;; sort [Miscellaneous]
-;;  Sorts a specified array of numbers.
+;; integerSort [Miscellaneous]
+;;  Sorts a specified array of 8-bit numbers using a fast (time complexity 
+;;  O(n)) algorithm.
 ;; Inputs:
 ;;  HL: first element in array
 ;;  DE: Last element in array
@@ -269,7 +270,7 @@ _:  pop de
 ;;  This routine is an in-place version of a radix sort, which has an O(k*n)
 ;;  runtime for k-bit numbers.  It also requires a smaller, fixed amount of
 ;;  stack space.
-sort:
+integerSort:
     ld b, 0b10000000
 .recurse:
     push bc
