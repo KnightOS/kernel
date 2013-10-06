@@ -262,7 +262,7 @@ test_sort:
         add hl, de
         pop de \ push de
         ex de, hl
-        call sort
+        call integerSort
         pop hl \ push hl
         ld de, .expected
         call compareStrings
