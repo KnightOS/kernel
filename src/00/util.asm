@@ -265,52 +265,58 @@ _:  pop de
 ;;  O(n)) algorithm.
 ;; Inputs:
 ;;  HL: first element in array
-;;  DE: Last element in array
+;;  BC: Size of array in bytes
 ;; Notes:
 ;;  This routine is an in-place version of a radix sort, which has an O(k*n)
 ;;  runtime for k-bit numbers.  It also requires a smaller, fixed amount of
 ;;  stack space.
 integerSort:
-    ld b, 0b10000000
+    ; Get end of array in DE
+    push de
+        push hl \ pop de
+        add hl, bc
+        ex hl, de
+        ld b, 0b10000000
 .recurse:
-    push bc
-        push de
-            push hl
-                or a                    ; We must initially clear CA bit, later it's never modified.
+        push bc
+            push de
+                push hl
+                    or a                    ; We must initially clear CA bit, later it's never modified.
 .nextbyte:
-                sbc hl, de \ add hl, de ; Check if our bins have met up
-                jr c, _
-                jr nz, .nextbit         ; If they have, restart with next bit
+                    sbc hl, de \ add hl, de ; Check if our bins have met up
+                    jr c, _
+                    jr nz, .nextbit         ; If they have, restart with next bit
 
-_:              ld a, (hl)              ; Perform our bit test
-                and b
-                jr nz, _
-                inc hl                  ; It's already in the 0s bin.  0s bin gets larger.
-                jr .nextbyte
-_:              ld a, (hl)              ; Switch number at top of 1s bin with this one
-                ex de, hl
-                ld c, (hl)
-                ld (hl), a
-                ex de, hl
-                ld (hl), c
-                dec de                  ; 1s bin gets larger.
-                jr .nextbyte
+_:                  ld a, (hl)              ; Perform our bit test
+                    and b
+                    jr nz, _
+                    inc hl                  ; It's already in the 0s bin.  0s bin gets larger.
+                    jr .nextbyte
+_:                  ld a, (hl)              ; Switch number at top of 1s bin with this one
+                    ex de, hl
+                    ld c, (hl)
+                    ld (hl), a
+                    ex de, hl
+                    ld (hl), c
+                    dec de                  ; 1s bin gets larger.
+                    jr .nextbyte
 
 .nextbit:
-                srl b                   ; Next bit please
-                jr c, .done             ; If our carry is 1, we've been through all 8 bits (base case).
-            pop hl
-            call .recurse               ; Sort the 0s bin
-            ex de, hl
-            inc hl
-        pop de
-        call .recurse                   ; Sort the 1s bin
-    pop bc
-    ret
+                    srl b                   ; Next bit please
+                    jr c, .done             ; If our carry is 1, we've been through all 8 bits (base case).
+                pop hl
+                call .recurse               ; Sort the 0s bin
+                ex de, hl
+                inc hl
+            pop de
+            call .recurse                   ; Sort the 1s bin
+        pop bc
+        ret
 .done:
-            pop hl
-        pop de
-    pop bc
+                pop hl
+            pop de
+        pop bc
+    pop de
     ret
 
 ;; div32By16 [Miscellaneous]
