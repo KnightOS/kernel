@@ -37,7 +37,7 @@ _:  pop hl
 _:  pop hl
     ld a, 0xFE ; TODO: Dynamic library deallocation
     ret
-    
+
 ;; startThread [Threading]
 ;;  Starts a new thread.
 ;; Inputs:
@@ -116,7 +116,7 @@ _:      di
     ld a, (hl)
     cp a
     ret
-    
+
 startThread_mem: ; Out of memory
                 pop af
             pop af
@@ -126,13 +126,13 @@ startThread_mem: ; Out of memory
     ld a, errOutOfMem
     or 1
     ret
-    
+
 ;; killCurrentThread [Threading]
 ;;  Kills the currently executing thread.
 ;; Notes:
 ;;  In most cases, it is preferrable to call [[exitThread]], which will use
 ;;  the exit function specified by the caller.
-;;  
+;;
 ;;  This function cleans up all resources owned by that thread, including
 ;;  allocated memory, loaded libraries, file handles, etc. This function
 ;;  will never return; invoke it with `jp killCurrentThread`.
@@ -203,7 +203,7 @@ killCurrentThread_DeallocationDone:
     xor a
     ld (currentThreadIndex), a
     jp contextSwitch_search
-    
+
 ;; killThread [Threading]
 ;;  Kills the specified thread.
 ;; Inputs:
@@ -249,7 +249,7 @@ _:  pop af
     or a
     ld a, errNoSuchThread
     ret
-        
+
 _:  ; HL points to old thread in table
     push af
     push hl
@@ -334,7 +334,7 @@ launchProgram:
     push ix
         call openFileRead
         jr nz, .error
-        
+
         push de
             call getStreamInfo
             dec bc
@@ -348,7 +348,7 @@ launchProgram:
             pop af
             ld (currentThreadIndex), a
         pop de
-        
+
         push ix
             call streamReadByte ; Thread flags
             push af
@@ -386,7 +386,7 @@ _:  ld a, b
     pop af
     jp po, _
     ei
-    or 1
+_:  or 1
     ld a, b
     pop bc
     ret
@@ -414,7 +414,7 @@ exitThread:
         ld h, (ix + 1)
     pop af
     jp (hl)
-    
+
 ; Input:  A: Thread ID
 ; Output: HL: Thread entry
 ;; getThreadEntry [Threading]
@@ -549,7 +549,7 @@ _:          inc hl \ inc hl \ inc hl
         pop de
     pop hl
     ret
-    
+
 ;; setInitialHL [Threading]
 ;;  Sets the initial value of the HL register for the specified thread.
 ;; Inputs:
@@ -586,7 +586,7 @@ _:          inc hl \ inc hl \ inc hl
         pop de
     pop hl
     ret
-    
+
 ;; setInitialA [Threading]
 ;;  Sets the initial value of the A register for the specified thread.
 ;; Inputs:
@@ -695,7 +695,7 @@ _:  inc hl \ inc hl \ inc hl \ push bc
         pop de
     pop hl
     ret
-    
+
 ; TODO: suspendThread
 ;; suspendCurrentThread [Threading]
 ;;  Suspends the currently executing thread.
@@ -715,7 +715,7 @@ suspendCurrentThread:
     pop af
     pop hl
     ret
-    
+
 ;; resumeThread [Threading]
 ;;  Resumes the specified thread.
 ;; Inputs:
@@ -732,4 +732,4 @@ resumeThread:
     pop af
     pop hl
     ret
-    
+
