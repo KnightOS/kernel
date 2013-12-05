@@ -322,9 +322,9 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
 ;;  BC: Size of element in bytes
 ;;  IX: Pointer to comparison function.
 ;; Notes:
-;;  The comparison function must perform the equivalent of cp (hl), (de).
-;;  That is, CA must be appropriately set, and all registers must be
-;;  preserved.
+;;  The comparison function must affect the carry flag like cp (hl), (de)
+;;  would.  (That is, set the carry flag if (HL) < (DE).)  All other registers
+;;  must be preserved.
 callbackSort:
     call cpHLDE
     ret z
