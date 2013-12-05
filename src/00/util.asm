@@ -325,7 +325,9 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
 ;; Notes:
 ;;  The comparison function must affect the carry flag like cp (hl), (de)
 ;;  would.  (That is, set the carry flag if (HL) < (DE).)  All other registers
-;;  must be preserved.
+;;  must be preserved.  The algorithm (quicksort) uses an average of O(log n)
+;;  stack space, with 8 bytes stack per recursion required.  Quicksort is
+;;  in-place and is not a stable sort.
 callbackSort:
     ; Saves 4 bytes of stack per recursion
     push af
