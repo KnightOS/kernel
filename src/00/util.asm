@@ -327,12 +327,19 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
 ;;  would.  (That is, set the carry flag if (HL) < (DE).)  All other registers
 ;;  must be preserved.
 callbackSort:
+    ; Saves 4 bytes of stack per recursion
+    push af
+    push bc
+        call .recurse
+    pop bc
+    pop af
+    ret
+
+.recurse:
     call cpHLDE
     ret z
     ret nc
 
-    push af
-    push bc
     push iy
         ; middle = left
         push hl \ pop iy
@@ -357,7 +364,7 @@ _:          add hl, bc
         push de
             push iy \ pop de
             dec de
-            call callbackSort
+            call .recurse
         pop de
         push iy
           ex (sp), hl
@@ -365,8 +372,6 @@ _:          add hl, bc
             call callbackSort
         pop hl
     pop iy
-    pop bc
-    pop af
     ret
 .swap:
         push de
