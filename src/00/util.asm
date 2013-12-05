@@ -313,6 +313,77 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
     pop bc
     ret
 
+;; callbackSort [Miscellaneous]
+;;  Sorts an array of arbitrarily-sized blocks using a callback function
+;;  to perform comparisons.
+;; Inputs:
+;;  HL: First element in array
+;;  DE: Last element in array
+;;  BC: Size of element in bytes
+;;  IX: Pointer to comparison function.
+;; Notes:
+;;  The comparison function must perform the equivalent of cp (hl), (de).
+;;  That is, CA must be appropriately set, and all registers must be
+;;  preserved.
+callbackSort:
+    call cpHLDE
+    ret z
+    ret nc
+
+    push af
+    push bc
+    push iy
+        ; middle = left
+        push hl \ pop iy
+        push hl
+.loop:
+            call .indirect ; cp (hl), (de)
+            jr nc, _
+            ; swap (HL) and (IY)
+            call .swap
+            ; "increment" middle
+            add iy, bc
+_:          add hl, bc
+            call cpHLDE
+            jr nz, .loop
+        pop hl
+        ; swap (IY) and (DE)
+        ex hl, de
+        call .swap
+        ex hl, de
+
+        ; recurse
+        push de
+            push iy \ pop de
+            dec de
+            call callbackSort
+        pop de
+        push iy
+          ex (sp), hl
+            inc hl
+            call callbackSort
+        pop hl
+    pop iy
+    pop bc
+    pop af
+    ret
+.swap:
+        push de
+        push bc
+_:          ld d, (hl)
+            ld e, (iy)
+            ld (iy), d
+            ld (hl), e
+            dec bc
+            ld a, b \ or c
+            jr nz, -_
+        pop bc
+        pop de
+        ret
+.indirect:
+        jp (ix)
+
+
 ;; div32By16 [Miscellaneous]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
