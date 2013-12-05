@@ -376,20 +376,20 @@ _:          add hl, bc
     pop iy
     ret
 .swap:
-        push de
-        push bc
-_:          ld d, (hl)
-            ld e, (iy)
-            ld (iy), d
-            ld (hl), e
-            dec bc
-            ld a, b \ or c
-            jr nz, -_
-        pop bc
-        pop de
-        ret
+    push de
+    push bc
+_:      ld d, (hl)
+        ld e, (iy)
+        ld (iy), d
+        ld (hl), e
+        dec bc
+        ld a, b \ or c
+        jr nz, -_
+    pop bc
+    pop de
+    ret
 .indirect:
-        jp (ix)
+    jp (ix)
 
 
 ;; div32By16 [Miscellaneous]
