@@ -808,3 +808,45 @@ _:
         ld a, b
     pop bc \ pop hl
     ret
+
+;; indirect16HLDE [Miscellaneous]
+;;  Performs HL = (HL) and DE = (DE).
+;; Notes:
+;;  This routine is useful as part of a callback for the callbackSort routine.
+indirect16HLDE:
+    ex hl, de
+    call indirect16HL
+    ex hl, de
+    ; Fall through
+
+;; indirect16HL [Miscellaneous]
+;;  Performs HL = (HL)
+indirect16HL:
+    push af
+        ld a, (hl)
+        inc hl
+        ld h, (hl)
+        ld l, a
+    pop af
+    ret
+
+;; indirectCompareStrings [Miscellaneous]
+;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
+;;  then calls compareStrings.
+;; Inputs:
+;;  HL: Pointer to string pointer
+;;  DE: Pointer to string pointer
+;; Outputs:
+;;  Z: Set if equal, reset if not equal
+;;  C: Set if string (HL) is alphabetically earlier than string (DE)
+;; Notes:
+;;  This routine is extremely useful as the callback for the callbackSort routine.
+;;  It allows sorting a list of pointers to strings by the strings' sort order.
+compareStrings_sort:
+    push hl
+    push de
+        call indirect16HLDE
+        call compareStrings
+    pop de
+    pop hl
+    ret
