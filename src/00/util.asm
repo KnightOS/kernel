@@ -360,17 +360,17 @@ _:          add hl, bc
         ; swap (IY) and (DE)
         ex hl, de
         call .swap
-        ex hl, de
-
         ; recurse
-        push de
-            push iy \ pop de
-            dec de
+        push hl
+            push iy \ pop hl
+            xor a
+            sbc hl, bc
+            ex hl, de
             call .recurse
         pop de
         push iy
           ex (sp), hl
-            inc hl
+            add hl, bc
             call callbackSort
         pop hl
     pop iy
