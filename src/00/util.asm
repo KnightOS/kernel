@@ -221,24 +221,29 @@ DEMulA:
     ret
 
 ;; compareStrings [Miscellaneous]
-;;  Determines if two strings are equal.
+;;  Determines if two strings are equal, and checks alphabetical sort order.
 ;; Inputs:
 ;;  HL: String pointer
 ;;  DE: String pointer
 ;; Outputs:
 ;;  Z: Set if equal, reset if not equal
+;;  C: Set if string HL is alphabetically earlier than string DE
 compareStrings:
     ld a, (de)
     or a
     jr z, .end
     cp (hl)
-    ret nz
+    jr nz, .false
     inc hl
     inc de
     jr compareStrings
 .end:
     ld a, (hl)
     or a
+    ccf
+    ret
+.false:
+    ccf
     ret
 
 ;; stringCopy [Miscellaneous]
