@@ -233,17 +233,13 @@ compareStrings:
     or a
     jr z, .end
     cp (hl)
-    jr nz, .false
+    ret nz
     inc hl
     inc de
     jr compareStrings
 .end:
     ld a, (hl)
     or a
-    ccf
-    ret
-.false:
-    ccf
     ret
 
 ;; stringCopy [Miscellaneous]
