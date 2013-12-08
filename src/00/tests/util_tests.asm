@@ -133,6 +133,16 @@ test_compareStrings:
     assert_notequal(.string1, .string3)
     assert_notequal(.string1, .string4)
     assert_notequal(.string1, .string5)
+    ld hl, .string6
+    ld de, .string7
+    call compareStrings
+    jr nc, .fail
+    ex de, hl
+    call compareStrings
+    jr c, .fail
+    ;push de \ pop hl
+    ;call compareStrings
+    ; TODO: Figure out the desired behavior of the C flag with equivalent strings
     assert_pass()
 .fail:
     assert_fail()
@@ -146,6 +156,10 @@ test_compareStrings:
     .db "ne", 0
 .string5:
     .db 0
+.string6:
+    .db "ab", 0
+.string7:
+    .db "ba", 0
 .undefine assert_equal assert_notequal
 
 ; rleCompress 0008
