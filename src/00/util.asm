@@ -361,8 +361,8 @@ _:          add hl, bc
         ex hl, de
         call .swap
         ; recurse
-        push hl
-            push iy \ pop hl
+        push iy
+          ex (sp), hl
             xor a
             sbc hl, bc
             ex hl, de
@@ -371,7 +371,7 @@ _:          add hl, bc
         push iy
           ex (sp), hl
             add hl, bc
-            call callbackSort
+            call .recurse
         pop hl
     pop iy
     ret
