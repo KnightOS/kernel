@@ -377,15 +377,21 @@ _:          add hl, bc
     ret
 .swap:
     push de
+    push iy
+    push hl
     push bc
 _:      ld d, (hl)
         ld e, (iy)
         ld (iy), d
         ld (hl), e
         dec bc
+        inc hl
+        inc iy
         ld a, b \ or c
         jr nz, -_
     pop bc
+    pop hl
+    pop iy
     pop de
     ret
 .indirect:
