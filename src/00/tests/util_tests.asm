@@ -281,22 +281,22 @@ test_integerSort:
 
 ; callbackSort 000F
 test_callbackSort:
-    ld bc, 6
+    ld bc, 7
     call malloc
     jr nz, .failMem
     ld hl, .test
-    ld bc, 6
-        push ix \ pop de \ push de
+    ld bc, 7
+    push ix \ pop de \ push de
         ldir
-        pop hl \ push hl
+    pop hl \ push hl
         ld de, 4
         add hl, de
-        pop de \ push de
+    pop de \ push de
         ex de, hl
-        ld ix, .callback
-        ld bc, 1
+        ld ix, compareStrings_sort
+        ld bc, 2
         call callbackSort
-        pop hl \ push hl
+    pop hl \ push hl
         ld de, .expected
         call compareStrings
     pop ix
@@ -308,12 +308,12 @@ test_callbackSort:
 .failMem:
     assert_fail()
 .test:
-    .db 1, 7, 4, 8, 6, 0
+    .dw .string2, .string3, .string1, 0
 .expected:
-    .db 1, 4, 6, 7, 8, 0
-.callback:
-    ex de, hl
-    ld a, (de)
-    cp a, (hl)
-    ex de, hl
-    ret
+    .dw .string1, .string2, .string3, 0
+.string1:
+    .db "abc", 0
+.string2:
+    .db "bcd", 0
+.string3:
+    .db "cde", 0
