@@ -838,7 +838,7 @@ indirect16HL:
     pop af
     ret
 
-;; indirectCompareStrings [Miscellaneous]
+;; compareStrings_sort [Miscellaneous]
 ;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
 ;;  then calls compareStrings.
 ;; Inputs:
