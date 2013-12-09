@@ -860,14 +860,13 @@ _:  pop de
     ret
 
 ;; cpHLDE_sort [Miscellaneous]
-;;  Compares 16-bit integers at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
+;;  Compares 16-bit integers at (HL) and (DE).  That is, calls indirect16HLDE,
 ;;  then calls cpHLDE.
 ;; Inputs:
 ;;  HL: Pointer to integer
 ;;  DE: Pointer to integer
 ;; Outputs:
-;;  Z: Set if equal, reset if not equal
-;;  C: Set if string (HL) is alphabetically earlier than string (DE)
+;;  Same as z80 CP instruction.
 ;; Notes:
 ;;  This routine is extremely useful as the callback for the callbackSort routine.
 ;;  It allows sorting a list of 16-bit numbers.
