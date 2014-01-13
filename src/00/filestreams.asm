@@ -19,7 +19,7 @@ openFileRead:
         ex de, hl
         jr nz, .notFound
         ; Create stream based on file entry
-        out (6), a
+        setBankA
         ld a, (activeFileStreams)
         cp maxFileStreams
         jr nc, .tooManyStreams
@@ -195,7 +195,7 @@ streamReadByte:
 _:          ; Set A to the flash page and DE to the address (relative to 0x4000)
             ld a, e \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
             sla d \ sla d \ sla d \ or d
-            out (6), a
+            setBankA
             ; Now get the address of the entry on the page
             ld a, e \ and 0b011111 \ ld d, a
             inc hl \ ld a, (hl) \ ld e, a
@@ -224,7 +224,7 @@ _:          ; Set A to the flash page and DE to the address (relative to 0x4000)
                 push bc
                     ld a, c \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
                     sla b \ sla b \ sla b \ or b
-                    out (6), a
+                    setBankA
                     ld a, c \ and 0b011111 \ rla \ rla \ ld d, 0x40 \ ld e, a
                     ; DE points to header entry of next block
                     inc de \ inc de
@@ -350,7 +350,7 @@ streamReadBuffer:
 _:          ; Set A to the flash page and DE to the address (relative to 0x4000)
             ld a, e \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
             sla d \ sla d \ sla d \ or d
-            out (6), a
+            setBankA
             ; Now get the address of the entry on the page
             ld a, e \ and 0b011111 \ ld d, a
             inc hl \ ld a, (hl) \ ld e, a
@@ -422,7 +422,7 @@ _:          pop af
                 sla b \ sla b \ or b
                 ld b, (hl)
                 ; 0xCange flash page
-                out (6), a
+                setBankA
                 ; Update entry
                 ld (ix + 3), c
                 ld (ix + 4), b
@@ -515,7 +515,7 @@ _:              inc b
 _:          ; Loop through remaining blocks
             ld a, (ix + 3) \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
             ld h, (ix + 4) \ sla h \ sla h \ sla h \ or h
-            out (6), a
+            setBankA
             ld a, (ix + 3) \ and 0b011111 \ rla \ rla \ ld l, a
             ld h, 0x40
             ; 0xCeck for early exit
@@ -583,7 +583,7 @@ _:              ; Navigate to new block and update working size
                     or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
                     sla d \ sla d \ sla d \ or d
                 pop de
-                out (6), a
+                setBankA
                 ld a, e \ and 0b011111 \ rla \ rla \ ld l, a
                 ld h, 0x40
             pop de

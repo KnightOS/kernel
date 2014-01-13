@@ -206,7 +206,7 @@ _:  pop af
     ret
     
 .ram:
-    out (6), a
+    setBankA
     ld a, 0xAA
     ld (0x0AAA), a ; Unlock
     ld a, 0x55
@@ -396,10 +396,10 @@ _:
 .loop:
     push af
         ld a, e
-        out (6), a ; The inefficiency on this model comes from swapping pages during the loop
+        setBankA ; The inefficiency on this model comes from swapping pages during the loop
         ld d, (hl)
     pop af
-    out (6), a
+    setBankA
     ; copy D to (HL)
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
@@ -551,10 +551,10 @@ _:
 .loop:
     push af
         ld a, e
-        out (6), a ; The inefficiency on this model comes from swapping pages during the loop
+        setBankA ; The inefficiency on this model comes from swapping pages during the loop
         ld d, (hl)
     pop af
-    out (6), a
+    setBankA
     ; copy D to (HL)
     ld a, $AA
     ld ($0AAA), a    ; Unlock

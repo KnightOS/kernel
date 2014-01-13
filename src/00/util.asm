@@ -534,8 +534,7 @@ getBootCodeVersionString:
         push bc
         push ix
         push de
-            ld a, bootPage
-            out (6), a
+            setBankA(bootPage)
             ld hl, 0x400F ; Location of boot code version string
             call stringLength
             inc bc

@@ -17,7 +17,7 @@ deleteFile:
             push af
                 di
                 ld a, b
-                out (6), a
+                setBankA
                 call unlockFlash
                 ld a, fsDeletedFile
                 call writeFlashByte
@@ -81,8 +81,7 @@ findFileEntry:
         cp '/'
         jr nz, _
         inc de
-_:      ld a, fatStart
-        out (6), a
+_:      setBankA(fatStart)
         ld hl, 0
         ld (kernelGarbage), hl ; Used as temporary storage of parent directory ID
         ld hl, 0x7FFF
