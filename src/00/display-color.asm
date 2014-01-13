@@ -1,5 +1,5 @@
-; Screen is 320x240
 #ifdef COLOR
+; Color screen is 320x240
 
 ; Blinks the LCD backlight 10 times, then pauses
 ; For debugging

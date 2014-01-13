@@ -18,7 +18,7 @@ clearBuffer:
     pop hl
     ret
 
-#ifndef COLOR
+#ifndef COLOR ; Color fastCopy is implemented in display_color.asm
 ;; fastCopy [Display]
 ;;  Copies the screen buffer to the LCD.
 ;; Inputs:
