@@ -57,3 +57,32 @@ bootPage .equ 0xFF
     call writeLcdRegister
 .endmacro
 #endif
+
+#ifndef FLASH4MB
+    .macro pageBankA()
+        out (6), a
+    .endmacro
+
+    .macro pageBankA(page)
+        ld a, page
+        out (6), a
+    .endmacro
+#else
+    .macro pageBankA()
+        call color_pageBankA
+    .endmacro
+
+    .macro pageBankA(page)
+        .if page & 0b1000000
+            ld a, 1
+            out (0x0E), a
+            ld a, page & 0b10000000
+            out (6), a
+        .else
+            ld a, 0
+            out (0x0E), a
+            ld a, page
+            out (6), a
+        .endif
+    .endmacro
+#endif

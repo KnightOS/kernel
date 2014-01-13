@@ -1,12 +1,11 @@
 ; TODO: Add routines to erase certificate sectors (or add this to eraseFlashSector?)
-    rst 0 ; Safety, prevents runaway code from unlocking flash
+    rst 0 ; Prevent runaway code from unlocking flash
 unlockFlash:
     push af
     push bc
     in a, (6)
     push af
-    ld a, privledgedPage
-    out (6), a
+    pageBankA(privledgedPage)
     ld b, 0x01
     ld c, 0x14
     call 0x4001
