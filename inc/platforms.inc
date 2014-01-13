@@ -41,7 +41,6 @@ bootPage .equ 0x7F
 #endif
 
 #ifdef TI84pCSE
-; CSE support temporarily uses the same configuration as 84+ SE support
 #define CPU15
 #define USB
 #define CLOCK
