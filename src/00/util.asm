@@ -179,11 +179,12 @@ stringLength:
 ;; Outputs:
 ;;  B: Battery level
 ;; Notes:
-;;  B is a value from 0 to 4, where 0 is critical and 4 is full.
+;;  For 15MHz CPUs, B is a value from 0 to 4, where 0 is critical and 4 is full.
+;;  For 6MHz CPUs, B is either 0 or 1, where 0 is critical and 1 is good.
 getBatteryLevel:
 #ifdef CPU15
     push af
-        ld bc, 0x0403
+        ld bc, 0x0000
         ; Reset battery threshold
         in a, (4)
         or 0b11000000
@@ -191,21 +192,27 @@ getBatteryLevel:
 _:      push bc
             rrc c \ rrc c
             in a, (4)
-            and 0b11000000
+            and 0b00111111
             or c
             out (4), a
             in a, (2)
             bit 0, a
-            jr z, _
+            jr z, +_
         pop bc
-        dec c
-        djnz _
+        inc c
+        inc b
+        ld a, b
+        cp 4
+        jr nz, -_
+        
 _:  pop af
     ret
-#else
+ #else
     push af
         in a, (2)
-        and 0b11111110
+        and 0x1
+        add a, a
+        add a, a
         ld b, a
     pop af
     ret
@@ -229,24 +236,27 @@ DEMulA:
     ret
 
 ;; compareStrings [Miscellaneous]
-;;  Determines if two strings are equal.
+;;  Determines if two strings are equal, and checks alphabetical sort order.
 ;; Inputs:
 ;;  HL: String pointer
 ;;  DE: String pointer
 ;; Outputs:
 ;;  Z: Set if equal, reset if not equal
+;;  C: Set if string HL is alphabetically earlier than string DE
 compareStrings:
     ld a, (de)
     or a
     jr z, .end
     cp (hl)
-    ret nz
+    jr nz, .exit
     inc hl
     inc de
     jr compareStrings
 .end:
     ld a, (hl)
     or a
+.exit:
+    ccf
     ret
 
 ;; stringCopy [Miscellaneous]
@@ -268,8 +278,9 @@ _:  pop de
     pop hl
     ret
 
-;; sort [Miscellaneous]
-;;  Sorts a specified array of numbers.
+;; integerSort [Miscellaneous]
+;;  Sorts a specified array of 8-bit numbers using a fast (time complexity 
+;;  O(n)) algorithm.
 ;; Inputs:
 ;;  HL: first element in array
 ;;  DE: Last element in array
@@ -277,7 +288,7 @@ _:  pop de
 ;;  This routine is an in-place version of a radix sort, which has an O(k*n)
 ;;  runtime for k-bit numbers.  It also requires a smaller, fixed amount of
 ;;  stack space.
-sort:
+integerSort:
     ld b, 0b10000000
 .recurse:
     push bc
@@ -319,6 +330,90 @@ _:              ld a, (hl)              ; Switch number at top of 1s bin with th
         pop de
     pop bc
     ret
+
+;; callbackSort [Miscellaneous]
+;;  Sorts an array of arbitrarily-sized blocks using a callback function
+;;  to perform comparisons.
+;; Inputs:
+;;  HL: First element in array
+;;  DE: Last element in array
+;;  BC: Size of element in bytes
+;;  IX: Pointer to comparison function.
+;; Notes:
+;;  The comparison function must affect the carry flag like cp (hl), (de)
+;;  would.  (That is, set the carry flag if (HL) < (DE).)  All other registers
+;;  must be preserved.  The algorithm (quicksort) uses an average of O(log n)
+;;  stack space, with 8 bytes stack per recursion required.  Quicksort is
+;;  in-place and is not a stable sort.
+callbackSort:
+    ; Saves 4 bytes of stack per recursion
+    push af
+    push bc
+        call .recurse
+    pop bc
+    pop af
+    ret
+
+.recurse:
+    call cpHLDE
+    ret z
+    ret nc
+
+    push iy
+        ; middle = left
+        push hl \ pop iy
+        push hl
+.loop:
+            call .indirect ; cp (hl), (de)
+            jr nc, _
+            ; swap (HL) and (IY)
+            call .swap
+            ; "increment" middle
+            add iy, bc
+_:          add hl, bc
+            call cpHLDE
+            jr nz, .loop
+        pop hl
+        ; swap (IY) and (DE)
+        ex hl, de
+        call .swap
+        ; recurse
+        push iy
+          ex (sp), hl
+            xor a
+            sbc hl, bc
+            ex hl, de
+            call .recurse
+        pop de
+        push iy
+          ex (sp), hl
+            add hl, bc
+            call .recurse
+        pop hl
+    pop iy
+    ret
+.swap:
+    push de
+    push iy
+    push hl
+    push bc
+_:      ld d, (hl)
+        ld e, (iy)
+        ld (iy), d
+        ld (hl), e
+        dec bc
+        inc hl
+        inc iy
+        ld a, b \ or c
+        jr nz, -_
+    pop bc
+    pop hl
+    pop iy
+    pop de
+    ret
+.indirect:
+    jp (ix)
+
 
 ;; div32By16 [Miscellaneous]
 ;;  Performs `ACIX = ACIX / DE`
@@ -736,3 +831,63 @@ _:
         ld a, b
     pop bc \ pop hl
     ret
+
+;; indirect16HLDE [Miscellaneous]
+;;  Performs HL = (HL) and DE = (DE).
+;; Notes:
+;;  This routine is useful as part of a callback for the callbackSort routine.
+indirect16HLDE:
+    ex hl, de
+    call indirect16HL
+    ex hl, de
+    ; Fall through
+
+;; indirect16HL [Miscellaneous]
+;;  Performs HL = (HL)
+indirect16HL:
+    push af
+        ld a, (hl)
+        inc hl
+        ld h, (hl)
+        ld l, a
+    pop af
+    ret
+
+;; compareStrings_sort [Miscellaneous]
+;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
+;;  then calls compareStrings.
+;; Inputs:
+;;  HL: Pointer to string pointer
+;;  DE: Pointer to string pointer
+;; Outputs:
+;;  Z: Set if equal, reset if not equal
+;;  C: Set if string (HL) is alphabetically earlier than string (DE)
+;; Notes:
+;;  This routine is extremely useful as the callback for the callbackSort routine.
+;;  It allows sorting a list of pointers to strings by the strings' sort order.
+compareStrings_sort:
+    push hl
+    push de
+        call indirect16HLDE
+        call compareStrings
+_:  pop de
+    pop hl
+    ret
+
+;; cpHLDE_sort [Miscellaneous]
+;;  Compares 16-bit integers at (HL) and (DE).  That is, calls indirect16HLDE,
+;;  then calls cpHLDE.
+;; Inputs:
+;;  HL: Pointer to integer
+;;  DE: Pointer to integer
+;; Outputs:
+;;  Same as z80 CP instruction.
+;; Notes:
+;;  This routine is extremely useful as the callback for the callbackSort routine.
+;;  It allows sorting a list of 16-bit numbers.
+cpHLDE_sort:
+    push hl
+    push de
+        call indirect16HLDE
+        call cpHLDE
+        jr -_
