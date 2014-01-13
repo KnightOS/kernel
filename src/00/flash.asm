@@ -3,14 +3,14 @@
 unlockFlash:
     push af
     push bc
-    in a, (6)
-    push af
-    pageBankA(privledgedPage)
-    ld b, 0x01
-    ld c, 0x14
-    call 0x4001
-    pop af
-    out (6), a
+        getBankA()
+        push af
+            setBankA(privledgedPage)
+            ld b, 0x01
+            ld c, 0x14
+            call 0x4001
+        pop af
+        setBankA
     pop bc
     pop af
     ret
@@ -18,15 +18,14 @@ unlockFlash:
 lockFlash:
     push af
     push bc
-    in a, (6)
-    push af
-    ld a, privledgedPage
-    out (6), a
-    ld b, 0x00
-    ld c, 0x14
-    call 0x4017
-    pop af
-    out (6), a
+        getBankA()
+        push af
+            setBankA(privledgedPage)
+            ld b, 0x00
+            ld c, 0x14
+            call 0x4017
+        pop af
+        setBankA
     pop bc
     pop af
     ret

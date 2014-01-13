@@ -59,20 +59,24 @@ bootPage .equ 0xFF
 #endif
 
 #ifndef FLASH4MB
-    .macro pageBankA()
+    .macro setBankA()
         out (6), a
     .endmacro
 
-    .macro pageBankA(page)
+    .macro setBankA(page)
         ld a, page
         out (6), a
     .endmacro
+
+    .macro getBankA()
+        in a, (6)
+    .endmacro
 #else
-    .macro pageBankA()
+    .macro setBankA()
         call color_pageBankA
     .endmacro
 
-    .macro pageBankA(page)
+    .macro setBankA(page)
         .if page & 0b1000000
             ld a, 1
             out (0x0E), a
@@ -84,5 +88,14 @@ bootPage .equ 0xFF
             ld a, page
             out (6), a
         .endif
+    .endmacro
+
+    .macro getBankA()
+        push bc
+            in c, (0x0E)
+            rrc c
+            in a, (6)
+            or c
+        pop bc
     .endmacro
 #endif
