@@ -105,7 +105,8 @@ bootPage .equ 0xFF
 
     .macro getBankA()
         push bc
-            in c, (0x0E)
+            in a, (0x0E)
+            ld c, a
             rrc c
             in a, (6)
             or c
@@ -130,9 +131,10 @@ bootPage .equ 0xFF
         .endif
     .endmacro
 
-    .macro getBankA()
+    .macro getBankB()
         push bc
-            in c, (0x0F)
+            in a, (0x0F)
+            ld c, a
             rrc c
             in a, (7)
             or c

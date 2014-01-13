@@ -890,3 +890,37 @@ cpHLDE_sort:
         call indirect16HLDE
         call cpHLDE
         jr -_
+
+#ifdef COLOR
+color_pageBankA:
+   bit 7, a
+   push af
+      jr z, .zero
+      ld a, 0
+      out (0x0E), a
+   pop af
+   out (6), a
+   ret
+.zero:
+      ld a, 1
+      out (0x0E), a
+   pop af
+   out (6), a
+   ret
+
+color_pageBankB:
+   bit 7, a
+   push af
+      jr z, .zero
+      ld a, 0
+      out (0x0F), a
+   pop af
+   out (7), a
+   ret
+.zero:
+      ld a, 1
+      out (0x0F), a
+   pop af
+   out (7), a
+   ret
+#endif
