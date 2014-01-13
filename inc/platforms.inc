@@ -71,6 +71,19 @@ bootPage .equ 0xFF
     .macro getBankA()
         in a, (6)
     .endmacro
+
+    .macro setBankB()
+        out (7), a
+    .endmacro
+
+    .macro setBankB(page)
+        ld a, page
+        out (7), a
+    .endmacro
+
+    .macro getBankB()
+        in a, (7)
+    .endmacro
 #else
     .macro setBankA()
         call color_pageBankA
@@ -95,6 +108,33 @@ bootPage .equ 0xFF
             in c, (0x0E)
             rrc c
             in a, (6)
+            or c
+        pop bc
+    .endmacro
+
+    .macro setBankB()
+        call color_pageBankB
+    .endmacro
+
+    .macro setBankB(page)
+        .if page & 0b1000000
+            ld a, 1
+            out (0x0F), a
+            ld a, page & 0b10000000
+            out (7), a
+        .else
+            ld a, 0
+            out (0x0F), a
+            ld a, page
+            out (7), a
+        .endif
+    .endmacro
+
+    .macro getBankA()
+        push bc
+            in c, (0x0F)
+            rrc c
+            in a, (7)
             or c
         pop bc
     .endmacro
