@@ -196,10 +196,6 @@ reboot:
     jp testrunner
 #endif
 
-#ifdef COLOR
-    jp testProgram
-#endif
-
     ld de, bootFile
     call fileExists
     ld a, kerr_init_not_found
