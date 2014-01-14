@@ -134,7 +134,7 @@ fastCopy: ; Draws a 96x64 monochrome buffer on a color screen
 fastCopy_skipCheck:
     ; TODO: Thread locking
     ; TODO: Update original fastCopy docs
-    push hl \ push bc \ push de \ push af
+    push iy \ push hl \ push bc \ push de \ push af
         ; Draws a 96x64 monochrome LCD buffer (legacy buffer) to the color LCD
         ld bc, 64 << 8 | 0x11 ; 64 rows in b, and the data port in c
         ld de, ((240 - 128) / 2) << 8 | 0xFF ; Top of the current window in d, 0xFF in e
@@ -188,7 +188,7 @@ fastCopy_skipCheck:
         pop bc
         inc d
         djnz .loop
-    pop af \ pop de \ pop bc \ pop hl
+    pop af \ pop de \ pop bc \ pop hl \ pop iy
     ret
 
 clearColorLcd:
