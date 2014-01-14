@@ -90,7 +90,7 @@ bootPage .equ 0xFF
     .endmacro
 
     .macro setBankA(page)
-        .if page & 0b1000000
+        .if page & 0x80
             ld a, 1
             out (0x0E), a
             ld a, page & 0x7F
@@ -118,7 +118,7 @@ bootPage .equ 0xFF
     .endmacro
 
     .macro setBankB(page)
-        .if page & 0b1000000
+        .if page & 0x80
             ld a, 1
             out (0x0F), a
             ld a, page & 0x7F
