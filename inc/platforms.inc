@@ -96,7 +96,7 @@ bootPage .equ 0xFF
             ld a, page & 0b10000000
             out (6), a
         .else
-            ld a, 0
+            xor a
             out (0x0E), a
             ld a, page
             out (6), a
@@ -124,7 +124,7 @@ bootPage .equ 0xFF
             ld a, page & 0b10000000
             out (7), a
         .else
-            ld a, 0
+            xor a
             out (0x0F), a
             ld a, page
             out (7), a
