@@ -4,6 +4,8 @@
 ; Blinks the LCD backlight 10 times, then pauses
 ; For debugging
 debug_blink:
+    push af
+    push bc
     ld b, 10
 .loop:
     push bc
@@ -17,6 +19,8 @@ debug_blink:
         call colorLcdWait
     pop bc
     djnz .loop
+    pop bc
+    pop af
     ret
 
 ; Destroys C

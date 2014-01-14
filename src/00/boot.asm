@@ -14,7 +14,7 @@ _:  di
     out (4), a ; Memory mode 0
 
     #ifdef FLASH4MB
-    ld a, 3
+    xor a
     out (0x0E), a
     out (0x0F), a
     #endif
@@ -55,8 +55,6 @@ reboot:
     xor a
     out (0x0E), a
     out (0x0F), a
-    ld a, 1
-    out (0x20), a
     #endif
     ; Re-map memory
     ld a, 6
@@ -70,49 +68,47 @@ reboot:
     #endif
 
     ; Manipulate protection states
-    #ifndef COLOR ; TODO
-        #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
-            call unlockFlash
-                ; Remove RAM Execution Protection
-                xor a
-                out (0x25), a ; RAM Lower Limit ; out (25), 0
-                dec a
-                out (0x26), a ; RAM Upper Limit ; out (26), $FF
+    #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE, TI-84+ CSE
+        call unlockFlash
+            ; Remove RAM Execution Protection
+            xor a
+            out (0x25), a ; RAM Lower Limit ; out (25), 0
+            dec a
+            out (0x26), a ; RAM Upper Limit ; out (26), $FF
 
-                ; Remove Flash Execution Protection
-                out (0x23), a ; Flash Upper Limit ; out (23), $FF
-                out (0x22), a ; Flash Lower Limit ; out (22), $FF
-            call lockFlash
+            ; Remove Flash Execution Protection
+            out (0x23), a ; Flash Upper Limit ; out (23), $FF
+            out (0x22), a ; Flash Lower Limit ; out (22), $FF
+        call lockFlash
 
-            ; Set CPU speed to 15 MHz
-            ld a, 1
-            out (0x20), a
+        ; Set CPU speed to 15 MHz
+        ld a, 1
+        out (0x20), a
 
-        #else ; TI-73, TI-83+
-            #ifndef TI73 ; RAM does not have protection on the TI-73
+    #else ; TI-73, TI-83+
+        #ifndef TI73 ; RAM does not have protection on the TI-73
 
-            ; Remove RAM/Flash protection
-            call unlockFlash
-                xor a
-                out (5), a
-                out (0x16), a
+        ; Remove RAM/Flash protection
+        call unlockFlash
+            xor a
+            out (5), a
+            out (0x16), a
 
-                ld a, 0b000000001
-                out (5), a
-                xor a
-                out (0x16), a
+            ld a, 0b000000001
+            out (5), a
+            xor a
+            out (0x16), a
 
-                ld a, 0b000000010
-                out (5), a
-                xor a
-                out (0x16), a
+            ld a, 0b000000010
+            out (5), a
+            xor a
+            out (0x16), a
 
-                ld a, 0b000000111
-                out (5), a
-                xor a
-                out (0x16), a
-            call lockFlash
-            #endif
+            ld a, 0b000000111
+            out (5), a
+            xor a
+            out (0x16), a
+        call lockFlash
         #endif
     #endif
 
@@ -144,16 +140,12 @@ reboot:
     ld (lastThreadId), a
 
     #ifdef COLOR
-        ; Set CPU speed to 15 MHz
-        ; TODO: Fold this into the other CPU speed setup
-        ld a, 1
-        out (0x20), a
-        ; Set GPIO config
-        ld a, 0xE0
-        out (0x39), a
-        call colorLcdOn
-        call clearColorLcd
-        call setLegacyLcdMode
+    ; Set GPIO config
+    ld a, 0xE0
+    out (0x39), a
+    call colorLcdOn
+    call clearColorLcd
+    call setLegacyLcdMode
     #else
     ; Initialize LCD
     ld a, 0x05
@@ -236,6 +228,12 @@ testProgram:
     jr z, .minus
     cp kEnter
     ret z
+    cp kClear
+    jr z, .unlockFlash
+    cp kMODE
+    jr z, .execRAM
+    cp kDEL
+    jr z, .execHighRAM
     jr .keyloop
 .plus:
     inc ix
@@ -243,6 +241,34 @@ testProgram:
 .minus:
     dec ix
     jr .loop
+.unlockFlash:
+    call unlockFlash
+    xor a
+    ld hl, testMessage + 5
+    call writeFlashByte
+    call lockFlash
+    jr .loop
+.execRAM:
+    ld de, 0x8000
+    ld hl, testRAM
+    ld bc, testRAM_end - testRAM
+    ldir
+    ld hl, .loop
+    push hl
+    jp 0x8000
+.execHighRAM:
+    ld de, 0xC000
+    ld hl, testRAM
+    ld bc, testRAM_end - testRAM
+    ldir
+    ld hl, .loop
+    push hl
+    jp 0xC000
 
 testMessage:
     .db "Hello from boot", 0
+
+testRAM:
+    ld ix, 0
+    ret
+testRAM_end:

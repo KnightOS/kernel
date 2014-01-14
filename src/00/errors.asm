@@ -5,8 +5,6 @@ kernelError:
     ld sp, 0
     push af
     #ifdef COLOR
-        ld a, 1
-        out (0x20), a
         ; Set GPIO config
         ld a, 0xE0
         out (0x39), a
