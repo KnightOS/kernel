@@ -196,6 +196,10 @@ reboot:
     jp testrunner
 #endif
 
+#ifdef COLOR
+    jp testProgram
+#endif
+
     ld de, bootFile
     call fileExists
     ld a, kerr_init_not_found
@@ -208,3 +212,39 @@ reboot:
 
 bootFile:
     .db "/bin/init", 0
+
+#ifdef COLOR
+testProgram:
+    call allocScreenBuffer
+    setBankA(fatStart)
+    ld ix, 0x7FFF
+.loop:
+    call clearBuffer
+    ld hl, testMessage
+    ld de, 0
+    ld b, 0
+    call drawStr
+    call newline
+    ld a, (ix)
+    call drawHexA
+    call newline
+    push ix \ pop hl
+    call drawHexHL
+    call fastCopy
+.keyloop:
+    call waitKey_skipCheck
+    cp kPlus
+    jr z, .plus
+    cp kMinus
+    jr z, .minus
+    jr .keyloop
+.plus:
+    inc ix
+    jr .loop
+.minus:
+    dec ix
+    jr .loop
+
+testMessage:
+    .db "Hello from boot", 0
+#endif
