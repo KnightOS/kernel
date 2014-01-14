@@ -5,8 +5,13 @@
 waitKey:
 _:  call hasKeypadLock
     jr nz, -_ ; Loop until a lock is acquired
-waitKey_skipCheck:
 _:  call getKey
+    or a
+    jr z, -_
+    ret
+
+waitKey_skipCheck:
+_:  call getKey_skipCheck
     or a
     jr z, -_
     ret

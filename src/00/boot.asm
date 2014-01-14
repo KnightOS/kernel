@@ -204,16 +204,16 @@ reboot:
     ld h, 0
     call setInitialA
 
+    call testProgram ; Verify state of memory
+
     jp contextSwitch_manual
 
 bootFile:
     .db "/bin/init", 0
 
-#ifdef COLOR
 testProgram:
     call allocScreenBuffer
-    setBankA(fatStart)
-    ld ix, 0x7FFF
+    ld ix, 0x8000
 .loop:
     call clearBuffer
     ld hl, testMessage
@@ -226,13 +226,16 @@ testProgram:
     call newline
     push ix \ pop hl
     call drawHexHL
-    call fastCopy
+    call fastCopy_skipCheck
 .keyloop:
+    call flushKeys_skipCheck
     call waitKey_skipCheck
     cp kPlus
     jr z, .plus
     cp kMinus
     jr z, .minus
+    cp kEnter
+    ret z
     jr .keyloop
 .plus:
     inc ix
@@ -243,4 +246,3 @@ testProgram:
 
 testMessage:
     .db "Hello from boot", 0
-#endif
