@@ -196,7 +196,7 @@ reboot:
     ld h, 0
     call setInitialA
 
-    call testProgram ; Verify state of memory
+    ;call testProgram
 
     jp contextSwitch_manual
 
@@ -223,52 +223,54 @@ testProgram:
     call flushKeys_skipCheck
     call waitKey_skipCheck
     cp kPlus
-    jr z, .plus
+    jp z, .plus
     cp kMinus
-    jr z, .minus
+    jp z, .minus
     cp kEnter
     ret z
-    cp kClear
-    jr z, .unlockFlash
+    cp k1
+    jp z, .noteworthyPlace1 ; threadTable
+    cp k2
+    jp z, .noteworthyPlace2 ; userMemory
+    cp k3
+    jp z, .noteworthyPlace3 ; activeThreads
+    cp k4
+    jp z, .noteworthyPlace4 ; /bin/init (memory)
+    cp k5
+    jp z, .noteworthyPlace5 ; /bin/init (disk)
+    cp kStat
+    jp z, .swapPage4
     cp kMODE
-    jr z, .execRAM
-    cp kDEL
-    jr z, .execHighRAM
-    jr .keyloop
+    jp z, .swapPage4_alt
+    jp .keyloop
+.swapPage4:
+    setBankA(4)
+    jp .loop
+.swapPage4_alt:
+    ld a, 4
+    setBankA
+    jp .loop
 .plus:
     inc ix
-    jr .loop
+    jp .loop
 .minus:
     dec ix
-    jr .loop
-.unlockFlash:
-    call unlockFlash
-    xor a
-    ld hl, testMessage + 5
-    call writeFlashByte
-    call lockFlash
-    jr .loop
-.execRAM:
-    ld de, 0x8000
-    ld hl, testRAM
-    ld bc, testRAM_end - testRAM
-    ldir
-    ld hl, .loop
-    push hl
-    jp 0x8000
-.execHighRAM:
-    ld de, 0xC000
-    ld hl, testRAM
-    ld bc, testRAM_end - testRAM
-    ldir
-    ld hl, .loop
-    push hl
-    jp 0xC000
+    jp .loop
+.noteworthyPlace1:
+    ld ix, threadTable
+    jp .loop
+.noteworthyPlace2:
+    ld ix, userMemory
+    jp .loop
+.noteworthyPlace3:
+    ld ix, activeThreads
+    jp .loop
+.noteworthyPlace4:
+    ld ix, 0x8503 ; This is where /bin/init should be loaded
+    jp .loop
+.noteworthyPlace5:
+    ld ix, 0x4B00
+    jp .loop
 
 testMessage:
     .db "Hello from boot", 0
-
-testRAM:
-    ld ix, 0
-    ret
-testRAM_end:

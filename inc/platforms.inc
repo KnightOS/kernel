@@ -98,7 +98,7 @@ bootPage .equ 0xFF
         .else
             xor a
             out (0x0E), a
-            ld a, page
+            ld a, page & 0x7F
             out (6), a
         .endif
     .endmacro
@@ -126,7 +126,7 @@ bootPage .equ 0xFF
         .else
             xor a
             out (0x0F), a
-            ld a, page
+            ld a, page & 0x7F
             out (7), a
         .endif
     .endmacro
