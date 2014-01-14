@@ -1,22 +1,22 @@
 #ifdef TI73
-privledgedPage .equ 0x1C
 swapSector .equ 0x18
 fatStart .equ 0x17
+privledgedPage .equ 0x1C
 bootPage .equ 0x1F
 #endif
 
 #ifdef TI83p
-privledgedPage .equ 0x1C
 swapSector .equ 0x18
 fatStart .equ 0x17
+privledgedPage .equ 0x1C
 bootPage .equ 0x1F
 #endif
 
 #ifdef TI83pSE
 #define CPU15
-privledgedPage .equ 0x7C
 swapSector .equ 0x78
 fatStart .equ 0x77
+privledgedPage .equ 0x7C
 bootPage .equ 0x7F
 #endif
 
@@ -24,9 +24,9 @@ bootPage .equ 0x7F
 #define CPU15
 #define USB
 #define CLOCK
-privledgedPage .equ 0x3C
 swapSector .equ 0x38
 fatStart .equ 0x37
+privledgedPage .equ 0x3C
 bootPage .equ 0x3F
 #endif
 
@@ -34,9 +34,9 @@ bootPage .equ 0x3F
 #define CPU15
 #define USB
 #define CLOCK
-privledgedPage .equ 0x7C
 swapSector .equ 0x78
 fatStart .equ 0x77
+privledgedPage .equ 0x7C
 bootPage .equ 0x7F
 #endif
 
@@ -46,9 +46,9 @@ bootPage .equ 0x7F
 #define CLOCK
 #define COLOR
 #define FLASH4MB
-privledgedPage .equ 0xEC
-swapSector .equ 0xE8
-fatStart .equ 0xE7
+swapSector .equ 0xF8
+fatStart .equ 0xF7
+privledgedPage .equ 0xFC
 bootPage .equ 0xFF
 
 .macro lcdout(reg, value)
