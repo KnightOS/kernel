@@ -41,8 +41,6 @@ can use to link your userspace with the kernel.
 
 You may also run `make all` to build all platforms at once.
 
-**Note**: TI-84+ CSE support is not complete, and will not work correctly.
-
 ## Usage
 
 The basic kernel image doesn't do anything on its own. If you were to send it to a calculator, you'd get

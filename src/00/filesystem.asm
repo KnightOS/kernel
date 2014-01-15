@@ -139,7 +139,7 @@ _:          ld a, (hl)
             sbc hl, bc
             jr findFileEntry_fileLoop
 findFileEntry_handleEndOfTable:
-        pop af    
+        pop af
     pop af ; Restore interrupts
     jp po, _
     ei
