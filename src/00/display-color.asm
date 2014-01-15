@@ -57,6 +57,7 @@ colorLcdWait:
     ret
 
 colorLcdOn:
+    ; TODO: Optimize this, it could be a lot faster
     ld a, 0x0D
     out (0x2A), a ; LCD delay
     lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
@@ -115,6 +116,7 @@ colorLcdOn:
     set 5, a
     out (0x3A), a
     xor a
+    ; TODO: Remember and restore backlight brightness
     lcdout(0x03, 0x10B8) ; Entry mode the way we want it
     ret
 

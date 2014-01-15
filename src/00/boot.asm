@@ -143,7 +143,6 @@ reboot:
     ; Set GPIO config
     ld a, 0xE0
     out (0x39), a
-    call colorLcdOn
     call clearColorLcd
     call setLegacyLcdMode
 #else
