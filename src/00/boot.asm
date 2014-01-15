@@ -188,6 +188,8 @@ reboot:
     jp testrunner
 #endif
 
+    call testProgram
+
     ld de, bootFile
     call fileExists
     ld a, kerr_init_not_found
@@ -196,52 +198,40 @@ reboot:
     ld h, 0
     call setInitialA
 
-    ;call testProgram
-
     jp contextSwitch_manual
 
 bootFile:
     .db "/bin/init", 0
+testFile:
+    .db "/test", 0
 
 testProgram:
     call allocScreenBuffer
-    ld ix, 0x8000
+    xor a
+    ld (currentContrast), a
+    ; Default values here are a sanity check... of the sanity check
+    ld a, fatStart
+    setBankA
+    ld hl, 0x1234
+    ld bc, 0x4321
+    ld de, 0x3412
+    ld ix, 0x7FFE
 .loop:
-    call clearBuffer
-    ld hl, testMessage
-    ld de, 0
-    ld b, 0
-    call drawStr
-    call newline
-    ld a, (ix)
-    call drawHexA
-    call newline
-    push ix \ pop hl
-    call drawHexHL
-    call fastCopy_skipCheck
+    call drawStatus
 .keyloop:
-    call flushKeys_skipCheck
-    call waitKey_skipCheck
+    call getKey_skipCheck
     cp kPlus
     jp z, .plus
     cp kMinus
     jp z, .minus
     cp kEnter
     ret z
-    cp k1
-    jp z, .noteworthyPlace1 ; threadTable
-    cp k2
-    jp z, .noteworthyPlace2 ; userMemory
-    cp k3
-    jp z, .noteworthyPlace3 ; activeThreads
-    cp k4
-    jp z, .noteworthyPlace4 ; /bin/init (memory)
-    cp k5
-    jp z, .noteworthyPlace5 ; /bin/init (disk)
     cp kStat
     jp z, .swapPage4
     cp kMODE
     jp z, .swapPage4_alt
+    cp kMath
+    jp z, .testFile
     jp .keyloop
 .swapPage4:
     setBankA(4)
@@ -256,21 +246,140 @@ testProgram:
 .minus:
     dec ix
     jp .loop
-.noteworthyPlace1:
-    ld ix, threadTable
-    jp .loop
-.noteworthyPlace2:
-    ld ix, userMemory
-    jp .loop
-.noteworthyPlace3:
-    ld ix, activeThreads
-    jp .loop
-.noteworthyPlace4:
-    ld ix, 0x8503 ; This is where /bin/init should be loaded
-    jp .loop
-.noteworthyPlace5:
-    ld ix, 0x4B00
-    jp .loop
+.testFile:
+    ld de, testFile
+    call openFileRead
+    ;call drawStatus \ call flushKeys_skipCheck \ call waitKey_skipCheck
+    ;push de
+    ;    call getStreamInfo
+    ;pop de
+    ;call malloc
+    ld ix, 0x8000
+    call streamReadToEnd
+    call closeStream
+    call clearBuffer
+    push ix \ pop hl
+    ld de, 0
+    ld b, 0
+    call drawStr
+    call fastCopy_skipCheck
+    call flushKeys_skipCheck \ call waitKey_skipCheck
+    jp boot
 
-testMessage:
-    .db "Hello from boot", 0
+zeroResetText:
+    .db "\nZero flag reset", 0
+zeroSetText:
+    .db "\nZero flag set", 0
+interruptsDisabledText:
+    .db "\nInterrupts disabled", 0
+interruptsEnabledText:
+    .db "\nInterrupts enabled", 0
+checkText:
+    .db "Check #", 0
+pcRegText:
+    .db "\nPC: ", 0
+spRegText:
+    .db "        SP: ", 0
+aRegText:
+    .db "\n\nA: ", 0
+derIXRegText:
+    .db "                    (IX): ", 0
+hlRegText:
+    .db "\nHL: ", 0
+bcRegText:
+    .db "        BC: ", 0
+deRegText:
+    .db "\nDE: ", 0
+ixRegText:
+    .db "        IX: ", 0
+iyRegText:
+    .db "\nIY: ", 0
+drawStatus:
+    push de \ push bc \ push hl \ push af
+.loop:
+        call clearBuffer
+        ld de, 0
+        ld b, 0
+        ld hl, checkText
+        call drawStr
+        ld a, (currentContrast)
+        call drawHexA
+
+        ld hl, pcRegText
+        call drawStr
+        inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp
+        pop hl \ push hl
+        dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp
+        call drawHexHL
+
+        ld hl, spRegText
+        call drawStr
+        inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp
+        ld hl, 0 \ add hl, sp
+        dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp
+        call drawHexHL
+
+        ld hl, aRegText
+        call drawStr
+        pop af \ push af
+        call drawHexA
+
+        ld hl, derIXRegText
+        call drawStr
+        ld h, (ix)
+        ld l, (ix + 1)
+        call drawHexHL
+
+        ld hl, hlRegText
+        call drawStr
+        inc sp \ inc sp
+        pop hl \ push hl
+        dec sp \ dec sp
+        call drawHexHL
+
+        ld hl, bcRegText
+        call drawStr
+        inc sp \ inc sp \ inc sp \ inc sp
+        pop hl \ push hl
+        dec sp \ dec sp \ dec sp \ dec sp
+        call drawHexHL
+
+        ld hl, deRegText
+        call drawStr
+        inc sp \ inc sp \ inc sp \ inc sp \ inc sp \ inc sp
+        pop hl \ push hl
+        dec sp \ dec sp \ dec sp \ dec sp \ dec sp \ dec sp
+        call drawHexHL
+
+        ld hl, ixRegText
+        call drawStr
+        push ix \ pop hl
+        call drawHexHL
+
+        ld hl, iyRegText
+        call drawStr
+        push iy \ pop hl
+        call drawHexHL
+
+        pop af \ push af
+        jr z, _
+        ld hl, zeroResetText
+        jr _
+_:      ld hl, zeroSetText
+_:      call drawStr
+
+        ld a, i
+        jp po, _
+        ld hl, interruptsEnabledText
+        jr _
+_:      ld hl, interruptsDisabledText
+_:      call drawStr
+
+        call fastCopy_skipCheck
+        call flushKeys_skipCheck
+        call waitKey_skipCheck
+
+        cp kYEqu
+        jp z, boot
+    pop af \ pop hl \ pop bc \ pop de
+    ret

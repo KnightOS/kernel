@@ -204,7 +204,7 @@ _:      push bc
         ld a, b
         cp 4
         jr nz, -_
-        
+
 _:  pop af
     ret
  #else
@@ -279,7 +279,7 @@ _:  pop de
     ret
 
 ;; integerSort [Miscellaneous]
-;;  Sorts a specified array of 8-bit numbers using a fast (time complexity 
+;;  Sorts a specified array of 8-bit numbers using a fast (time complexity
 ;;  O(n)) algorithm.
 ;; Inputs:
 ;;  HL: first element in array
@@ -899,7 +899,9 @@ color_pageBankA:
       ld a, 1
       out (0x0E), a
    pop af
+   res 7, a
    out (6), a
+   set 7, a
    ret
 .zero:
       xor a
@@ -915,7 +917,9 @@ color_pageBankB:
       ld a, 1
       out (0x0F), a
    pop af
+   res 7, a
    out (7), a
+   set 7, a
    ret
 .zero:
       xor a

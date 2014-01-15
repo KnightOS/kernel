@@ -321,7 +321,11 @@ streamReadWord:
 ;; Notes:
 ;;  If BC is greater than the remaining space in the stream, the stream will be advanced to the end
 ;;  before returning an error.
+.macro sanityCheck(value)
+    push af \ ld a, value \ ld (currentContrast), a \ pop af \ call drawStatus
+.endmacro
 streamReadBuffer:
+    sanityCheck(0x30)
     push hl
         call getStreamEntry
         jr z, .doRead
@@ -331,10 +335,10 @@ streamReadBuffer:
         push af
         ld a, i
         push af
+        di
         push de
         push bc
         push ix
-            di
             ld a, (hl) \ inc hl
             bit 7, a
             jr nz, .readFromWritableStream
@@ -350,7 +354,9 @@ streamReadBuffer:
 _:          ; Set A to the flash page and DE to the address (relative to 0x4000)
             ld a, e \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
             sla d \ sla d \ sla d \ or d
+            sanityCheck(0x31)
             setBankA
+            sanityCheck(0x32)
             ; Now get the address of the entry on the page
             ld a, e \ and 0b011111 \ ld d, a
             inc hl \ ld a, (hl) \ ld e, a
@@ -456,6 +462,7 @@ _:              ; Update HL
         pop bc
         pop de
         pop af
+        sanityCheck(0x33)
         jp po, _
         ei
 _:      pop af
@@ -489,12 +496,14 @@ _:      pop af
 ;;  A: Error code (on failure)
 ;;  DBC: Remaining space in stream (on success)
 getStreamInfo:
+    sanityCheck(0x40)
     push hl
         call getStreamEntry
         jr z, _
     pop hl
     ret
-_:        push af
+_:      sanityCheck(0x41)
+        push af
         ld a, i
         push af
         di
@@ -515,7 +524,13 @@ _:              inc b
 _:          ; Loop through remaining blocks
             ld a, (ix + 3) \ or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
             ld h, (ix + 4) \ sla h \ sla h \ sla h \ or h
-            setBankA
+            push bc
+                ld b, (ix + 4)
+                ld c, (ix + 3)
+                sanityCheck(0x42)
+                setBankA
+                sanityCheck(0x43)
+            pop bc
             ld a, (ix + 3) \ and 0b011111 \ rla \ rla \ ld l, a
             ld h, 0x40
             ; 0xCeck for early exit
@@ -533,11 +548,13 @@ _:          ; Loop through remaining blocks
         inc sp \ inc sp
         pop ix
         pop af
-        jp po, $+4
+        jp po, .skipEI
         ei
+.skipEI:
         pop af
     pop hl
     cp a
+    sanityCheck(0x44)
     ret
             ; Continue into mid-block loop
 _:          pop de
@@ -571,11 +588,13 @@ _:          pop de
         inc sp \ inc sp
         pop ix
         pop af
-        jp po, $+4
+        jp po, .skipEI2
         ei
+.skipEI2:
         pop af
     pop hl
     cp a
+    sanityCheck(0x45)
     ret
 _:              ; Navigate to new block and update working size
                 push de
@@ -583,7 +602,9 @@ _:              ; Navigate to new block and update working size
                     or a \ rra \ rra \ rra \ rra \ rra \ and 0b0111
                     sla d \ sla d \ sla d \ or d
                 pop de
+                sanityCheck(0x46)
                 setBankA
+                sanityCheck(0x47)
                 ld a, e \ and 0b011111 \ rla \ rla \ ld l, a
                 ld h, 0x40
             pop de
