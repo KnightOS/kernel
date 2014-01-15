@@ -893,15 +893,15 @@ cpHLDE_sort:
 
 #ifdef COLOR
 color_pageBankA:
-   bit 7, a
    push af
+      bit 7, a
       jr z, .zero
       ld a, 1
       out (0x0E), a
+   pop af \ push af
+      res 7, a
+      out (6), a
    pop af
-   res 7, a
-   out (6), a
-   set 7, a
    ret
 .zero:
       xor a
@@ -911,15 +911,15 @@ color_pageBankA:
    ret
 
 color_pageBankB:
-   bit 7, a
    push af
+      bit 7, a
       jr z, .zero
       ld a, 1
       out (0x0F), a
+   pop af \ push af
+      res 7, a
+      out (7), a
    pop af
-   res 7, a
-   out (7), a
-   set 7, a
    ret
 .zero:
       xor a
