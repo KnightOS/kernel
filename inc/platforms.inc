@@ -14,6 +14,8 @@ bootPage .equ 0x1F
 
 #ifdef TI83pSE
 #define CPU15
+#define LINK_ASSIST
+#define MD5_ACCELERATION
 swapSector .equ 0x78
 fatStart .equ 0x77
 privledgedPage .equ 0x7C
@@ -22,6 +24,8 @@ bootPage .equ 0x7F
 
 #ifdef TI84p
 #define CPU15
+#define LINK_ASSIST
+#define MD5_ACCELERATION
 #define USB
 #define CLOCK
 swapSector .equ 0x38
@@ -32,6 +36,7 @@ bootPage .equ 0x3F
 
 #ifdef TI84pSE
 #define CPU15
+#define MD5_ACCELERATION
 #define USB
 #define CLOCK
 swapSector .equ 0x78
@@ -42,6 +47,7 @@ bootPage .equ 0x7F
 
 #ifdef TI84pCSE
 #define CPU15
+#define MD5_ACCELERATION
 #define USB
 #define CLOCK
 #define COLOR
