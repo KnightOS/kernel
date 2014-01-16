@@ -133,9 +133,9 @@ colorLcdOff:
     ret
 
 fastCopy: ; Draws a 96x64 monochrome buffer on a color screen
+    call hasLcdLock
+    ret nz
 fastCopy_skipCheck:
-    ; TODO: Thread locking
-    ; TODO: Update original fastCopy docs
     push iy \ push hl \ push bc \ push de \ push af
         ; Draws a 96x64 monochrome LCD buffer (legacy buffer) to the color LCD
         ld bc, 64 << 8 | 0x11 ; 64 rows in b, and the data port in c
