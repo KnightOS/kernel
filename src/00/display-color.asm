@@ -136,11 +136,11 @@ fastCopy: ; Draws a 96x64 monochrome buffer on a color screen
     call hasLcdLock
     ret nz
 fastCopy_skipCheck:
-    push iy \ push hl \ push bc \ push de \ push af
+    push hl \ push bc \ push de \ push af
+        push iy \ pop hl
         ; Draws a 96x64 monochrome LCD buffer (legacy buffer) to the color LCD
         ld bc, 64 << 8 | 0x11 ; 64 rows in b, and the data port in c
-        ld de, ((240 - 128) / 2) << 8 | 0xFF ; Top of the current window in d, 0xFF in e
-        ld l, 0
+        ld de, ((240 - 128) / 2) << 8 | 0 ; Top of the current window in d, 0xFF in e
 .loop:
         ; Set cursor column to 0
         ld a, 0x21
@@ -150,47 +150,91 @@ fastCopy_skipCheck:
         ; Set window top and cursor row to d
         ;ld a, 0x20 ; (aka 32)
         out (0x10), a \ out (0x10), a
-        out (c), l \ out (c), d ; Cursor row
+        out (c), e \ out (c), d ; Cursor row
         ld a, 0x50
         out (0x10), a \ out (0x10), a
-        out (c), l \ out (c), d ; Window top
+        out (c), e \ out (c), d ; Window top
         ; Window bottom to d + 1
         inc d \ inc a
         out (0x10), a \ out (0x10), a
-        out (c), l \ out (c), d
+        out (c), e \ out (c), d
         ; Select data register
         ld a, 0x22
         out (0x10), a \ out (0x10), a
         ; Draw row
+        push de
         push bc
-            ld h, 12
-.outerLoop:
-            ld a, (iy)
-            inc iy
-            ld b, 8
-            ; 8 pixels
-.byteLoop:
-            bit 7, a
-            jr z, .white
-.black:
-            ; Output each pixel twice
-            out (c), l \ out (c), l
-            out (c), l \ out (c), l
+            ld d, 0xFF
+            ld b, 12
+.innerLoop:
+            ld a, (hl)
+            inc hl
+
             rla
-            djnz .byteLoop
-            jr .endLoop
-.white:
+            jr nc, _ ; Bit 7
+            out (c), e \ out (c), e ; Black
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d ; White
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 6
             out (c), e \ out (c), e
             out (c), e \ out (c), e
-            rla
-            djnz .byteLoop
-.endLoop:
-            dec h
-            jr nz, .outerLoop
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 5
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 4
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 3
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 2
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 1
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:          rla
+            jr nc, _ ; Bit 0
+            out (c), e \ out (c), e
+            out (c), e \ out (c), e
+            jp ++_
+_:          out (c), d \ out (c), d
+            out (c), d \ out (c), d
+_:
+            dec b
+            jp nz, .innerLoop
         pop bc
+        pop de
         inc d
-        djnz .loop
-    pop af \ pop de \ pop bc \ pop hl \ pop iy
+        dec b
+        jp nz, .loop
+    pop af \ pop de \ pop bc \ pop hl
     ret
 
 clearColorLcd:
