@@ -4,6 +4,8 @@ suspendDevice:
     ld a, i
     push af
  #ifdef COLOR
+    push hl
+    push bc
     call colorLcdOff
  #else
     ld a, 2
@@ -22,6 +24,8 @@ suspendDevice:
     out (3), a
  #ifdef COLOR
     call colorLcdOn
+    pop bc
+    pop hl
  #else
     ld a, 3
     out (0x10), a ; Enable the screen
