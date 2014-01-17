@@ -408,6 +408,8 @@ streamReadBuffer:
         pop de \ push de ; the value of IX before getStreamEntry was called
         ld l, (ix + 1)
         ld h, (ix + 2)
+        ld a, (ix + 3)
+        add l, a \ ld l, a \ jr nc, $+3 \ inc h
 .readLoop:
         ; Registers:
         ; DE: Destination in RAM
@@ -450,15 +452,13 @@ _:          xor a
     or 1 \ ld a, errEndOfStream \ ret
 .readOkay:
             ld b, 0
-            cp c
-            jr z, _
-            ld bc, 0x100
-_:          ; BC is the amount they want us to read, assuming we're at the start of the block
-            ; But we may not be at the start of the block - handle that here
-            ; If (amount left in block) is less than BC, set BC to (amount left in block)
             ld a, c
             or a ; cp 0
             jr nz, _
+            ld bc, 0x100
+            ; BC is the amount they want us to read, assuming we're at the start of the block
+            ; But we may not be at the start of the block - handle that here
+            ; If (amount left in block) is less than BC, set BC to (amount left in block)
             ; See if we can manage a full block
             cp (ix + 3)
             jr z, .doRead

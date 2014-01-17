@@ -267,20 +267,21 @@ test_streamReadToEnd:
     pop de
     call malloc
     call streamReadToEnd
-    call closeStream
-    ; Calculate SHA-1 of that file
-    push ix \ pop hl
-    jr $
-    call sha1Init
-    call sha1AddRange
-    call sha1Pad
-    ; Compare
-    push ix \ pop de
-    ld (ix + 20), 0 ; Terminate hash "string"
-    ld hl, .largeFileSum
-    call compareStrings
     jr nz, .fail
-    call sha1Clean
+    call closeStream
+    call free
+    ; Calculate SHA-1 of that file
+    ;push ix \ pop hl
+    ;call sha1Init
+    ;call sha1AddRange
+    ;call sha1Pad
+    ;; Compare
+    ;push ix \ pop de
+    ;ld (ix + 20), 0 ; Terminate hash "string"
+    ;ld hl, .largeFileSum
+    ;call compareStrings
+    ;jr nz, .fail
+    ;call sha1Clean
     assert_pass()
 .fail:
     assert_fail()

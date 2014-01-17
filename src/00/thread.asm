@@ -337,6 +337,8 @@ launchProgram:
 
         push de
             call getStreamInfo
+            ; TODO: If D > 0, then the file is too large. Error out before we ask malloc about it.
+            pop de \ push de
             dec bc
             dec bc
             ld a, (currentThreadIndex)
