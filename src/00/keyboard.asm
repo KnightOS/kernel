@@ -1,14 +1,23 @@
-; Waits for a key to be pressed, then returns it
+;; waitKey [Input]
+;;  Blocks until a key is pressed, then returns that key code.
+;; Outputs:
+;;  A: Key code
 waitKey:
 _:  call hasKeypadLock
     jr nz, -_ ; Loop until a lock is acquired
-waitKey_skipCheck:
 _:  call getKey
     or a
     jr z, -_
     ret
-    
-; Waits for all keys to be released
+
+waitKey_skipCheck:
+_:  call getKey_skipCheck
+    or a
+    jr z, -_
+    ret
+
+;; flushKeys [Input]
+;;  Blocks until all keys are released.
 flushkeys:
     call hasKeypadLock
     ret nz
@@ -28,12 +37,16 @@ _:      xor a
     pop af
     ret
 
+;; getKey [Input]
+;;  Returns the currently pressed key code, or zero if no keys are pressed.
+;; Outputs:
+;;  A: Key code
 getKey:
     call hasKeypadLock
     jr z, _
     xor a
     ret
-_:  
+_:
 getKey_skipCheck:
     push bc
     ld a, i
@@ -93,7 +106,7 @@ getKey_skipCheck:
     cp d \ jr z, .end
     ld a, d
     ld (kernelGarbage), a
-    
+
 .end:
     pop hl
     pop de

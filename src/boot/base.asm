@@ -1,15 +1,15 @@
 ; Dummy boot page to get emulators to boot the OS
     jr _
-    .fill $0F - $
+    .fill 0x0F - $
     .db "n.nn", 0
 _:
 #ifdef TI84p
-    in a, ($21)
+    in a, (0x21)
     res 0, a
-    out ($21), a
+    out (0x21), a
 #else
-    in a, ($21)
+    in a, (0x21)
     set 0, a
-    out ($21), a
+    out (0x21), a
 #endif
-    jp $4000
+    jp 0x4000

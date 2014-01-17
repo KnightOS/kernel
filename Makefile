@@ -17,6 +17,7 @@ all:
 	make TI83pSE
 	make TI84p
 	make TI84pSE
+	make TI84pCSE
 
 # Platforms:
 # Variables (all in hex):
@@ -53,6 +54,12 @@ TI84pSE: BOOT := 1FC000
 TI84pSE: LENGTH := 200000
 TI84pSE: directories kernel
 
+TI84pCSE: PLATFORM := TI84pCSE
+TI84pCSE: PRIVILEGED := 3F0000
+TI84pCSE: BOOT := 3FC000
+TI84pCSE: LENGTH := 400000
+TI84pCSE: directories kernel
+
 DEFINES=$(PLATFORM)
 
 test: DEFINES=TI84pSE,TEST
@@ -73,13 +80,13 @@ kernel: page00 pageBoot pagePrivledged
 	rm bin/00.sym
 
 page00:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin --listing bin/00.list
 
 pageBoot:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin --listing bin/boot.list
 
 pagePrivledged:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" src/privileged/base.asm bin/privileged.bin
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" src/privileged/base.asm bin/privileged.bin --listing bin/priviledged.list
 
 directories:
 	mkdir -p bin

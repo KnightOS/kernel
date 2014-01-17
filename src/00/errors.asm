@@ -4,6 +4,14 @@ kernelError:
     di
     ld sp, 0
     push af
+    #ifdef COLOR
+        ; Set GPIO config
+        ld a, 0xE0
+        out (0x39), a
+        call colorLcdOn
+        call clearColorLcd
+        call setLegacyLcdMode
+    #else
         ; Reset the screen to a usable state
         ld a, 0x05
         call lcdDelay
@@ -17,9 +25,10 @@ kernelError:
         ld a, 0x17
         call lcdDelay
         out (0x10), a
-        ld a, $B
+        ld a, 0xB
         call lcdDelay
         out (0x10), a
+    #endif
     pop af
 
     bit 7, a
@@ -27,7 +36,6 @@ kernelError:
     call allocScreenBuffer
     jr z, ++_
 _:  ld iy, 0xC000
-    jr _
 _:  call clearBuffer
     ; Find the appropriate error message
     ld de, 0

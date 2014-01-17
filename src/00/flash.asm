@@ -1,17 +1,16 @@
 ; TODO: Add routines to erase certificate sectors (or add this to eraseFlashSector?)
-    rst 0 ; Safety, prevents runaway code from unlocking flash
+    rst 0 ; Prevent runaway code from unlocking flash
 unlockFlash:
     push af
     push bc
-    in a, (6)
-    push af
-    ld a, privledgedPage
-    out (6), a
-    ld b, 0x01
-    ld c, 0x14
-    call 0x4001
-    pop af
-    out (6), a
+        getBankA
+        push af
+            setBankA(privledgedPage)
+            ld b, 0x01
+            ld c, 0x14
+            call 0x4001
+        pop af
+        setBankA
     pop bc
     pop af
     ret
@@ -19,15 +18,14 @@ unlockFlash:
 lockFlash:
     push af
     push bc
-    in a, (6)
-    push af
-    ld a, privledgedPage
-    out (6), a
-    ld b, 0x00
-    ld c, 0x14
-    call 0x4017
-    pop af
-    out (6), a
+        getBankA
+        push af
+            setBankA(privledgedPage)
+            ld b, 0x00
+            ld c, 0x14
+            call 0x4017
+        pop af
+        setBankA
     pop bc
     pop af
     ret
@@ -208,7 +206,7 @@ _:  pop af
     ret
     
 .ram:
-    out (6), a
+    setBankA
     ld a, 0xAA
     ld (0x0AAA), a ; Unlock
     ld a, 0x55
@@ -332,9 +330,8 @@ _:  pop af
     
 #ifdef CPU15
 .ram:
-    out (7), a
-    ld a, swapSector
-    out (6), a
+    setBankB
+    setBankA(swapSector)
     
 .preLoop:    
     ld hl, 0x8000
@@ -360,8 +357,7 @@ _:  xor (hl)
     ; Error, abort
     ld a, 0xF0
     ld (0), a
-    ld a, 0x81
-    out (7), a
+    setBankB(0x81)
     ret
 _:
     inc hl
@@ -372,19 +368,19 @@ _:
     or a
     jr nz, .loop
     
-    in a, (7)
+    getBankB
     inc a
-    out (7), a
+    setBankB
     
-    in a, (6)
+    getBankA
     inc a
-    out (6), a
+    setBankA
     and 0b000000011
     or a
     jr nz, .preLoop
     
     ld a, 0x81
-    out (7), a
+    setBankB
     ret
 .end:
 
@@ -400,10 +396,10 @@ _:
 .loop:
     push af
         ld a, e
-        out (6), a ; The inefficiency on this model comes from swapping pages during the loop
+        setBankA ; The inefficiency on this model comes from swapping pages during the loop
         ld d, (hl)
     pop af
-    out (6), a
+    setBankA
     ; copy D to (HL)
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
@@ -502,9 +498,9 @@ _:  pop af
     
 #ifdef CPU15
 .ram:
-    out (6), a ; Destination
+    setBankA ; Destination
     ld a, b
-    out (7), a ; Source
+    setBankB ; Source
     
 .preLoop:    
     ld hl, 0x8000
@@ -530,8 +526,7 @@ _:    xor (hl)
     ; Error, abort
     ld a, 0xF0
     ld (0), a
-    ld a, 0x81
-    out (7), a
+    setBankB(0x81)
     ret
 _:
     inc hl
@@ -542,8 +537,7 @@ _:
     or a
     jr nz, .loop
     
-    ld a, 0x81
-    out (7), a
+    setBankB(0x81)
     ret
 .ram_end:
 #else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
@@ -557,10 +551,10 @@ _:
 .loop:
     push af
         ld a, e
-        out (6), a ; The inefficiency on this model comes from swapping pages during the loop
+        setBankA ; The inefficiency on this model comes from swapping pages during the loop
         ld d, (hl)
     pop af
-    out (6), a
+    setBankA
     ; copy D to (HL)
     ld a, $AA
     ld ($0AAA), a    ; Unlock

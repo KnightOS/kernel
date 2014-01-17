@@ -133,6 +133,16 @@ test_compareStrings:
     assert_notequal(.string1, .string3)
     assert_notequal(.string1, .string4)
     assert_notequal(.string1, .string5)
+    ld hl, .string6
+    ld de, .string7
+    call compareStrings
+    jr nc, .fail
+    ex de, hl
+    call compareStrings
+    jr c, .fail
+    ;push de \ pop hl
+    ;call compareStrings
+    ; TODO: Figure out the desired behavior of the C flag with equivalent strings
     assert_pass()
 .fail:
     assert_fail()
@@ -146,6 +156,10 @@ test_compareStrings:
     .db "ne", 0
 .string5:
     .db 0
+.string6:
+    .db "ab", 0
+.string7:
+    .db "ba", 0
 .undefine assert_equal assert_notequal
 
 ; rleCompress
@@ -248,8 +262,8 @@ _:  assert_pass()
 .check1:
     .db 0x28,0x9B,0x0A,0x20,0x00,0x0A,0x41,0x9B,0x01,0x9B,0x6C
 
-; sort 000E
-test_sort:
+; integerSort 000E
+test_integerSort:
     ld bc, 5
     call malloc
     jr nz, .failMem
@@ -262,7 +276,7 @@ test_sort:
         add hl, de
         pop de \ push de
         ex de, hl
-        call sort
+        call integerSort
         pop hl \ push hl
         ld de, .expected
         call compareStrings
@@ -278,3 +292,42 @@ test_sort:
     .db 7, 4, 8, 6, 0
 .expected:
     .db 4, 6, 7, 8, 0
+
+; callbackSort 000F
+test_callbackSort:
+    ld bc, 7
+    call malloc
+    jr nz, .failMem
+    ld hl, .test
+    ld bc, 7
+    push ix \ pop de \ push de
+        ldir
+    pop hl \ push hl
+        ld de, 4
+        add hl, de
+    pop de \ push de
+        ex de, hl
+        ld ix, compareStrings_sort
+        ld bc, 2
+        call callbackSort
+    pop hl \ push hl
+        ld de, .expected
+        call compareStrings
+    pop ix
+    jr nz, .fail
+    call free
+    assert_pass()
+.fail:
+    call free
+.failMem:
+    assert_fail()
+.test:
+    .dw .string2, .string3, .string1, 0
+.expected:
+    .dw .string1, .string2, .string3, 0
+.string1:
+    .db "abc", 0
+.string2:
+    .db "bcd", 0
+.string3:
+    .db "cde", 0

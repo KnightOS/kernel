@@ -5,7 +5,7 @@
 clearBuffer:
     push hl
     push de
-        push bc
+    push bc
         push iy \ pop hl
         ld (hl), 0
         ld d, h
@@ -18,6 +18,7 @@ clearBuffer:
     pop hl
     ret
 
+#ifndef COLOR ; Color fastCopy is implemented in display_color.asm
 ;; fastCopy [Display]
 ;;  Copies the screen buffer to the LCD.
 ;; Inputs:
@@ -25,6 +26,8 @@ clearBuffer:
 ;; Notes:
 ;;  This routine will return immediately without drawing to the LCD if the calling thead does not have an
 ;;  LCD lock. Acquire one with [[getLcdLock]].
+;;  On a TI-84+ CSE, this routine will draw the 96x64 monochrome buffer (the "legacy" buffer) to the LCD
+;;  The LCD should be set to legacy mode (see [[setLegacyLcdMode]]).
 fastCopy:
         call hasLCDLock
         ret nz
@@ -76,6 +79,7 @@ _:  pop de
     pop bc
     pop hl
     ret
+#endif
     
 ;; getPixel [Display]
 ;;  Finds the address of and mask for a pixel on the screen buffer.

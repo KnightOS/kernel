@@ -32,7 +32,14 @@ test_collection:
     .dw test_rleDecompress                  ; 000F test_rleDecompress
     .dw test_rleCalculateCompressedLength   ; 0010 test_rlePredictCompress
     .dw test_rleCalculateDecompressedLength ; 0011 test_rlePredictDecompress
-    .dw test_sort                           ; 0012 test_sort
+    .dw test_rleCompress                    ; 0012 test_rleCompress
+    .dw test_rleDecompress                  ; 0013 test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 0014 test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 0015 test_rlePredictDecompress
+    .dw test_crc16                          ; 0016 test_crc16
+    .dw test_sha1                           ; 0017 test_sha1
+    .dw test_integerSort                    ; 0018 test_integerSort
+    .dw test_callbackSort                   ; 0019 test_callbackSort
 
     .dw 0xFFFF
 explicit_only:

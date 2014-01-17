@@ -13,7 +13,13 @@ _:  di
     ld a, 6
     out (4), a ; Memory mode 0
 
-    #ifdef CPU15
+#ifdef FLASH4MB
+    xor a
+    out (0x0E), a
+    out (0x0F), a
+#endif
+
+#ifdef CPU15
     ; Set memory mapping
     ; Bank 0: Flash Page 00
     ; Bank 1: Flash Page *
@@ -21,7 +27,7 @@ _:  di
     ; Bank 3: RAM Page 00 ; In this order for consistency with TI-83+ and TI-73 mapping
     ld a, 0x81
     out (7), a
-    #else
+#else
     ; Set memory mapping
     ; Bank 0: Flash Page 00
     ; Bank 1: Flash Page *
@@ -29,7 +35,7 @@ _:  di
     ; Bank 3: RAM Page 00
     ld a, 0x41
     out (7), a
-    #endif
+#endif
 
     ld sp, userMemory ; end of kernel garbage
 
@@ -45,61 +51,66 @@ reboot:
 
     ld sp, userMemory ; end of kernel garbage
 
+#ifdef FLASH4MB
+    xor a
+    out (0x0E), a
+    out (0x0F), a
+#endif
     ; Re-map memory
     ld a, 6
     out (4), a
-    #ifdef CPU15
+#ifdef CPU15
     ld a, 0x81
     out (7), a
-    #else
+#else
     ld a, 0x41
     out (7), a
-    #endif
+#endif
 
     ; Manipulate protection states
-    #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE
-        call unlockFlash
-            ; Remove RAM Execution Protection
-            xor a
-            out (0x25), a ; RAM Lower Limit ; out (25), 0
-            dec a
-            out (0x26), a ; RAM Upper Limit ; out (26), $FF
+#ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE, TI-84+ CSE
+    call unlockFlash
+        ; Remove RAM Execution Protection
+        xor a
+        out (0x25), a ; RAM Lower Limit ; out (25), 0
+        dec a
+        out (0x26), a ; RAM Upper Limit ; out (26), $FF
 
-            ; Remove Flash Execution Protection
-            out (0x23), a ; Flash Upper Limit ; out (23), $FF
-            out (0x22), a ; Flash Lower Limit ; out (22), $FF
-        call lockFlash
+        ; Remove Flash Execution Protection
+        out (0x23), a ; Flash Upper Limit ; out (23), $FF
+        out (0x22), a ; Flash Lower Limit ; out (22), $FF
+    call lockFlash
 
-        ; Set CPU speed to 15 MHz
-        ld a, 1
-        out (0x20), a
+    ; Set CPU speed to 15 MHz
+    ld a, 1
+    out (0x20), a
 
-    #else ; TI-73, TI-83+
-        #ifndef TI73 ; RAM does not have protection on the TI-73
+#else ; TI-73, TI-83+
+    #ifndef TI73 ; RAM does not have protection on the TI-73
 
-        ; Remove RAM/Flash protection
-        call unlockFlash
-            xor a
-            out (5), a
-            out (0x16), a
+    ; Remove RAM/Flash protection
+    call unlockFlash
+        xor a
+        out (5), a
+        out (0x16), a
 
-            ld a, 0b000000001
-            out (5), a
-            xor a
-            out (0x16), a
+        ld a, 0b000000001
+        out (5), a
+        xor a
+        out (0x16), a
 
-            ld a, 0b000000010
-            out (5), a
-            xor a
-            out (0x16), a
+        ld a, 0b000000010
+        out (5), a
+        xor a
+        out (0x16), a
 
-            ld a, 0b000000111
-            out (5), a
-            xor a
-            out (0x16), a
-        call lockFlash
-        #endif
+        ld a, 0b000000111
+        out (5), a
+        xor a
+        out (0x16), a
+    call lockFlash
     #endif
+#endif
 
     ; Set intterupt mode
     ld a, 0b000001111
@@ -114,6 +125,27 @@ reboot:
 
     call formatMem
 
+    ; Initialize the font table pointer
+    ld hl, kernel_font
+    ld (fontTablePtr), hl
+
+    ; Set all file handles to unused
+    ld hl, fileHandleTable
+    ld (hl), 0xFF
+    ld de, fileHandleTable + 1
+    ld bc, 8 * maxFileStreams
+    ldir
+
+    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
+    ld (lastThreadId), a
+
+#ifdef COLOR
+    ; Set GPIO config
+    ld a, 0xE0
+    out (0x39), a
+    call clearColorLcd
+    call setLegacyLcdMode
+#else
     ; Initialize LCD
     ld a, 0x05
     call lcdDelay
@@ -145,23 +177,11 @@ reboot:
             ld a, 0xF4
         #endif
     #endif
+
     ld (currentContrast), a
     call lcdDelay
     out (0x10), a ; Contrast
-
-    ; Set all file handles to unused
-    ld hl, fileHandleTable
-    ld (hl), 0xFF
-    ld de, fileHandleTable + 1
-    ld bc, 8 * maxFileStreams
-    ldir
-
-    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
-    ld (lastThreadId), a
-
-    ; Initialize the font table pointer
-    ld hl, kernel_font
-    ld (fontTablePtr), hl
+#endif
 
 #ifdef TEST
     jp testrunner

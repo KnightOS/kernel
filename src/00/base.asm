@@ -1,5 +1,4 @@
 ; Base file for KnightOS kernel
-
 #include "platforms.inc"
 #include "defines.inc"
 #include "keys.inc"
@@ -21,6 +20,7 @@
 #include "locks.asm"
 
 #include "display.asm"
+#include "display-color.asm"
 #include "text.asm"
 #include "keyboard.asm"
 #include "time.asm"

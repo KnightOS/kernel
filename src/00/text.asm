@@ -1,5 +1,23 @@
 ; Text functions for kernel
 
+;; newline [Text]
+;;  Advances D, E to the next line of text
+;; Inputs:
+;;  D, E: X, Y
+;;  B: Left margin
+;; Outputs:
+;;  D, E: Moved down one line and to the left margin
+;; Notes:
+;;  This is identical to (but faster than) calling drawChar with '\n'
+newline:
+    push af
+        ld a, e
+        add a, 6
+        ld e, a
+        ld d, b
+    pop af
+    ret
+
 ;; drawChar [Text]
 ;;  Draws a character to the screen buffer using OR logic (turns pixels ON).
 ;; Inputs:
