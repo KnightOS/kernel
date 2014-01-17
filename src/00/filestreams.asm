@@ -141,7 +141,7 @@ populateStreamBuffer:
                 and 0b11111000
                 or c
             pop bc
-            out (6), a
+            setBankA
             ld a, c
             and 0b11111
             add a, 0x40
@@ -154,7 +154,7 @@ populateStreamBuffer:
         pop hl
         pop de
         pop af
-        out (6), a
+        setBankA
     pop af
     ret
 
@@ -353,7 +353,7 @@ selectSection:
     ld a, (ix + 5)
     rla \ rla \ rla \ and 0b11111000
     or b
-    out (6), a
+    setBankA
     ld a, (ix + 4)
     and 0b11111
     ret
@@ -587,7 +587,7 @@ _:          bit 7, (ix)
                     ld a, h
                     rla \ rla \ rla \ and 0b11111000
                     or l
-                    out (6), a ; A is flash page of section
+                    setBankA
                 pop hl
                 ld a, l
                 and 0b11111
