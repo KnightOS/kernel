@@ -246,7 +246,9 @@ test_getStreamInfo:
 test_streamReadToEnd:
     ld de, .testPath
     call openFileRead
-    call getStreamInfo
+    push de
+        call getStreamInfo
+    pop de
     inc bc
     call malloc
     call streamReadToEnd
@@ -260,12 +262,15 @@ test_streamReadToEnd:
     ; Test large file
     ld de, .testPath2
     call openFileRead
-    call getStreamInfo
+    push de
+        call getStreamInfo
+    pop de
     call malloc
     call streamReadToEnd
     call closeStream
     ; Calculate SHA-1 of that file
     push ix \ pop hl
+    jr $
     call sha1Init
     call sha1AddRange
     call sha1Pad

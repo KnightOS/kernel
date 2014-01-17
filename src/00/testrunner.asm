@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x000D
+;.equ defaultTest 0x000D
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST

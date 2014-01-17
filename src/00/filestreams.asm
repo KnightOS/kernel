@@ -451,7 +451,7 @@ _:          xor a
 .readOkay:
             ld b, 0
             cp c
-            jr nz, _
+            jr z, _
             ld bc, 0x100
 _:          ; BC is the amount they want us to read, assuming we're at the start of the block
             ; But we may not be at the start of the block - handle that here
@@ -526,7 +526,7 @@ _:          ; Handle any other buffer
         pop bc
         jp .readLoop
 
-;.done - 1:
+;.done - 2:
         pop bc
 .done:
     pop ix \ pop de \ pop af \ pop bc \ pop hl
