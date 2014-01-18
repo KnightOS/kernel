@@ -126,7 +126,7 @@ _:  pop af
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af
-        in a, (6)
+        getBankA
         push af
         push de
         push hl
