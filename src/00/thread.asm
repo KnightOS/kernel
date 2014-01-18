@@ -638,7 +638,7 @@ sharedSetInitial:
         add ix, bc
     pop bc
     ret
-    
+
 ; TODO: suspendThread
 ;; suspendCurrentThread [Threading]
 ;;  Suspends the currently executing thread.
