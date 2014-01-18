@@ -58,7 +58,7 @@ _:              pop af
                 call getStreamInfo
                 ld a, (currentThreadIndex)
                 push af
-                    ld a, $FE
+                    ld a, 0xFE
                     ld (currentThreadIndex), a
                     call malloc
                     jp nz, .outOfMem
@@ -97,9 +97,9 @@ _:              pop af
 .jumpTableLoop:
         ld a, (hl)
         inc hl
-        cp $FF
+        cp 0xFF
         jr z, .jumpTableDone
-        cp $C9
+        cp 0xC9
         jr nz, _
         inc hl \ inc hl
         jr .jumpTableLoop
