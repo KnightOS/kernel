@@ -17,9 +17,9 @@ It is laid out as follows:
     <tr><td>0x8200</td><td>0x7E00</td><td>Userspace memory</td></tr>
 </table>
 
-_\* See [defines.inc](https://github.com/KnightSoft/KnightOS/blob/master/inc/defines.inc#L66) for details_
+\* See [defines.inc](https://github.com/KnightSoft/KnightOS/blob/master/inc/defines.inc#L66) for details
 
-_\*\* The size of this section could change if the maximum value is changed in [defines.inc](https://github.com/KnightSoft/KnightOS/blob/master/inc/defines.inc#L66")_
+\*\* The size of this section could change if the maximum value is changed in [defines.inc](https://github.com/KnightSoft/KnightOS/blob/master/inc/defines.inc#L66")
 
 Kernel garbage is throwaway memory that the kernel uses for specific purposes for short periods of time. For example, it is used
 for garbage collection, and for writing to Flash, and as temporary storage during file lookups.
@@ -86,11 +86,11 @@ All active file streams are stored in this table.
     <tr><td>0003</td><td>1</td><td>Stream pointer</td></tr>
     <tr><td>0004</td><td>2</td><td>Section identifier</td></tr>
     <tr><td>0006</td><td>1</td><td>Length of final block</td></tr>
-    <tr><td>0007</td><td>1</td><td>Reserved for future use</td></tr>
+    <tr><td>0007</td><td>1</td><td>For future use</td></tr>
 </table>
 
-Flags/owner is the following 8 bit format: FTxxxxxx, where xxxxxx is the thread ID of the owner. F is set if the stream is currently on the
-final block of the file. T is set if thread is writable.
+Flags/owner is the following 8 bit format: FTExxxxx, where xxxxx is the thread ID of the owner. F is set if the stream is currently on the
+final block of the file. T is set if thread is writable. E is set if the stream pointer is past the end of the file.
 
 The buffer address is the location of the buffer in memory (the first byte). This 256-byte buffer contains the contents of the current DAT
 block. The stream pointer is the offset within this buffer that the stream is currently poitned to. When this offset overflows or underflows,

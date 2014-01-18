@@ -1,13 +1,13 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x0007
+;.equ defaultTest 0x000D
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
 
 ; To create a new unit test:
-; 1. Create a file for it in tests/ (if needed)
+; 1. Create a file for it in tests (if needed)
 ; 2. Add the test function
 ;    Return test success in A (0: Pass | 1: Fail)
 ; 3. Add test to test_collection
@@ -21,18 +21,30 @@ test_collection:
     .dw test_compareStrings                 ; 0006 test_compareStrings
 
     .dw test_openFileRead                   ; 0007 test_openFileRead
-    .dw test_rleCompress                    ; 0008 test_rleCompress
-    .dw test_rleDecompress                  ; 0009 test_rleDecompress
-    .dw test_rleCalculateCompressedLength   ; 000A test_rlePredictCompress
-    .dw test_rleCalculateDecompressedLength ; 000B test_rlePredictDecompress
-    .dw test_crc16                          ; 000C test_crc16
-    .dw test_sha1                           ; 000D test_sha1
-    .dw test_integerSort                    ; 000E test_integerSort
-    .dw test_callbackSort                   ; 000F test_callbackSort
+    .dw test_closeStream                    ; 0008 test_closeStream
+    .dw test_streamReadByte                 ; 0009 test_streamReadByte
+    .dw test_streamReadWord                 ; 000A test_streamReadWord
+    .dw test_streamReadBuffer               ; 000B test_streamReadBuffer
+    .dw test_getStreamInfo                  ; 000C test_getStreamInfo
+    .dw test_streamReadToEnd                ; 000D test_streamReadToEnd
+
+    .dw test_rleCompress                    ; 000E test_rleCompress
+    .dw test_rleDecompress                  ; 000F test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 0010 test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 0011 test_rlePredictDecompress
+    .dw test_rleCompress                    ; 0012 test_rleCompress
+    .dw test_rleDecompress                  ; 0013 test_rleDecompress
+    .dw test_rleCalculateCompressedLength   ; 0014 test_rlePredictCompress
+    .dw test_rleCalculateDecompressedLength ; 0015 test_rlePredictDecompress
+    .dw test_crc16                          ; 0016 test_crc16
+    .dw test_sha1                           ; 0017 test_sha1
+    .dw test_integerSort                    ; 0018 test_integerSort
+    .dw test_callbackSort                   ; 0019 test_callbackSort
 
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
+    ; That number starts at (last implicit test) + 1
 test_collection_end:
 
 testrunner:
@@ -127,12 +139,16 @@ testrunner_runtest:
     pop hl
     call fastCopy
     ld de, .return
+    push iy
     push de
 #ifdef BREAK_BEFORE_TEST
     jr $
 #endif
     jp (hl)
 .return:
+    pop iy
+    call getKeypadLock
+    call getLcdLock
     or a
     jr nz, .failure
     ; Pass
@@ -202,7 +218,7 @@ characterMap:
 .endmacro
 
 #include "tests/util_tests.asm"
-#include "tests/crypto_tests.asm"
 #include "tests/filestreams_tests.asm"
+#include "tests/crypto_tests.asm"
 
 .undefine assert_pass assert_fail

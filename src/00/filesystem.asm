@@ -76,7 +76,7 @@ findFileEntry:
     push af ; Save interrupt state
     di
         ; Skip initial / if present
-        ; TODO: Allow for relative paths som0xeow
+        ; TODO: Allow for relative paths somehow
         ld a, (de)
         cp '/'
         jr nz, _

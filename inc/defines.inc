@@ -12,7 +12,7 @@ errTooManySignals .equ 10
 
 #include "kernelmem.inc"
 
-threadRangeMask .equ 0x3F
+threadRangeMask .equ 0b11111
 
 ; Filesystem stuff
 fsEndOfTable .equ 0xFF
