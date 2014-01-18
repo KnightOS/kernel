@@ -1,10 +1,10 @@
 #ifndef COLOR
 
-setLegacyMode:
+setLegacyLcdMode:
     ret
     
+resetLegacyLcdMode:
 clearColorLcd:
-resetLegacyMode:
 colorLcdOn:
 colorLcdOff:
 colorLcdWait:
