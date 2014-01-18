@@ -1,27 +1,21 @@
-#ifdef COLOR
-; Color screen is 320x240
+#ifndef COLOR
 
-; Blinks the LCD backlight 10 times, then pauses
-; For debugging
-debug_blink:
-    push af
-    push bc
-    ld b, 10
-.loop:
-    push bc
-        in a, (0x3A)
-        set 5, a
-        out (0x3A), a ; off
-        call colorLcdWait
-        in a, (0x3A)
-        res 5, a
-        out (0x3A), a ; on
-        call colorLcdWait
-    pop bc
-    djnz .loop
-    pop bc
-    pop af
+setLegacyMode:
     ret
+    
+clearColorLcd:
+resetLegacyMode:
+colorLcdOn:
+colorLcdOff:
+colorLcdWait:
+readLcdRegister:
+writeLcdRegister:
+    or 1
+    ld a, errUnsupported
+    ret
+
+#else
+; Color screen is 320x240
 
 ; Destroys C
 ; A: Register
