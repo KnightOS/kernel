@@ -96,11 +96,7 @@ _:              pop af
         inc hl
         cp 0xFF
         jr z, .jumpTableDone
-<<<<<<< HEAD
-        cp 0xC9
-=======
         cp 0xC9 ; ret (note: we probably don't actually need to check this)
->>>>>>> master
         jr nz, _
         inc hl \ inc hl
         jr .jumpTableLoop
