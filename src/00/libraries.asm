@@ -33,8 +33,7 @@ _:  push af
                 ld a, d
                 push af
                     call streamReadWord
-                    ld d, h
-                    ld e, l
+                    ex de, hl
                 
                     ; Check to see if it has already been opened
                     ld a, (loadedLibraries)
@@ -58,7 +57,9 @@ _:              pop af
                 call getStreamInfo
                 ld a, (currentThreadIndex)
                 push af
-                    ld a, $FE
+                    ld a, 0xFE ; Load the memory for permanent use
+                    ; TODO: We should refactor this (and loadProgram/startThread) to modify the owner of allocated memory
+                    ; post-allocation. It shouldn't be done in malloc based on magic values in (currentThreadIndex)
                     ld (currentThreadIndex), a
                     call malloc
                     jp nz, .outOfMem
@@ -97,9 +98,9 @@ _:              pop af
 .jumpTableLoop:
         ld a, (hl)
         inc hl
-        cp $FF
+        cp 0xFF
         jr z, .jumpTableDone
-        cp $C9
+        cp 0xC9 ; ret (note: we probably don't actually need to check this)
         jr nz, _
         inc hl \ inc hl
         jr .jumpTableLoop

@@ -75,16 +75,20 @@ lcall:
 
         ld a, (hl)
         ld (hl), 0
-        ld b, a
+        ld c, a
         inc hl
         ex de, hl
         ld hl, libraryTable
+        ld a, (loadedLibraries)
+        ld b, a
 lmacro_SearchLoop:
         ld a, (hl)
-        cp b
+        cp c
         jr z, _
         inc hl \ inc hl \ inc hl \ inc hl
-        jr lmacro_SearchLoop
+        djnz lmacro_SearchLoop
+        ld a, kerr_library_not_found
+        jp kernelError
 
 _:      inc hl
         ld c, (hl)
