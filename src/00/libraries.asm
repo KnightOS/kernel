@@ -18,7 +18,7 @@ _:  push af
     push bc
         di
         push de
-            call fileExists
+            call fileExists ; TODO: Let's just error out on openFileRead instead of checking here
             jp nz, .fileNotFound
             
             ld a, (loadedLibraries)
@@ -33,8 +33,7 @@ _:  push af
                 ld a, d
                 push af
                     call streamReadWord
-                    ld d, h
-                    ld e, l
+                    ex de, hl
                 
                     ; Check to see if it has already been opened
                     ld a, (loadedLibraries)
@@ -47,26 +46,24 @@ _:                      ld a, (hl)
                         cp e
                         jr z, .alreadyLoaded
                         inc hl \ inc hl \ inc hl \ inc hl
-                        dec b
-                        jr nz, -_
+                        djnz -_
                     pop bc
 _:              pop af
             pop bc
             pop hl
-            ld d, a
-            push af
+            push de
                 call getStreamInfo
                 ld a, (currentThreadIndex)
                 push af
-                    ld a, 0xFE
+                    ld a, 0xFE ; Load the memory for permanent use
+                    ; TODO: We should refactor this (and loadProgram/startThread) to modify the owner of allocated memory
+                    ; post-allocation. It shouldn't be done in malloc based on magic values in (currentThreadIndex)
                     ld (currentThreadIndex), a
                     call malloc
                     jp nz, .outOfMem
                 pop af
                 ld (currentThreadIndex), a
-            pop af
-            
-            ld d, a
+            pop de
         pop af
         ld (loadedLibraries), a
         
@@ -99,7 +96,11 @@ _:              pop af
         inc hl
         cp 0xFF
         jr z, .jumpTableDone
+<<<<<<< HEAD
         cp 0xC9
+=======
+        cp 0xC9 ; ret (note: we probably don't actually need to check this)
+>>>>>>> master
         jr nz, _
         inc hl \ inc hl
         jr .jumpTableLoop

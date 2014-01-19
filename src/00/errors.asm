@@ -108,6 +108,7 @@ errorTable:
     .dw init_not_found_text
     .dw no_threads_text
     .dw no_active_threads_text
+    .dw library_not_found_text
 
 init_not_found_text:
     .db "/bin/init not found", 0
@@ -115,3 +116,5 @@ no_threads_text:
     .db "There are no running threads", 0
 no_active_threads_text:
     .db "There are no active threads", 0
+library_not_found_text:
+    .db "The requested library is not\nloaded", 0

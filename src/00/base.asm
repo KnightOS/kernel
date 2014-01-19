@@ -32,4 +32,13 @@
 #include "testrunner.asm"
 #endif
 
-.echo "Bytes remaining on page 00: " 0x4000-$ ; TODO: Fix this problem in sass
+.echo "Assigned kernel memory:"
+.echo "threadTable: 0x{0:X4}" threadTable
+.echo "libraryTable: 0x{0:X4}" libraryTable
+.echo "signalTable: 0x{0:X4}" signalTable
+.echo "fileHandleTable: 0x{0:X4}" fileHandleTable
+.echo "stateMemory: 0x{0:X4}" stateMemory
+.echo "kernelGarbage: 0x{0:X4}" kernelGarbage
+.echo "userMemory: 0x{0:X4}" userMemory
+
+.echo "Bytes remaining on page 00: {0}" 0x4000-$ ; TODO: Fix this problem in sass
