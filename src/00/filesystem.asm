@@ -15,6 +15,7 @@ deleteFile:
             ld b, a
             ld a, i
             push af
+                di
                 ld a, b
                 out (6), a
                 call unlockFlash
