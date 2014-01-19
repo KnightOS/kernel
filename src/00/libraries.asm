@@ -18,7 +18,7 @@ _:  push af
     push bc
         di
         push de
-            call fileExists
+            call fileExists ; TODO: Let's just error out on openFileRead instead of checking here
             jp nz, .fileNotFound
             
             ld a, (loadedLibraries)
@@ -46,14 +46,12 @@ _:                      ld a, (hl)
                         cp e
                         jr z, .alreadyLoaded
                         inc hl \ inc hl \ inc hl \ inc hl
-                        dec b
-                        jr nz, -_
+                        djnz -_
                     pop bc
 _:              pop af
             pop bc
             pop hl
-            ld d, a
-            push af
+            push de
                 call getStreamInfo
                 ld a, (currentThreadIndex)
                 push af
@@ -65,9 +63,7 @@ _:              pop af
                     jp nz, .outOfMem
                 pop af
                 ld (currentThreadIndex), a
-            pop af
-            
-            ld d, a
+            pop de
         pop af
         ld (loadedLibraries), a
         
