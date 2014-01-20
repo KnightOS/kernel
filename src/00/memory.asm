@@ -25,6 +25,19 @@ allocScreenBuffer:
     pop bc
     ret
 
+;; reassignMemory [System]
+;;  Reassigns a given block of memory to the specified thread ID.
+;; Inputs:
+;;  IX: Pointer to any location within the target block.
+;;  A: Thread ID for new owner
+reassignMemory:
+    push ix
+        ; TODO: Check if thread exists
+        call memSeekToStart
+        ld (ix + -3), a
+    pop ix
+    ret
+
 ;; calloc [System]
 ;;  Allocates memory for a given number of elements
 ;;  of a given size (that is, BC * A bytes total),

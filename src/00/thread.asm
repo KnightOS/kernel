@@ -20,10 +20,6 @@ _:          inc a
 getCurrentThreadID:
     push hl
         ld a, (currentThreadIndex)
-        cp nullThread
-        jr z, +_
-        cp 0xFE
-        jr z, ++_
         add a, a
         add a, a
         add a, a
@@ -31,11 +27,6 @@ getCurrentThreadID:
         ld l, a
         ld a, (hl)
     pop hl
-    ret
-_:  pop hl
-    jp getNextThreadID ; call \ ret
-_:  pop hl
-    ld a, 0xFE ; TODO: Dynamic library deallocation
     ret
 
 ;; startThread [Threading]
@@ -335,21 +326,14 @@ launchProgram:
         call openFileRead
         jr nz, .error
 
-        push de
-            call getStreamInfo
-            ; TODO: If D > 0, then the file is too large. Error out before we ask malloc about it.
-            pop de \ push de
-            dec bc
-            dec bc
-            ld a, (currentThreadIndex)
-            push af
-                ld a, nullThread
-                ld (currentThreadIndex), a ; The null thread will allocate memory to the next thread
-                call malloc
-                jr nz, .error_pop2
-            pop af
-            ld (currentThreadIndex), a
-        pop de
+        call getStreamInfo
+        ; TODO: If E > 0, then the file is too large. Error out before we ask malloc about it.
+        dec bc
+        dec bc
+        call malloc
+        jr nz, .error_pop2
+        call getNextThreadId
+        call reassignMemory
 
         push ix
             call streamReadByte ; Thread flags

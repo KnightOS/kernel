@@ -53,16 +53,10 @@ _:              pop af
             pop hl
             push de
                 call getStreamInfo
-                ld a, (currentThreadIndex)
-                push af
-                    ld a, 0xFE ; Load the memory for permanent use
-                    ; TODO: We should refactor this (and loadProgram/startThread) to modify the owner of allocated memory
-                    ; post-allocation. It shouldn't be done in malloc based on magic values in (currentThreadIndex)
-                    ld (currentThreadIndex), a
-                    call malloc
-                    jp nz, .outOfMem
-                pop af
-                ld (currentThreadIndex), a
+                call malloc
+                jp nz, .outOfMem
+                ld a, 0xFE
+                call reassignMemory
             pop de
         pop af
         ld (loadedLibraries), a
