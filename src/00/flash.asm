@@ -4,10 +4,10 @@
 ;; unlockFlash [Flash]
 ;;  Unlocks Flash and unlocks protected ports
 ;; Notes:
+;;  **Do not use this unless you know what you're doing.**
+;;  
 ;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
-;;  much time with Flash unlocked. Please leave interrupts disabled while working
-;;  with Flash in an unlocked state. **Do not do this unless you know what you're
-;;  doing.**
+;;  much time with Flash unlocked. Disabled interrupts while Flash is unlocked.
 unlockFlash:
     push af
     push bc
