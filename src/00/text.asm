@@ -37,6 +37,7 @@ drawChar:
     ld c, a
     ld a, i
     push af
+        di
         setBankA(0x01)
         ld a, c
         cp '\n'
@@ -89,6 +90,7 @@ drawCharAND:
     ld c, a
     ld a, i
     push af
+        di
         setBankA(0x01)
         ld a, c
         cp '\n'
@@ -141,6 +143,7 @@ drawCharXOR:
     ld c, a
     ld a, i
     push af
+        di
         setBankA(0x01)
         ld a, c
         cp '\n'
@@ -326,7 +329,7 @@ measureChar:
     push af
     ld a, i
     push af
-    di
+        di
         setBankA(0x01)
         ld de, 6
         sub 0x20
