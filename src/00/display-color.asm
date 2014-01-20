@@ -32,7 +32,7 @@ writeLcdRegister:
     ret
 
 ;; readLcdRegister [Color]
-;;  Reads a 16-bit value to a color LCD register
+;;  Reads a 16-bit value from a color LCD register
 ;; Inputs:
 ;;  A: Register
 ;; Outputs:
