@@ -158,7 +158,7 @@ populateStreamBuffer:
     pop af
     ret
 
-;; getStreamBuffer [File Streams]
+;; getStreamBuffer [File Stream]
 ;;  Gets the address of a stream's memory buffer.
 ;; Inputs:
 ;;  D: Stream ID
