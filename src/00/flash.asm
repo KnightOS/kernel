@@ -3,7 +3,7 @@
 
 ;; unlockFlash [Flash]
 ;;  Unlocks Flash and unlocks protected ports
-;; Comments:
+;; Notes:
 ;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
 ;;  much time with Flash unlocked. Please leave interrupts disabled while working
 ;;  with Flash in an unlocked state. **Do not do this unless you know what you're
@@ -45,7 +45,7 @@ lockFlash:
 ;; Inputs:
 ;;  HL: Destination
 ;;  A: Value
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked. This can only *reset* bits of Flash.
 writeFlashByte:
     push bc
@@ -112,7 +112,7 @@ _:  ld a, b
 ;;  DE: Address to write to
 ;;  HL: Address to read from (in RAM)
 ;;  BC: Length of data to write
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked. Do not attempt to read your source data
 ;;  from Flash, you must load any data to be written into RAM. This
 ;;  can only *reset* bits of Flash.
@@ -182,7 +182,7 @@ _:
 
 ;; eraseSwapSector [Flash]
 ;;  Erases the swap sector.
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked.
 eraseSwapSector:
     ld a, swapSector
@@ -194,7 +194,7 @@ eraseSwapSector:
 ;;  by setting each byte to 0xFF.
 ;; Inputs:
 ;;  A: Any page within the target sector
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked.
 eraseFlashSector:
     push bc
@@ -261,7 +261,7 @@ _:  ld a, (0x4000)
 ;;  Erases a single page of Flash.
 ;; Inputs:
 ;;  A: Target page
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked. This is a very costly operation, and you
 ;;  may want to consider handling this logic yourself if you have to
 ;;  erase more than one page in a single sector
@@ -303,7 +303,7 @@ _:
 ;;  Copies a single sector of Flash to the swap sector.
 ;; Inputs:
 ;;  A: Any page within the sector to be copied
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked.
 copySectorToSwap:
     push af
@@ -478,7 +478,7 @@ _:  cp (hl)
 ;; Inputs:
 ;;  A: Destination page
 ;;  B: Source page
-;; Comments:
+;; Notes:
 ;;  Flash must be unlocked and the desination page must be cleared.
 copyFlashPage:
     push de
