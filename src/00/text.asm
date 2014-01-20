@@ -34,6 +34,11 @@ drawChar:
     push hl
     push ix
     push bc
+    ld c, a
+    ld a, i
+    push af
+        setBankA(0x01)
+        ld a, c
         cp '\n'
         jr nz, _
         ld a, e
@@ -47,7 +52,7 @@ _:      push de
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, (fontTablePtr)
+            ld hl, 0x4000
             add hl, de
             ld a, (hl)
             inc hl
@@ -56,6 +61,9 @@ _:      push de
         call putSpriteOR
         add a, d
         ld d, a
+_:  pop af
+    jp po, _
+    ei
 _:  pop bc
     pop ix
     pop hl
@@ -78,6 +86,11 @@ drawCharAND:
     push hl
     push ix
     push bc
+    ld c, a
+    ld a, i
+    push af
+        setBankA(0x01)
+        ld a, c
         cp '\n'
         jr nz, _
         ld a, e
@@ -91,7 +104,7 @@ _:      push de
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, (fontTablePtr)
+            ld hl, 0x4000
             add hl, de
             ld a, (hl)
             inc hl
@@ -100,6 +113,9 @@ _:      push de
         call putSpriteAND
         add a, d
         ld d, a
+_:  pop af
+    jp po, _
+    ei
 _:  pop bc
     pop ix
     pop hl
@@ -122,6 +138,11 @@ drawCharXOR:
     push hl
     push ix
     push bc
+    ld c, a
+    ld a, i
+    push af
+        setBankA(0x01)
+        ld a, c
         cp '\n'
         jr nz, _
         ld a, e
@@ -130,12 +151,12 @@ drawCharXOR:
         ld d, b
         jr ++_
     
-_:        push de
+_:      push de
             ld de, 6
             sub 0x20
             call DEMulA
             ex de, hl
-            ld hl, (fontTablePtr)
+            ld hl, 0x4000
             add hl, de
             ld a, (hl)
             inc hl
@@ -144,6 +165,9 @@ _:        push de
         call putSpriteXOR
         add a, d
         ld d, a
+_:  pop af
+    jp po, _
+    ei
 _:  pop bc
     pop ix
     pop hl
@@ -299,13 +323,22 @@ drawHexHL:
 measureChar:
     push hl
     push de
+    push af
+    ld a, i
+    push af
+    di
+        setBankA(0x01)
         ld de, 6
         sub 0x20
         call DEMulA
         ex de, hl
-        ld hl, (fontTablePtr)
+        ld hl, 0x4000
         add hl, de
         ld a, (hl)
+    pop af
+    jp po, _
+    ei
+_:  pop af
     pop de
     pop hl
     ret
@@ -335,5 +368,3 @@ _:  pop af
     pop bc
     pop hl
     ret
-    
-#include "font.asm"

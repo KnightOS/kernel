@@ -125,10 +125,6 @@ reboot:
 
     call formatMem
 
-    ; Initialize the font table pointer
-    ld hl, kernel_font
-    ld (fontTablePtr), hl
-
     ; Set all file handles to unused
     ld hl, fileHandleTable
     ld (hl), 0xFF

@@ -70,8 +70,8 @@ runtest: test
 	$(EMPREFIX)build/Wabbitemu.exe bin/kernel-TI84pSE.rom
 
 # Build kernel
-kernel: page00 pageBoot pagePrivledged
-	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
+kernel: page00 page01 pageBoot pagePrivledged
+	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/01.bin:4000 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
 	$(ASPREFIX)build/CreateJumpTable.exe src/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom inc/kernel.inc bin/kernel.inc
 	cat inc/kernelmem.inc >> bin/kernel.inc
 	rm bin/00.bin
@@ -81,6 +81,9 @@ kernel: page00 pageBoot pagePrivledged
 
 page00:
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin --listing bin/00.list
+
+page01:
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols bin/01.sym src/01/base.asm bin/01.bin --listing bin/01.list
 
 pageBoot:
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin --listing bin/boot.list
