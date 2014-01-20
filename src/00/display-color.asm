@@ -17,9 +17,13 @@ writeLcdRegister:
 #else
 ; Color screen is 320x240
 
-; Destroys C
-; A: Register
-; HL: Value
+;; writeLcdRegister [Color]
+;;  Writes a 16-bit value to a color LCD register
+;; Inputs:
+;;  A: Register
+;;  HL: Value
+;; Comments:
+;;  Destroys C
 writeLcdRegister:
     out (0x10), a \ out (0x10), a
     ld c, 0x11
@@ -27,9 +31,14 @@ writeLcdRegister:
     out (c), l
     ret
 
-; Destroys C
-; A: Register
-; HL: Value
+;; readLcdRegister [Color]
+;;  Reads a 16-bit value to a color LCD register
+;; Inputs:
+;;  A: Register
+;; Outputs:
+;;  HL: Value
+;; Comments:
+;;  Destroys C
 readLcdRegister:
     out (0x10), a \ out (0x10), a
     ld c, 0x11
@@ -50,6 +59,8 @@ colorLcdWait:
     jp nz, .loop
     ret
 
+;; colorLcdOn [Color]
+;;  Initializes and turns on the color LCD in color mode.
 colorLcdOn:
     ; TODO: Optimize this, it could be a lot faster
     ld a, 0x0D
@@ -114,6 +125,8 @@ colorLcdOn:
     lcdout(0x03, 0x10B8) ; Entry mode the way we want it
     ret
 
+;; colorLcdOff [Color]
+;;  Turns off the color LCD and backlight.
 colorLcdOff:
     lcdout(0x07, 0x00)
     call colorLcdWait
@@ -231,6 +244,9 @@ _:
     pop af \ pop de \ pop bc \ pop hl
     ret
 
+;; clearColorLcd [Color]
+;;  Sets all pixels on the LCD to grey in color mode.
+; TODO: Set pixels to user-specified color
 clearColorLcd:
     push af
     push hl
@@ -276,12 +292,10 @@ clearColorLcd:
     ret
 
 ;; setLegacyLcdMode [Color]
-;;  Sets up the LCD for use with the legacy [[fastCopy]] function on
-;;  color models.
+;;  Sets the LCD to legacy mode.
 ;; Notes:
-;;  This function sets the display to use interlaced partial images, so
-;; that each pixel written is two pixels wide (for the sake of speed).
-;; It also prepares the windowing and entry modes for fastCopy.
+;;  Legacy mode simulates a 96x64 monochrome screen with the help of [[fastCopy]]. Color
+;;  graphics are not advised in legacy mode.
 setLegacyLcdMode:
     call clearColorLcd
     push af
@@ -327,6 +341,8 @@ setLegacyLcdMode:
     pop af
     ret
 
+;; resetLegacyLcdMode [Color]
+;;  Sets the LCD to color mode.
 resetLegacyLcdMode:
     push af
     push bc
