@@ -537,7 +537,7 @@ _:          ; Handle any other buffer
 ;;  Gets the amount of space remaining in a file stream.
 ;; Inputs:
 ;;  D: Stream ID
-;; Ouptuts:
+;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
 ;;  EBC: Remaining space in stream (on success)
