@@ -244,23 +244,24 @@ eraseFlashPage:
         pop af
         
         ld c, a
-        and 0b011111100
+        and 0b111111100
         ld b, swapSector
+        ; b is page in swap sector, a is page in target sector, c is target page
 _:
         cp c
-        jr z, _
+        jr z, .skipPage
         call copyFlashPage
-_:
+.skipPage:
         inc b
         inc a
         push af
         ld a, b
-        and 0b011111100
+        and 0b000000011
         or a
-        jr z, _
+        jr z, .return
         pop af
-        jr --_
-_:        
+        jr -_
+.return:
         pop af
     pop bc
     pop af
@@ -440,12 +441,12 @@ _:  cp (hl)
 ; Inputs:    A: Destination page
 ;            B: Source page
 ; Outputs:   None
-; Copies the contents of one page to another.  The destination should be cleared to $FF first.
+; Copies the contents of one page to another.  The destination should be cleared to 0xFF first.
 copyFlashPage:
     push de
+    push bc
     ld d, a
     push af
-    ld a, i
     ld a, i
     push af
     di
@@ -459,8 +460,8 @@ copyFlashPage:
 #ifdef CPU15
             ld a, 1
             out (5), a
-        
-            ld de, kernelGarbage + 0x4000 ; By rearranging memory, we can make the routine perform better
+            ; This routine can perform better on some models if we rearrange memory 
+            ld de, kernelGarbage + 0x4000
             ld bc, .ram_end - .ram
             ldir
 #else
@@ -489,11 +490,12 @@ copyFlashPage:
     pop de
     pop hl
     
-    pop bc
     pop af
     jp po, _
     ei
 _:  pop af
+    pop bc
+    pop de
     ret
     
 #ifdef CPU15
