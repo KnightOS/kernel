@@ -1,5 +1,13 @@
 ; TODO: Add routines to erase certificate sectors (or add this to eraseFlashSector?)
     rst 0 ; Prevent runaway code from unlocking flash
+
+;; unlockFlash [Flash]
+;;  Unlocks Flash and unlocks protected ports
+;; Comments:
+;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
+;;  much time with Flash unlocked. Please leave interrupts disabled while working
+;;  with Flash in an unlocked state. **Do not do this unless you know what you're
+;;  doing.**
 unlockFlash:
     push af
     push bc
@@ -15,6 +23,8 @@ unlockFlash:
     pop af
     ret
 
+;; lockFlash [Flash]
+;;  Locks Flash and locks protected ports
 lockFlash:
     push af
     push bc
@@ -30,10 +40,13 @@ lockFlash:
     pop af
     ret
 
-; Inputs:    A: Value to write
-;            HL: Address to write to
-; Outputs:    None
-; Comments:    Flash must be unlocked
+;; writeFlashByte [Flash]
+;;  Writes a single byte to Flash
+;; Inputs:
+;;  HL: Destination
+;;  A: Value
+;; Comments:
+;;  Flash must be unlocked. This can only *reset* bits of Flash.
 writeFlashByte:
     push bc
     ld b, a
@@ -93,11 +106,16 @@ _:  ld a, b
     ret
 .ram_end:
 
-; Inputs:    DE: Address to write to
-;            HL: Address to read from (must be in RAM)
-;            BC: Size of data to be written
-; Outputs:    None
-; Comments:    Flash must be unlocked
+;; writeFlashBuffer [Flash]
+;;  Writes several bytes of memory to Flash
+;; Inputs:
+;;  DE: Address to write to
+;;  HL: Address to read from (in RAM)
+;;  BC: Length of data to write
+;; Comments:
+;;  Flash must be unlocked. Do not attempt to read your source data
+;;  from Flash, you must load any data to be written into RAM. This
+;;  can only *reset* bits of Flash.
 writeFlashBuffer:
     push af
     ld a, i
@@ -162,14 +180,22 @@ _:
     ret
 .ram_end:
 
+;; eraseSwapSector [Flash]
+;;  Erases the swap sector.
+;; Comments:
+;;  Flash must be unlocked.
 eraseSwapSector:
     ld a, swapSector
     call eraseFlashSector
     ret
 
-; Inputs:    A: Any page within the sector to be erased
-; Outputs:    None
-; Comments:    Flash must be unlocked
+;; eraseFlashSector [Flash]
+;;  Erases one sector of Flash (generally 4 pages of Flash, or 64K)
+;;  by setting each byte to 0xFF.
+;; Inputs:
+;;  A: Any page within the target sector
+;; Comments:
+;;  Flash must be unlocked.
 eraseFlashSector:
     push bc
     ld b, a
@@ -231,8 +257,14 @@ _:  ld a, (0x4000)
     ret
 .ram_end:
 
-; Inputs:    A: Page to erase
-; Erases a single flash page
+;; eraseFlashPage [Flash]
+;;  Erases a single page of Flash.
+;; Inputs:
+;;  A: Target page
+;; Comments:
+;;  Flash must be unlocked. This is a very costly operation, and you
+;;  may want to consider handling this logic yourself if you have to
+;;  erase more than one page in a single sector
 eraseFlashPage:
     push af
     push bc
@@ -267,9 +299,12 @@ _:
     pop af
     ret
 
-; Inputs:    A: Any page within the sector to be copied
-; Outputs:    None
-; Comments:    Flash must be unlocked
+;; copySectorToSwap [Flash]
+;;  Copies a single sector of Flash to the swap sector.
+;; Inputs:
+;;  A: Any page within the sector to be copied
+;; Comments:
+;;  Flash must be unlocked.
 copySectorToSwap:
     push af
     call eraseSwapSector
@@ -438,10 +473,13 @@ _:  cp (hl)
 .end:
 #endif
 
-; Inputs:    A: Destination page
-;            B: Source page
-; Outputs:   None
-; Copies the contents of one page to another.  The destination should be cleared to 0xFF first.
+;; copyFlashPage [Flash]
+;;  Copies one page of Flash to another.
+;; Inputs:
+;;  A: Destination page
+;;  B: Source page
+;; Comments:
+;;  Flash must be unlocked and the desination page must be cleared.
 copyFlashPage:
     push de
     push bc
@@ -509,12 +547,12 @@ _:  pop af
     ld de, 0x4000
     ld bc, 0x4000
 .loop:
-    ld a, $AA
-    ld ($0AAA), a    ; Unlock
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
-    ld a, $A0
-    ld ($0AAA), a    ; Write command
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
     ld a, (hl)
     ld (de), a        ; Data
     inc de
@@ -558,12 +596,12 @@ _:
     pop af
     setBankA
     ; copy D to (HL)
-    ld a, $AA
-    ld ($0AAA), a    ; Unlock
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
-    ld a, $A0
-    ld ($0AAA), a    ; Write command
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
     ld (hl), d        ; Data
     
     ld a, d
