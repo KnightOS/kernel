@@ -26,7 +26,7 @@ clearBuffer:
 ;; Notes:
 ;;  This routine will return immediately without drawing to the LCD if the calling thead does not have an
 ;;  LCD lock. Acquire one with [[getLcdLock]].
-;;  On a TI-84+ CSE, this routine will draw the 96x64 monochrome buffer (the "legacy" buffer) to the LCD
+;;  On a TI-84+ CSE, this routine will draw the 96x64 monochrome buffer (the "legacy" buffer) to the LCD.
 ;;  The LCD should be set to legacy mode (see [[setLegacyLcdMode]]).
 fastCopy:
         call hasLCDLock
