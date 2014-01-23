@@ -529,7 +529,7 @@ _:          ; Handle any other buffer
 ;.done - 2:
         pop bc
 .done:
-    pop ix \ pop de \ pop af \ pop bc \ pop hl
+    pop ix \ pop af \ pop de \ pop bc \ pop hl
     cp a
     ret
 
