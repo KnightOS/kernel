@@ -120,12 +120,12 @@ _:  dec hl
 
     jr sysInterruptDone
 noThreads:
-    ld a, kerr_no_threads
-    jp kernelError
+    ld a, panic_no_threads
+    jp panic
 noActiveThreads:
-    ld a, kerr_no_active_threads
+    ld a, panic_no_active_threads
     set 7, a
-    jp kernelError
+    jp panic
 intHandleTimer2:
     in a, (0x03)
     res 2, a

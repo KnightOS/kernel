@@ -185,8 +185,8 @@ reboot:
 
     ld de, bootFile
     call fileExists
-    ld a, kerr_init_not_found
-    jp nz, kernelError
+    ld a, panic_init_not_found
+    jp nz, panic
     call launchProgram
     ld h, 0
     call setInitialA

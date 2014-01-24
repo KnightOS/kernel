@@ -87,8 +87,8 @@ lmacro_SearchLoop:
         jr z, _
         inc hl \ inc hl \ inc hl \ inc hl
         djnz lmacro_SearchLoop
-        ld a, kerr_library_not_found
-        jp kernelError
+        ld a, panic_library_not_found
+        jp panic
 
 _:      inc hl
         ld c, (hl)
