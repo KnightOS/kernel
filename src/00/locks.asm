@@ -6,28 +6,36 @@ getLCDLock:
         ld (hwLockLCD), a
     pop af
     ret
-    
+
+;; getIOLock [Hardware]
+;;  Locks the I/O port to the current thread.
 getIOLock:
     push af
         call getCurrentThreadId
         ld (hwLockIO), a
     pop af
     ret
-    
+
+;; getKeypadLock [Hardware]
+;;  Locks the keyboard to the current thread.
 getKeypadLock:
     push af
         call getCurrentThreadId
         ld (hwLockKeypad), a
     pop af
     ret
-    
+
+;; getUSBLock [Hardware]
+;;  Locks the USB port to the current thread.
 getUSBLock:
     push af
         call getCurrentThreadId
         ld (hwLockUSB), a
     pop af
     ret
-    
+
+;; hasLCDLock [Hardware]
+;;  Sets Z if the current thread has a lock on the LCD.
 hasLCDLock:
     push hl
     push af
@@ -38,7 +46,9 @@ hasLCDLock:
     ld a, h
     pop hl
     ret
-    
+
+;; hasIOLock [Hardware]
+;;  Sets Z if the current thread has a lock on the I/O port.
 hasIOLock:
     push hl
     push af
@@ -49,7 +59,9 @@ hasIOLock:
     ld a, h
     pop hl
     ret
-    
+
+;; hasKeypadLock [Hardware]
+;;  Sets Z if the current thread has a lock on the keyboard.
 hasKeypadLock:
     push hl
     push af
@@ -60,7 +72,9 @@ hasKeypadLock:
     ld a, h
     pop hl
     ret
-    
+
+;; hasUSBLock [Hardware]
+;;  Sets Z if the current thread has a lock on the USB.
 hasUSBLock:
 #ifdef USB
     push hl
@@ -80,4 +94,4 @@ hasUSBLock:
     pop bc
 #endif
     ret
-    
+
