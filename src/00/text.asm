@@ -28,7 +28,7 @@ newline:
 ;; Outputs:
 ;;  D, E: Moved to next character position
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawChar:
     push af
     push hl
@@ -45,6 +45,11 @@ drawChar:
         ld a, e
         add a, 6
         ld e, a
+        ld d, b
+        jr +++_
+_:
+        cp '\r'
+        jr nz, _
         ld d, b
         jr ++_
     
@@ -81,7 +86,7 @@ _:  pop bc
 ;; Outputs:
 ;;  D, E: Moved to next character position
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawCharAND:
     push af
     push hl
@@ -93,14 +98,19 @@ drawCharAND:
         di
         setBankA(0x01)
         ld a, c
-        cp '\n'
+         cp '\n'
         jr nz, _
         ld a, e
         add a, 6
         ld e, a
         ld d, b
+        jr +++_
+_:
+        cp '\r'
+        jr nz, _
+        ld d, b
         jr ++_
-    
+        
 _:      push de
             ld de, 6
             sub 0x20
@@ -134,7 +144,7 @@ _:  pop bc
 ;; Outputs:
 ;;  D, E: Moved to next character position
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawCharXOR:
     push af
     push hl
@@ -151,6 +161,11 @@ drawCharXOR:
         ld a, e
         add a, 6
         ld e, a
+        ld d, b
+        jr +++_
+_:
+        cp '\r'
+        jr nz, _
         ld d, b
         jr ++_
     
