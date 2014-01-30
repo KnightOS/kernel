@@ -30,50 +30,10 @@ newline:
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawChar:
-    push af
-    push hl
     push ix
-    push bc
-    ld c, a
-    ld a, i
-    push af
-        di
-        setBankA(0x01)
-        ld a, c
-        cp '\n'
-        jr nz, _
-        ld a, e
-        add a, 6
-        ld e, a
-        ld d, b
-        jr +++_
-_:
-        cp '\r'
-        jr nz, _
-        ld d, b
-        jr ++_
-    
-_:      push de
-            ld de, 6
-            sub 0x20
-            call DEMulA
-            ex de, hl
-            ld hl, 0x4000
-            add hl, de
-            ld a, (hl)
-            inc hl
-        pop de
-        ld b, 5
-        call putSpriteOR
-        add a, d
-        ld d, a
-_:  pop af
-    jp po, _
-    ei
-_:  pop bc
+        ld ixl, 0
+        call drawCharShared
     pop ix
-    pop hl
-    pop af
     ret
 
 ;; drawCharAND [Text]
@@ -88,50 +48,10 @@ _:  pop bc
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawCharAND:
-    push af
-    push hl
     push ix
-    push bc
-    ld c, a
-    ld a, i
-    push af
-        di
-        setBankA(0x01)
-        ld a, c
-         cp '\n'
-        jr nz, _
-        ld a, e
-        add a, 6
-        ld e, a
-        ld d, b
-        jr +++_
-_:
-        cp '\r'
-        jr nz, _
-        ld d, b
-        jr ++_
-        
-_:      push de
-            ld de, 6
-            sub 0x20
-            call DEMulA
-            ex de, hl
-            ld hl, 0x4000
-            add hl, de
-            ld a, (hl)
-            inc hl
-        pop de
-        ld b, 5
-        call putSpriteAND
-        add a, d
-        ld d, a
-_:  pop af
-    jp po, _
-    ei
-_:  pop bc
+        ld ixl, 1
+        call drawCharShared
     pop ix
-    pop hl
-    pop af
     ret
 
 ;; drawCharXOR [Text]
@@ -146,9 +66,15 @@ _:  pop bc
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawCharXOR:
+    push ix
+        ld ixl, 2
+        call drawCharShared
+    pop ix
+    ret
+    
+drawCharShared:
     push af
     push hl
-    push ix
     push bc
     ld c, a
     ld a, i
@@ -180,14 +106,22 @@ _:      push de
             inc hl
         pop de
         ld b, 5
-        call putSpriteXOR
+        push af
+            ; ld a, ixl
+            .db 0xDD, 0x7D
+            or a
+            call z, putSpriteOR
+            dec a
+            call z, putSpriteAND
+            dec a
+            call z, putSpriteXOR
+        pop af
         add a, d
         ld d, a
 _:  pop af
     jp po, _
     ei
 _:  pop bc
-    pop ix
     pop hl
     pop af
     ret
