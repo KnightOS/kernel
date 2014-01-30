@@ -134,7 +134,7 @@ _:  pop bc
 ;;  D, E: X, Y
 ;;  B: Left margin
 ;; Outputs:
-;;  D, E: Advanced to position of next character
+;;  D, E: Advanced to position of the end of the string
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines.
 drawStr:
@@ -158,7 +158,7 @@ _:  pop af
 ;;  D, E: X, Y
 ;;  B: Left margin
 ;; Outputs:
-;;  D, E: Advanced to position of next character
+;;  D, E: Advanced to position of the end of the string
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines.
 drawStrAND:
@@ -182,7 +182,7 @@ _:  pop af
 ;;  D, E: X, Y
 ;;  B: Left margin
 ;; Outputs:
-;;  D, E: Advanced to position of next character
+;;  D, E: Advanced to position of the end of the string
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines.
 drawStrXOR:
