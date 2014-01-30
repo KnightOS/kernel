@@ -197,7 +197,6 @@ _:      ld a, (hl)
 _:  pop af
     pop hl
     ret
-    ret
 
 ;; drawStrFromStream [Text]
 ;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON).
@@ -227,25 +226,24 @@ _:  pop af
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
 drawHexA:
-   push af
-   rrca
-   rrca
-   rrca
-   rrca
-   call dispha
-   pop af
-   call dispha
-   ret
+    push af
+        rrca
+        rrca
+        rrca
+        rrca
+        call dispha
+    pop af
+    ; fall into for second call
 dispha:
-   and 15
-   cp 10
-   jr nc, dhlet
-   add a, 48
-   jr dispdh
+    and 15
+    cp 10
+    jr nc, dhlet
+    add a, 48
+    jr dispdh
 dhlet:
-   add a, 55
+    add a, 55
 dispdh:
-   jp drawChar
+    jp drawChar
 
 ;; drawHexHL [Text]
 ;;  Draws the contents of HL in hexadecimal to the screen buffer using OR logic (turns pixels ON).
