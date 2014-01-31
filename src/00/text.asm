@@ -107,8 +107,7 @@ _:      push de
         pop de
         ld b, 5
         push af
-            ; ld a, ixl
-            .db 0xDD, 0x7D
+            ld a, ixl
             or a
             call z, putSpriteOR
             dec a
