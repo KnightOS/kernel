@@ -318,6 +318,7 @@ clearColorLcd:
     pop bc
     pop hl
     pop af
+    cp a
     ret
 
 ;; setLegacyLcdMode [Color]
@@ -326,6 +327,7 @@ clearColorLcd:
 ;;  Legacy mode simulates a 96x64 monochrome screen with the help of [[fastCopy]]. Color
 ;;  graphics are not advised in legacy mode.
 setLegacyLcdMode:
+    ld iy, 0x4108
     call clearColorLcd
     push af
     push bc
@@ -368,6 +370,7 @@ setLegacyLcdMode:
     pop hl
     pop bc
     pop af
+    cp a
     ret
 
 ;; resetLegacyLcdMode [Color]
@@ -397,5 +400,6 @@ resetLegacyLcdMode:
     pop hl
     pop bc
     pop af
+    cp a
     ret
 #endif
