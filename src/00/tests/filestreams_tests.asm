@@ -297,7 +297,6 @@ test_streamReadToEnd:
     .db 0x18, 0xbf, 0x6e, 0x17, 0
 
 test_createFileEntry:
-    jr $
     ld de, .newFile
     call fileExists
     jr z, .fail

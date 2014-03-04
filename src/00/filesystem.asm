@@ -83,32 +83,8 @@ createFileEntry:
     push hl
     push de
     push bc
-        ; Find end of FAT
-        ld d, fatStart
-        ld a, d
-        setBankA
-        ld hl, 0x7FFF
-.search:
-        ld a, (hl)
-        cp 0xFF
-        jr z, .endOfTable
-        dec hl
-        ld c, (hl)
-        dec hl
-        ld b, (hl)
-        scf
-        sbc hl, bc ; Skip to next entry
-        ld a, 0x40
-        cp h
-        jr c, .search
-        ; Swap in next page of FAT
-        dec d
-        ld a, d
-        cp fatStart - 4
-        jp z, .endOfFilesystem
-        setBankA
-        ld hl, 0x7FFF
-        jr .search
+        call findFATEnd
+        jr nz, .endOfFilesystem
 
 .endOfTable:
         ; Write new entry here
@@ -223,7 +199,7 @@ _:      ; Write to flash
         ex de, hl ; Return HL with file entry address
         add hl, bc
         dec hl
-        getBankA()
+        getBankA
         ld (ix + 5), a ; And return A with Flash page
     pop bc
     pop de
@@ -247,6 +223,41 @@ _:  pop af
     pop ix
     or 1
     ld a, errFilesystemFull
+    ret
+
+; Internal function - finds the end of the FAT, swaps that page in, and leaves HL for you to use
+findFATEnd:
+    ; Find end of FAT
+    ld d, fatStart
+    ld a, d
+    setBankA
+    ld hl, 0x7FFF
+.search:
+    ld a, (hl)
+    cp fsEndOfTable
+    jr z, .endOfTable
+    dec hl
+    ld c, (hl)
+    dec hl
+    ld b, (hl)
+    scf
+    sbc hl, bc ; Skip to next entry
+    ld a, 0x40
+    cp h
+    jr c, .search
+    ; Swap in next page of FAT
+    dec d
+    ld a, d
+    cp fatStart - 4
+    jp z, .exitError
+    setBankA
+    ld hl, 0x7FFF
+    jr .search
+.endOfTable:
+    cp a
+    ret
+.exitError:
+    or 1
     ret
 
 ;; findFileEntry [Filesystem]
