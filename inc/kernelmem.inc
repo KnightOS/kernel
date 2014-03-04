@@ -4,7 +4,7 @@
 maxThreads              .equ 32
 maxLibraries            .equ 16
 maxSignals              .equ 16
-maxFileStreams          .equ 16
+maxFileStreams          .equ 8
 kernelGarbageSize       .equ 0x200
 stateMemorySize         .equ 0x100
 
@@ -20,7 +20,7 @@ signalTable             .equ libraryTable + libraryTableSize
 signalTableSize         .equ 4 * maxSignals             ; 4 bytes per entry
 
 fileHandleTable         .equ signalTable + signalTableSize
-fileHandleTableSize     .equ 8 * maxFileStreams         ; 8 bytes per entry
+fileHandleTableSize     .equ 16 * maxFileStreams         ; 16 bytes per entry
 
 kernelTablesSize        .equ threadTableSize + libraryTableSize + signalTableSize + fileHandleTableSize
 

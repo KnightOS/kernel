@@ -20,7 +20,7 @@ openFileRead:
         push iy
         push bc
             ld iy, fileHandleTable
-            ld bc, 8
+            ld bc, 16 ; Length of a file handle
             ld d, 0
 .findEntryLoop:
             ld a, (iy)
@@ -196,7 +196,7 @@ getStreamEntry:
         ld a, d
         cp maxFileStreams
         jr nc, .notFound
-        or a \ rla \ rla \ rla ; A *= 8
+        or a \ rla \ rla \ rla \ rla ; A *= 16 (length of file handle)
         ld ix, fileHandleTable
         add ixl \ ld ixl, a
         ld a, (ix)
