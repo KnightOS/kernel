@@ -139,6 +139,7 @@ reboot:
     ; Set GPIO config
     ld a, 0xE0
     out (0x39), a
+    ld iy, 0x4108 ; A dark purpleish color
     call clearColorLcd
     call setLegacyLcdMode
 #else

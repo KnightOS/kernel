@@ -246,11 +246,14 @@ _:
 
 ;; clearColorLcd [Color]
 ;;  Sets all pixels on the LCD to grey in color mode.
-; TODO: Set pixels to user-specified color
+;; Inputs:
+;;  IY: Color in 0bRRRRRGGGGGGBBBBB format
 clearColorLcd:
     push af
     push hl
     push bc
+    push de
+        push iy \ pop de
         ; Set window
         ld a, 0x50
         ld hl, 0
@@ -270,22 +273,48 @@ clearColorLcd:
         inc a
         ; Select GRAM
         out (0x10), a \ out (0x10), a
-        ld c, 240
+        ld c, 0x11
+        ld h, 240
 .outerLoop:
-        ld b, 160
+        ld b, 40
 .innerLoop:
-        ; Two pixels per iteration
+        ; 8 pixels per iteration
         ld a, 0b10100101
-        out (0x11), a
+        out (c), d
         ld a, 0b00110100
-        out (0x11), a
+        out (c), e
         ld a, 0b10100101
-        out (0x11), a
+        out (c), d
         ld a, 0b00110100
-        out (0x11), a
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
         djnz .innerLoop
-        dec c
+        dec h
         jr nz, .outerLoop
+    pop de
     pop bc
     pop hl
     pop af
