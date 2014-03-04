@@ -123,6 +123,158 @@ _:  pop af
     or a
     ret
 
+;; openFileWrite [File Stream]
+;;  Opens a file stream in write mode. If the file does not exist,
+;;  it is created.
+;; Inputs:
+;;  DE: Path to file (string pointer)
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+;;  D: File stream ID (on success)
+;;  E: Garbage (on success)
+openFileWrite:
+    push hl
+    push bc
+.retry:
+        call findFileEntry
+        jp nz, .fileNotFound
+.fileCreated:
+        ld b, a
+        push af
+        ld a, i
+        push af
+        di
+        push iy
+        push bc
+            ld iy, fileHandleTable
+            ld bc, 16 ; Length of a file handle
+            ld d, 0
+.findEntryLoop:
+            ld a, (iy)
+            cp 0xFF
+            jr z, .entryFound
+            add iy, bc
+            inc d
+            ld a, maxFileStreams - 1
+            cp d
+            jr nc, .findEntryLoop
+            ; Too many active streams
+            ; We could check (activeFileStreams) instead, but since we have to iterate through the table
+            ; anyway, we may as well do it here and save some space.
+        pop bc
+        pop iy
+        pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop hl
+    or a
+    ld a, errTooManyStreams
+    ret
+.entryFound:
+            ; We can put the stream entry at (iy) and use d as the ID
+            pop bc
+            ld a, b
+            push de
+            push ix
+                call getCurrentThreadId
+                and 0b111111
+                ld (iy), a ; Flags & owner
+                ; Create a buffer
+                ld bc, 256
+                call malloc
+                jr nz, .outOfMemory
+                push ix \ pop bc
+                ld (iy + 1), c ; Buffer
+                ld (iy + 2), b
+                dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
+                ; Check for final block
+                xor a
+                ld (iy + 7), a
+                ld a, (hl)
+                or a ; cp 0
+                jr z, .final
+                cp 1
+                jr nz, .notFinal
+                ; Check next byte to see if it's zero - if so, it's the final block
+                inc hl
+                ld a, (hl)
+                or a ; cp 0
+                jr nz, .notFinal - 1 ; (-1 adds the inc hl)
+                dec hl
+.final:
+                set 7, (iy)
+                ld a, (hl)
+                ld (iy + 7), a
+                jr .notFinal
+dec hl
+.notFinal:
+                inc hl
+                ld a, (hl)
+                ld (iy + 6), a ; Length of final block
+                dec hl \ dec hl ; Move to section ID
+                ld b, (hl)
+                ld (iy + 5), b
+                dec hl \ ld c, (hl)
+                ld (iy + 4), c
+                ; Section ID in BC
+                call populateStreamBuffer
+                xor a
+                ld (iy + 3), a ; Stream pointer
+            pop ix
+            pop de
+        pop iy
+        pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop hl
+    ret
+.fileNotFound:
+    push de
+    push iy
+    push af
+       ex de, hl ; HL is file name
+       ld de, 0xFFFF ; Parent directory (TODO)
+       ld a, 0xFF \ ld bc, 0xFFFF ; File length
+       ld iy, 0xFFFF ; Section ID
+       call createFileEntry
+       jr nz, .unableToCreateFile
+    pop af
+    pop iy
+    pop de
+    jp .fileCreated
+ .unableToCreateFile:
+            ld b, a
+            pop ix
+            pop de
+        pop iy
+        pop af
+    jp po, _
+    ei
+_:  pop af
+    ld a, b
+    pop bc
+    pop hl
+    or a
+    ret
+.outOfMemory:
+            pop ix
+            pop de
+        pop iy
+        pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop hl
+    ld a, errOutOfMem
+    or a
+    ret
+
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af

@@ -60,6 +60,195 @@ _:  ld h, a
     pop hl
     ret
 
+;; createFileEntry [Filesystem]
+;;  Creates a new file entry in the FAT.
+;; Inputs:
+;;  HL: File name
+;;  DE: Parent ID
+;;  ABC: Length
+;;  IY: Section ID
+;; Returns:
+;;  Z: Set on success, reset on failure
+;;  A: New entry Flash page (on success); Error code (on failure)
+;;  HL: New entry address relative to 0x4000 (on success)
+createFileEntry:
+    ; TODO: Check for file name too long
+    push af
+    ld a, i
+    push af
+    di
+    push ix
+    ld ix, 0
+    add ix, sp
+    push hl
+    push de
+    push bc
+        ; Find end of FAT
+        ld d, fatStart
+        ld a, d
+        setBankA
+        ld hl, 0x7FFF
+.search:
+        ld a, (hl)
+        cp 0xFF
+        jr z, .endOfTable
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        scf
+        sbc hl, bc ; Skip to next entry
+        ld a, 0x40
+        cp h
+        jr c, .search
+        ; Swap in next page of FAT
+        dec d
+        ld a, d
+        cp fatStart - 4
+        jp z, .endOfFilesystem
+        setBankA
+        ld hl, 0x7FFF
+        jr .search
+
+.endOfTable:
+        ; Write new entry here
+        ld de, 0x3FFF
+        scf
+        push hl
+            sbc hl, de
+            ld b, h \ ld c, l
+        pop hl
+        ; BC is space left in this FAT page
+        ld d, h \ ld e, l ; Save HL in DE
+        ld h, (ix + -1)
+        ld l, (ix + -2) ; Grab file name from stack
+        push bc
+            call stringLength
+            inc bc ; Zero delimited
+        pop hl
+        push bc
+            ld a, 10
+            add c
+            ld c, a
+            jr nc, _
+            inc c
+_:          call cpHLBC
+        pop bc
+        jr c, .endOfFilesystem
+        ; We're good to go, let's do this
+        ; DE is the address in FAT (here, we'll modify it to be the end of the entry):
+        ex de, hl
+        scf
+        sbc hl, bc
+        push bc
+            scf
+            ld bc, 8
+            sbc hl, bc
+        pop bc
+        ex de, hl
+        ; BC is the length of the filename
+        ; Everything else is on the stack
+        ; Let's build a new entry in kernelGarbage and then write it all at once
+        ld hl, kernelGarbage + 10
+        add hl, bc
+        ld a, fsFile 
+        ld (hl), a ; Entry ID
+        dec hl
+        ; Increase BC to full length of entry for a moment
+        push bc
+            ld a, 8
+            add c
+            ld c, a
+            jr nc, _
+            inc c
+_:          ; And write that length down
+            ld (hl), c
+            dec hl
+            ld (hl), b
+            dec hl
+        pop bc
+        ; Write parent ID
+        ld a, (ix + -4)
+        ld (hl), a
+        dec hl
+        ld a, (ix + -3)
+        ld (hl), a
+        dec hl
+        ; Write flags (0xFF, someone else can modify it later if they want)
+        ld a, 0xFF
+        ld (hl), a
+        dec hl
+        ; File size
+        ld a, (ix + -6)
+        ld (hl), a
+        dec hl
+        ld a, (ix + -5)
+        ld (hl), a
+        dec hl
+        ld a, (ix + 5)
+        ld (hl), a
+        dec hl
+        ; Section ID
+        push iy \ pop bc
+        ld (hl), c
+        dec hl
+        ld (hl), b
+        dec hl
+        ld b, (ix + -1)
+        ld c, (ix + -2) ; Grab file name from stack
+        push de
+            ld de, 0
+.nameLoop:
+            ld a, (bc)
+            ld (hl), a
+            dec hl
+            inc bc
+            inc de
+            or a ; cp 0
+            jr nz, .nameLoop
+            ld b, d \ ld c, e
+        pop de
+        ; Grab full length of entry
+        ld a, 11
+        add c
+        ld c, a
+        jr nc, _
+        inc b
+_:      ; Write to flash
+        inc hl
+        call unlockFlash
+        call writeFlashBuffer
+        call lockFlash
+
+        ex de, hl ; Return HL with file entry address
+        add hl, bc
+        dec hl
+        getBankA()
+        ld (ix + 5), a ; And return A with Flash page
+    pop bc
+    pop de
+    inc sp \ inc sp ; Skip HL
+    pop ix
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    cp a
+    ret
+
+.endOfFilesystem:
+    pop bc
+    pop de
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    or 1
+    ld a, errFilesystemFull
+    ret
+
 ;; findFileEntry [Filesystem]
 ;;  Finds a file entry in the FAT.
 ;; Inputs:

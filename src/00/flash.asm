@@ -63,13 +63,13 @@ writeFlashByte:
         push de
         push bc
             ld hl, .ram
-            ld de, kernelGarbage
+            ld de, flashFunctions
             ld bc, .ram_end - .ram
             ldir
         pop bc
         pop de
         pop hl
-        call kernelGarbage
+        call flashFunctions
     pop bc
     pop de
     pop hl
@@ -129,13 +129,13 @@ writeFlashBuffer:
         push de
         push bc
             ld hl, .ram
-            ld de, kernelGarbage
+            ld de, flashFunctions
             ld bc, .ram_end - .ram
             ldir
         pop bc
         pop de
         pop hl
-        call kernelGarbage
+        call flashFunctions
     pop bc
     pop de
     pop hl
@@ -213,13 +213,13 @@ eraseFlashSector:
         push de
         push bc
             ld hl, .ram
-            ld de, kernelGarbage
+            ld de, flashFunctions
             ld bc, .ram_end - .ram
             ldir
         pop bc
         pop de
         pop hl
-        call kernelGarbage
+        call flashFunctions
     pop bc
     pop de
     pop hl
@@ -329,12 +329,12 @@ copySectorToSwap:
             ld a, 1
             out (5), a
         
-            ld de, kernelGarbage + 0x4000 ; By rearranging memory, we can make the routine perform better
+            ld de, flashFunctions + 0x4000 ; By rearranging memory, we can make the routine perform better
             ld bc, .end - .ram
             ldir
         pop af
 #else
-        ld de, kernelGarbage
+        ld de, flashFunctions
         ld bc, .end - .ram
         ldir
 #endif
@@ -342,7 +342,7 @@ copySectorToSwap:
         ld hl, 0x4000
         add hl, sp
         ld sp, hl
-        call kernelGarbage + 0x4000
+        call flashFunctions + 0x4000
         xor a
         out (5), a ; Restore correct memory mapping
         ld hl, 0
@@ -352,7 +352,7 @@ copySectorToSwap:
         sbc hl, bc
         ld sp, hl
 #else
-        call kernelGarbage
+        call flashFunctions
 #endif
     pop de
     pop hl
@@ -425,7 +425,7 @@ _:
     ld e, a
     
     ld a, swapSector
-    ld (kernelGarbage + kernelGarbageSize - 1), a
+    ld (flashFunctions + flashFunctionSize - 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000
@@ -454,20 +454,20 @@ _:  cp (hl)
     
     ld a, b
     or a
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .loop
     ld a, c
     or a
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .loop
     
     inc e
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     inc a
-    ld (kernelGarbage + kernelGarbageSize - 1), a
+    ld (flashFunctions + flashFunctionSize - 1), a
     and 0b000000011
     or a
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .preLoop
     ret
 .end:
@@ -499,11 +499,11 @@ copyFlashPage:
             ld a, 1
             out (5), a
             ; This routine can perform better on some models if we rearrange memory 
-            ld de, kernelGarbage + 0x4000
+            ld de, flashFunctions + 0x4000
             ld bc, .ram_end - .ram
             ldir
 #else
-        ld de, kernelGarbage
+        ld de, flashFunctions
         ld bc, .ram_end - .ram
         ldir
 #endif
@@ -513,7 +513,7 @@ copyFlashPage:
         ld hl, 0x4000
         add hl, sp
         ld sp, hl
-        call kernelGarbage + 0x4000
+        call flashFunctions + 0x4000
         xor a
         out (5), a ; Restore correct memory mapping
         ld hl, 0
@@ -523,7 +523,7 @@ copyFlashPage:
         sbc hl, bc
         ld sp, hl
 #else
-        call kernelGarbage
+        call flashFunctions
 #endif
     pop de
     pop hl
@@ -584,7 +584,7 @@ _:
 .ram:
     ld e, b
     
-    ld (kernelGarbage + kernelGarbageSize - 1), a
+    ld (flashFunctions + flashFunctionSize - 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000
@@ -613,11 +613,11 @@ _:  cp (hl)
     
     ld a, b
     or a
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .loop
     ld a, c
     or a
-    ld a, (kernelGarbage + kernelGarbageSize - 1)
+    ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .loop
     ret
 .ram_end:

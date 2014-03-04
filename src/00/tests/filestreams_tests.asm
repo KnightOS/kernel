@@ -295,3 +295,24 @@ test_streamReadToEnd:
     .db 0x7c, 0xdd, 0x93, 0x3a, 0x7a, 0x2d, 0x86, 0xbf
     .db 0xf0, 0x4d, 0xcf, 0x21, 0xcc, 0x86, 0x5f, 0xc2
     .db 0x18, 0xbf, 0x6e, 0x17, 0
+
+test_createFileEntry:
+    jr $
+    ld de, .newFile
+    call fileExists
+    jr z, .fail
+    ld hl, .newFile
+    ld de, 0x0000
+    ld a, 0x00 \ ld bc, 0x0000
+    ld iy, 0xFFFF
+    call createFileEntry
+    ld de, .newFile
+    call fileExists
+    jr nz, .fail
+    ld de, .newFile
+    call deleteFile
+    assert_pass()
+.fail:
+    assert_fail()
+.newFile:
+    .db "new", 0

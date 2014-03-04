@@ -6,6 +6,7 @@ maxLibraries            .equ 16
 maxSignals              .equ 16
 maxFileStreams          .equ 8
 kernelGarbageSize       .equ 0x200
+flashFunctionSize       .equ 0x100
 stateMemorySize         .equ 0x100
 
 kernelMem .equ 0x8000
@@ -46,7 +47,8 @@ bcallHook               .equ currentContrast + 1        ; 2 bytes
 ; TODO: Phase this out
 clip_mask               .equ currentContrast + 2        ; 1 byte
 
-kernelGarbage           .equ stateMemory + stateMemorySize
+flashFunctions          .equ stateMemory + stateMemorySize
+kernelGarbage           .equ flashFunctions + flashFunctionSize
 
 userMemory              .equ kernelGarbage + kernelGarbageSize
 userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF

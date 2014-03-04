@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-;.equ defaultTest 0x000D
+.equ defaultTest 0x001A
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -41,6 +41,8 @@ test_collection:
     .dw test_integerSort                    ; 0018 test_integerSort
     .dw test_callbackSort                   ; 0019 test_callbackSort
 
+    .dw test_createFileEntry                ; 001A test_createFileEntry
+
     .dw 0xFFFF
 explicit_only:
     ; Tests here are only run when explicity mentioned by number
@@ -48,6 +50,10 @@ explicit_only:
 test_collection_end:
 
 testrunner:
+    ld bc, 0x100
+    call malloc
+    call memSeekToEnd
+    ld sp, ix
     call getLcdLock
     call getKeypadLock
     call allocScreenBuffer

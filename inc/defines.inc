@@ -9,6 +9,8 @@ errNoSuchThread .equ 7
 errTooManyLibraries .equ 8
 errUnsupported .equ 9
 errTooManySignals .equ 10
+errFilesystemFull .equ 11
+errNameTooLong .equ 12
 
 #include "kernelmem.inc"
 

@@ -38,6 +38,7 @@
 .echo "signalTable: 0x{0:X4}" signalTable
 .echo "fileHandleTable: 0x{0:X4}" fileHandleTable
 .echo "stateMemory: 0x{0:X4}" stateMemory
+.echo "flashFunctions: 0x{0:X4}" flashFunctions
 .echo "kernelGarbage: 0x{0:X4}" kernelGarbage
 .echo "userMemory: 0x{0:X4}" userMemory
 
