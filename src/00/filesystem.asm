@@ -60,6 +60,28 @@ _:  ld h, a
     pop hl
     ret
 
+;; directoryExists [Filesystem]
+;;  Determines if a directory exists.
+;; Inputs:
+;;  DE: Path to directory (string pointer)
+;; Outputs:
+;;  Z: Set if file exists, reset if not
+directoryExists:
+    push hl
+    push af
+        call findDirectoryEntry
+        jr nz, _
+    pop af
+    pop hl
+    cp a
+    ret
+_:  ld h, a
+    pop af
+    or 1
+    ld a, h
+    pop hl
+    ret
+
 ;; createFileEntry [Filesystem]
 ;;  Creates a new file entry in the FAT.
 ;; Inputs:
@@ -67,7 +89,7 @@ _:  ld h, a
 ;;  DE: Parent ID
 ;;  ABC: Length
 ;;  IY: Section ID
-;; Returns:
+;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: New entry Flash page (on success); Error code (on failure)
 ;;  HL: New entry address relative to 0x4000 (on success)
@@ -83,32 +105,8 @@ createFileEntry:
     push hl
     push de
     push bc
-        ; Find end of FAT
-        ld d, fatStart
-        ld a, d
-        setBankA
-        ld hl, 0x7FFF
-.search:
-        ld a, (hl)
-        cp 0xFF
-        jr z, .endOfTable
-        dec hl
-        ld c, (hl)
-        dec hl
-        ld b, (hl)
-        scf
-        sbc hl, bc ; Skip to next entry
-        ld a, 0x40
-        cp h
-        jr c, .search
-        ; Swap in next page of FAT
-        dec d
-        ld a, d
-        cp fatStart - 4
-        jp z, .endOfFilesystem
-        setBankA
-        ld hl, 0x7FFF
-        jr .search
+        call findFATEnd
+        jr nz, .endOfFilesystem
 
 .endOfTable:
         ; Write new entry here
@@ -223,7 +221,7 @@ _:      ; Write to flash
         ex de, hl ; Return HL with file entry address
         add hl, bc
         dec hl
-        getBankA()
+        getBankA
         ld (ix + 5), a ; And return A with Flash page
     pop bc
     pop de
@@ -244,6 +242,211 @@ _:  pop af
     jp po, _
     ei
 _:  pop af
+    pop ix
+    or 1
+    ld a, errFilesystemFull
+    ret
+
+; Internal function - finds the end of the FAT, swaps that page in, and leaves HL for you to use
+findFATEnd:
+    ; Find end of FAT
+    ld d, fatStart
+    ld a, d
+    setBankA
+    ld hl, 0x7FFF
+.search:
+    ld a, (hl)
+    cp fsEndOfTable
+    jr z, .endOfTable
+    dec hl
+    ld c, (hl)
+    dec hl
+    ld b, (hl)
+    scf
+    sbc hl, bc ; Skip to next entry
+    ld a, 0x40
+    cp h
+    jr c, .search
+    ; Swap in next page of FAT
+    dec d
+    ld a, d
+    cp fatStart - 4
+    jp z, .exitError
+    setBankA
+    ld hl, 0x7FFF
+    jr .search
+.endOfTable:
+    cp a
+    ret
+.exitError:
+    or 1
+    ret
+
+;; createDirectoryEntry [Filesystem]
+;;  Creates a new directory entry in the FAT.
+;; Inputs:
+;;  HL: Directory name
+;;  DE: Parent ID
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: New entry Flash page (on success); Error code (on failure)
+;;  HL: New entry address relative to 0x4000 (on success)
+createDirectoryEntry:
+    push ix
+    push af
+    push bc
+    push de
+    push hl
+    ld ix, 0
+    add ix, sp
+    ld a, i
+    push af
+    di
+        ; Traverse the FAT
+        ld hl, 0
+        ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
+        ld a, fatStart
+        setBankA
+        ld hl, 0x7FFF
+.search:
+        ld a, (hl)
+        cp fsEndOfTable
+        jr z, .endOfTable
+
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
+
+        cp fsDirectory
+        jr z, .directory
+.skip:
+        or a
+        sbc hl, bc ; Skip to next entry
+        ld a, 0x40
+        cp h
+        jr c, .search
+        ; Swap in next page of FAT
+        dec d
+        ld a, d
+        cp fatStart - 4
+        jp z, .exitError
+        setBankA
+        ld hl, 0x7FFF
+        jr .search
+.directory:
+        dec hl \ dec hl
+        ld e, (hl) \ dec hl
+        ld d, (hl) \ dec hl
+        push hl
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            or a
+            sbc hl, de
+        pop hl
+        jr z, .update
+        jr c, .update
+        jr .search
+.update:
+        ex de, hl
+        inc hl
+        ld (kernelGarbage + kernelGarbageSize - 2), hl
+        ex de, hl
+        inc hl \ inc hl \ inc hl \ inc hl
+        jr .skip
+.endOfTable:
+        ; HL: Address of next entry in FAT
+        ; end of kernel garbage: New directory ID
+        push hl
+            ld l, (ix + 0)
+            ld h, (ix + 1)
+            call stringLength
+            ld hl, 6
+            add hl, bc
+            ld b, h \ ld c, l
+        pop hl
+        ; BC: Length of new entry
+        ld de, kernelGarbage
+        ex de, hl
+        add hl, bc
+        inc hl \ inc hl
+        ld a, fsDirectory
+        ld (hl), a ; Entry type
+        dec hl
+        ld (hl), c ; Length of entry
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        ld c, (ix + 2)
+        ld b, (ix + 3)
+        ld (hl), c ; Parent ID
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        push hl
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld b, h \ ld c, l
+        pop hl
+        ld (hl), c ; New ID
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        ld a, 0xFF ; Flags
+        ld (hl), a
+        dec hl
+        ld c, (ix + 0)
+        ld b, (ix + 1) ; Grab file name from stack
+        push de
+            ld de, 0
+.nameLoop:
+            ld a, (bc)
+            ld (hl), a
+            dec hl
+            inc bc
+            inc de
+            or a ; cp 0
+            jr nz, .nameLoop
+            ld b, d \ ld c, e
+        pop de
+        ; Set BC to full length of entry
+        ld a, 8
+        add c
+        ld c, a
+        jr nc, _
+        inc b
+_:      ; Move DE to end of file entry
+        ex de, hl
+        or a
+        sbc hl, bc
+        ex de, hl
+        inc de
+        ; Write new entry
+        inc hl
+        call unlockFlash
+        call writeFlashBuffer
+        call lockFlash
+        ex de, hl ; HL has file entry address
+        add hl, bc
+        dec hl
+        getBankA
+        ld (ix + 7), a ; Flash page in A (on stack)
+    pop af
+    jp po, _
+    ei
+_:  inc sp \ inc sp ; Skip HL
+    pop de
+    pop bc
+    pop af
+    pop ix
+    ret
+.exitError:
+    pop af
+    jp po, _
+    ei
+_:  pop hl
+    pop de
+    pop bc
+    pop af
     pop ix
     or 1
     ld a, errFilesystemFull
@@ -354,7 +557,7 @@ _:          ld a, (hl)
 .handleFile:
             push bc
                 push hl
-                    ; 0xCeck parent directory ID
+                    ; Check parent directory ID
                     ld c, (hl) \ dec hl \ ld b, (hl)
                     ld hl, (kernelGarbage)
                     call cpHLBC
@@ -389,8 +592,140 @@ _:  pop af
     cp a
     ret
 
+;; findDirectoryEntry [Filesystem]
+;;  Finds a directory entry in the FAT.
+;; Inputs:
+;;  DE: Path to directory
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Flash page (on success); Error code (on failure)
+;;  HL: Address relative to 0x4000 (on success)
+;; Notes:
+;;  This function returns HL=0 for the root directory. You should
+;;  handle this special case yourself. The root directory has ID 0
+;;  and has no parent directory.
+findDirectoryEntry:
+    push de
+    push bc
+    push af
+    ld a, i
+    push af
+    di
+        ; TODO: Relative paths
+        setBankA(fatStart)
+        ld hl, 0
+        ld (kernelGarbage), hl ; Parent ID
+        ld hl, 0x7FFF
+.search:
+        ld a, (de)
+        cp '/'
+        jr nz, _
+        inc de
+        ld a, (de)
+_:      or a ; cp 0
+        jr z, .done_root ; Root is a special case
+.traversalLoop:
+        ; Traverse the table
+        ld a, (hl)
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
 
-; 0xcecks string at (DE) for '/'
+        cp fsDirectory
+        jr z, .handleDirectory
+        cp fsSymLink ; TODO
+        cp fsEndOfTable
+        jr z, .endOfTable
+_:
+        or a
+        sbc hl, bc
+        ; TODO: Handle swapping out next page
+        jr .traversalLoop
+.skip:
+        inc hl
+        inc hl
+        inc hl
+        inc hl
+        jr -_
+.handleDirectory:
+        ; Check parent IDs
+        push bc
+        push hl
+            ld c, (hl)
+            dec hl
+            ld b, (hl)
+            dec hl
+            push hl
+                ld hl, (kernelGarbage)
+                call cpHLBC
+            pop hl
+            jr z, _
+        pop hl
+        pop bc
+        jr .skip + 2
+_:          ; Parent IDs match, check name
+            ld c, (hl)
+            dec hl
+            ld b, (hl) ; Grab new directory ID just in case
+            dec hl
+            dec hl ; Skip flags
+            push de
+                call compareDirectories
+                jr z, _
+            pop de
+        inc sp \ inc sp ; pop hl
+        pop bc
+        jr .skip
+_:          inc sp \ inc sp ; pop de
+            ; Directories match, update kernelGarbage
+            ld (kernelGarbage), bc
+            ; We might be done here
+            ld a, (de)
+            cp '/'
+            jr nz, _
+            inc de
+            ld a, (de)
+_:          or a ; cp 0
+            jr nz, .continue
+            ; We are done!
+        pop hl
+        pop bc
+        ld bc, 3
+        add hl, bc
+        jr .done
+.continue:
+        inc sp \ inc sp ; pop hl
+        pop bc
+        dec hl
+        jr .traversalLoop
+.endOfTable:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop de
+    or 1
+    ld a, errFileNotFound
+    ret
+.done_root:
+        ld hl, (kernelGarbage)
+.done:
+        getBankA
+        ld b, a
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ld a, b
+    pop bc
+    pop de
+    cp a
+    ret
+
+; Checks string at (DE) for '/'
 ; Z for no slashes, NZ for slashes
 checkForRemainingSlashes:
     ld a, (de)
@@ -401,6 +736,7 @@ checkForRemainingSlashes:
     inc de
     jr checkForRemainingSlashes
 .found:
+    ; Check for one last slash
     or a
     ret
 

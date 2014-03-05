@@ -29,6 +29,9 @@ flushkeys_skipCheck:
 _:      xor a
         out (1), a
         nop \ nop
+        #ifdef COLOR
+        nop \ nop
+        #endif
         in a, (1)
         inc a
         jr nz, -_
@@ -70,6 +73,9 @@ getKey_skipCheck:
     ld a, c
     out (1), a
     nop \ nop \ nop \ nop
+    #ifdef COLOR
+    nop \ nop \ nop \ nop
+    #endif
     in a, (1)
 
     ld de,0

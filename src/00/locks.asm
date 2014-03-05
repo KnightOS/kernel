@@ -4,7 +4,10 @@ getLCDLock:
     push af
         call getCurrentThreadId
         ld (hwLockLCD), a
-    pop af
+        call checkLegacyLcdMode
+        jr nz, _
+        call setLegacyLcdMode
+_:  pop af
     ret
 
 ;; getIOLock [Hardware]

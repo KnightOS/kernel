@@ -297,12 +297,11 @@ test_streamReadToEnd:
     .db 0x18, 0xbf, 0x6e, 0x17, 0
 
 test_createFileEntry:
-    jr $
     ld de, .newFile
     call fileExists
     jr z, .fail
     ld hl, .newFile
-    ld de, 0x0000
+    ld de, 0
     ld a, 0x00 \ ld bc, 0x0000
     ld iy, 0xFFFF
     call createFileEntry
@@ -316,3 +315,84 @@ test_createFileEntry:
     assert_fail()
 .newFile:
     .db "new", 0
+
+test_createDirectoryEntry:
+    ld hl, .newFile
+    ld de, 0x1234
+    call createDirectoryEntry
+    ; TODO: Write directoryExists and verify this
+    assert_pass()
+.fail:
+    assert_fail()
+.newFile:
+    .db "new_test_dir", 0
+
+test_findDirectoryEntry:
+    ld de, .root
+    call findDirectoryEntry
+    ld bc, 0
+    call cpHLBC
+    jr nz, .fail
+
+    ld de, .test
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test2
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test3
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test4
+    call findDirectoryEntry
+    jr z, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.root:
+    .db "/", 0
+.test:
+    .db "/sub", 0
+.test2:
+    .db "/sub/", 0
+.test3:
+    .db "/sub/sub2", 0
+.test4:
+    .db "/does/not/exist", 0
+
+test_directoryExists:
+    ld de, .root
+    call directoryExists
+    jr nz, .fail
+
+    ld de, .test
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test2
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test3
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test4
+    call findDirectoryEntry
+    jr z, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.root:
+    .db "/", 0
+.test:
+    .db "/sub", 0
+.test2:
+    .db "/sub/", 0
+.test3:
+    .db "/sub/sub2", 0
+.test4:
+    .db "/does/not/exist", 0

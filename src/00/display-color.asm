@@ -2,6 +2,10 @@
 
 setLegacyLcdMode:
     ret
+
+checkLegacyLcdMode:
+    cp a
+    ret
     
 resetLegacyLcdMode:
 clearColorLcd:
@@ -15,8 +19,22 @@ colorRectangle:
     ld a, errUnsupported
     ret
 
+colorSupported:
+    or 1
+    ld a, errUnsupported
+    ret
+
 #else
 ; Color screen is 320x240
+
+;; colorSupported [Color]
+;;  Sets Z if color is supported on this device.
+;; Outputs:
+;;  A: errUnsupported if color is unsupported
+;;  Z: Set if supported, reset if unsupported
+colorSupported:
+    cp a
+    ret
 
 ;; writeLcdRegister [Color]
 ;;  Writes a 16-bit value to a color LCD register
@@ -247,11 +265,14 @@ _:
 
 ;; clearColorLcd [Color]
 ;;  Sets all pixels on the LCD to grey in color mode.
-; TODO: Set pixels to user-specified color
+;; Inputs:
+;;  IY: Color in 0bRRRRRGGGGGGBBBBB format
 clearColorLcd:
     push af
     push hl
     push bc
+    push de
+        push iy \ pop de
         ; Set window
         ld a, 0x50
         ld hl, 0
@@ -271,25 +292,52 @@ clearColorLcd:
         inc a
         ; Select GRAM
         out (0x10), a \ out (0x10), a
-        ld c, 240
+        ld c, 0x11
+        ld h, 240
 .outerLoop:
-        ld b, 160
+        ld b, 40
 .innerLoop:
-        ; Two pixels per iteration
+        ; 8 pixels per iteration
         ld a, 0b10100101
-        out (0x11), a
+        out (c), d
         ld a, 0b00110100
-        out (0x11), a
+        out (c), e
         ld a, 0b10100101
-        out (0x11), a
+        out (c), d
         ld a, 0b00110100
-        out (0x11), a
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
+        ld a, 0b10100101
+        out (c), d
+        ld a, 0b00110100
+        out (c), e
         djnz .innerLoop
-        dec c
+        dec h
         jr nz, .outerLoop
+    pop de
     pop bc
     pop hl
     pop af
+    cp a
     ret
 
 ;; setLegacyLcdMode [Color]
@@ -298,7 +346,38 @@ clearColorLcd:
 ;;  Legacy mode simulates a 96x64 monochrome screen with the help of [[fastCopy]]. Color
 ;;  graphics are not advised in legacy mode.
 setLegacyLcdMode:
-    call clearColorLcd
+    push af
+        ld a, (color_mode)
+        or a
+        jr nz, _
+    pop af
+    ret
+_:      xor a
+        ld (color_mode), a
+    pop af
+    push hl
+    push af
+    ld a, i
+    di
+    push af
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      res 3, (hl)
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop hl
+setLegacyLcdMode_boot:
+    push iy
+        ld iy, 0x4108
+        call clearColorLcd
+    pop iy
     push af
     push bc
     push hl
@@ -340,14 +419,34 @@ setLegacyLcdMode:
     pop hl
     pop bc
     pop af
+    cp a
     ret
 
 ;; resetLegacyLcdMode [Color]
-;;  Sets the LCD to color mode.
+;;  Sets the LCD to color mode. Call this before you call
+;;  [[getLcdLock]].
 resetLegacyLcdMode:
     push af
+        ld a, (color_mode)
+        cp 1
+        jr nz, _
+    pop af
+    ret
+_:  ld a, 1
+    ld (color_mode), a
     push bc
     push hl
+    ld a, i
+    push af
+    di
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      set 3, (hl)
         ; Set BASEE = 0, both partial images = 1
         ld a, 0x07
         out (0x10), a \ out (0x10), a
@@ -366,9 +465,49 @@ resetLegacyLcdMode:
         lcdout(0x52, 319)
         ; Set entry mode
         lcdout(0x03, 0x10B8)
-    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop hl
     pop bc
     pop af
+    cp a
+    ret
+
+;; checkLegacyLcdMode [Color]
+;;  Sets Z if the current thread is in color mode.
+checkLegacyLcdMode:
+    push hl
+    push af
+    ld a, i
+    push af
+    di
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      bit 3, (hl)
+        jr z, .legacyMode
+.colorMode:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ld h, a
+    or 1
+    ld a, h
+    pop hl
+    ret
+.legacyMode:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop hl
+    cp a
     ret
 
 ;; colorRectangle [Color]

@@ -1,7 +1,7 @@
 ; Test runner for kernel unit tests
 
 ;Uncomment to automatically run the specified test
-.equ defaultTest 0x001A
+.equ defaultTest 0x001D
 
 ;Uncomment to add a jr $ before running tests
 ;#define BREAK_BEFORE_TEST
@@ -42,6 +42,9 @@ test_collection:
     .dw test_callbackSort                   ; 0019 test_callbackSort
 
     .dw test_createFileEntry                ; 001A test_createFileEntry
+    .dw test_createDirectoryEntry           ; 001B test_createDirectoryEntry
+    .dw test_findDirectoryEntry             ; 001C test_findDirectoryEntry
+    .dw test_directoryExists                ; 001D test_directoryExists
 
     .dw 0xFFFF
 explicit_only:
