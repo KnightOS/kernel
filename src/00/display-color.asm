@@ -264,7 +264,7 @@ _:
     ret
 
 ;; clearColorLcd [Color]
-;;  Sets all pixels on the LCD to grey in color mode.
+;;  Sets all pixels on the LCD to a specified color in color mode.
 ;; Inputs:
 ;;  IY: Color in 0bRRRRRGGGGGGBBBBB format
 clearColorLcd:
@@ -375,7 +375,8 @@ _:  pop af
     pop hl
 setLegacyLcdMode_boot:
     push iy
-        ld iy, 0x4108
+        ; ld iy, 0x4108
+        ld iy, 0b1100011000011000
         call clearColorLcd
     pop iy
     push af
@@ -475,7 +476,7 @@ _:  pop hl
     ret
 
 ;; checkLegacyLcdMode [Color]
-;;  Sets Z if the current thread is in color mode.
+;;  Sets Z if the current thread is in legacy mode.
 checkLegacyLcdMode:
     push hl
     push af
