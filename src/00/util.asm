@@ -6,6 +6,13 @@ suspendDevice:
  #ifdef COLOR
     push hl
     push bc
+    call checkLegacyLcdMode
+    ld b, 0
+    jr nz, _
+    call resetLegacyLcdMode
+    inc b
+_:
+    push bc
     call colorLcdOff
  #else
     ld a, 2
@@ -24,6 +31,10 @@ suspendDevice:
     out (3), a
  #ifdef COLOR
     call colorLcdOn
+    pop bc
+    xor a
+    cp b
+    call nz, setLegacyLcdMode
     pop bc
     pop hl
  #else
@@ -161,11 +172,12 @@ cpBCDE:
 stringLength:
     push af
     push hl
-        ld bc, 0
         xor a
+        ld b, a
+        ld c, a
         cpir
         ; bc = -bc
-        ld a, b \ xor $FF \ ld b, a \ ld a, c \ xor $FF \ add a, 1 \ jr nc, $+3 \ inc b \ ld c, a
+        xor a \ sub c \ ld c, a \ sbc a, a \ sub b \ ld b, a
         dec bc
     pop hl
     pop af
@@ -888,6 +900,46 @@ cpHLDE_sort:
         call cpHLDE
         jr -_
 
+;; min [Miscellaneous]
+;;  Returns the smallest between HL and DE. The operation is signed.
+;; Inputs:
+;;  HL: integer
+;;  DE: integer
+;; Outputs:
+;;  HL: the smallest of the previous HL and DE
+;;  DE: the largest of the previous HL and DE
+min:
+    ld a, l
+    sub e
+    ld a, h
+    sbc a, d
+    rra
+    xor d
+    xor h
+    jp m, $ + 4
+    ex de, hl
+    ret
+    
+;; max [Miscellaneous]
+;;  Returns the largest between HL and DE. The operation is signed.
+;; Inputs:
+;;  HL: integer
+;;  DE: integer
+;; Outputs:
+;;  HL: the largest of the previous HL and DE
+;;  DE: the smallest of the previous HL and DE
+max:
+    ld a, l
+    sub e
+    ld a, h
+    sbc a, d
+    rra
+    xor d
+    xor h
+    jp p, $ + 4
+    ex de, hl
+    ret
+        
 #ifdef COLOR
 color_pageBankA:
    push af
