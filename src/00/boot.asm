@@ -67,18 +67,18 @@ reboot:
     out (7), a
 #endif
 
-    ; Manipulate protection states
+; Manipulate protection states
 #ifdef CPU15 ; TI-83+ SE, TI-84+, TI-84+ SE, TI-84+ CSE
     call unlockFlash
-        ; Remove RAM Execution Protection
-        xor a
-        out (0x25), a ; RAM Lower Limit ; out (25), 0
-        dec a
-        out (0x26), a ; RAM Upper Limit ; out (26), $FF
+    ; Remove RAM Execution Protection
+    xor a
+    out (0x25), a ; RAM Lower Limit ; out (25), 0
+    dec a
+    out (0x26), a ; RAM Upper Limit ; out (26), 0xFF
 
-        ; Remove Flash Execution Protection
-        out (0x23), a ; Flash Upper Limit ; out (23), $FF
-        out (0x22), a ; Flash Lower Limit ; out (22), $FF
+    ; Remove Flash Execution Protection
+    out (0x23), a ; Flash Upper Limit
+    out (0x22), a ; Flash Lower Limit
     call lockFlash
 
     ; Set CPU speed to 15 MHz
@@ -86,30 +86,29 @@ reboot:
     out (0x20), a
 
 #else ; TI-73, TI-83+
-    #ifndef TI73 ; RAM does not have protection on the TI-73
-
+#ifndef TI73 ; RAM does not have protection on the TI-73
     ; Remove RAM/Flash protection
     call unlockFlash
-        xor a
-        out (5), a
-        out (0x16), a
+    xor a
+    out (5), a
+    out (0x16), a
 
-        ld a, 0b000000001
-        out (5), a
-        xor a
-        out (0x16), a
+    ld a, 0b000000001
+    out (5), a
+    xor a
+    out (0x16), a
 
-        ld a, 0b000000010
-        out (5), a
-        xor a
-        out (0x16), a
+    ld a, 0b000000010
+    out (5), a
+    xor a
+    out (0x16), a
 
-        ld a, 0b000000111
-        out (5), a
-        xor a
-        out (0x16), a
+    ld a, 0b000000111
+    out (5), a
+    xor a
+    out (0x16), a
     call lockFlash
-    #endif
+#endif
 #endif
 
     ; Set intterupt mode
@@ -122,7 +121,6 @@ reboot:
     ld de, 0x8001
     ld bc, 0x7FFF
     ldir
-
     call formatMem
 
     ; Set all file handles to unused
@@ -164,15 +162,15 @@ reboot:
     out (0x10), a ; Op-amp control (OPA2) set to max
 
     ; Different amounts of contrast look better on different models
-    #ifdef USB
-        ld a, 0xEF
-    #else
-        #ifdef TI73
-            ld a, 0xFB
-        #else
-            ld a, 0xF4
-        #endif
-    #endif
+#ifdef USB
+    ld a, 0xEF
+#else
+#ifdef TI73
+    ld a, 0xFB
+#else
+    ld a, 0xF4
+#endif
+#endif
 
     ld (currentContrast), a
     call lcdDelay

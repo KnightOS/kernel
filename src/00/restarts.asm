@@ -1,4 +1,4 @@
-; rst $08
+; rst 0x08
 kcall:
     push hl
     inc sp \ inc sp
@@ -59,7 +59,7 @@ _:
     pop hl
     ret
 
-; rst $10
+; rst 0x10
 lcall:
     push hl
     inc sp \ inc sp
@@ -122,7 +122,7 @@ _:
     pop hl
     ret
 
-; rst $28
+; rst 0x28
 bcall:
     push hl
     push af
@@ -132,7 +132,7 @@ bcall:
         jr nz, _
         cp l
         ; KnightOS doesn't provide bcall support on its own. However, 3rd party programs
-        ; can hook into RST $28 and provide their own bcall mechanism. This is to make
+        ; can hook into RST 0x28 and provide their own bcall mechanism. This is to make
         ; compatibility layers possible with KnightOS. However, if no bcall hook is set,
         ; we kill the originating thread. This is because use of a bcall implies that a
         ; TIOS program is running, and without a compatibility layer (especially considering

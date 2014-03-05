@@ -165,7 +165,7 @@ stringLength:
         xor a
         cpir
         ; bc = -bc
-        ld a, b \ xor $FF \ ld b, a \ ld a, c \ xor $FF \ add a, 1 \ jr nc, $+3 \ inc b \ ld c, a
+        ld a, b \ xor 0xFF \ ld b, a \ ld a, c \ xor 0xFF \ add a, 1 \ jr nc, $+3 \ inc b \ ld c, a
         dec bc
     pop hl
     pop af
