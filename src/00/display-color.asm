@@ -14,8 +14,22 @@ writeLcdRegister:
     ld a, errUnsupported
     ret
 
+colorSupported:
+    or 1
+    ld a, errUnsupported
+    ret
+
 #else
 ; Color screen is 320x240
+
+;; colorSupported [Color]
+;;  Sets Z if color is supported on this device.
+;; Outputs:
+;;  A: errUnsupported if color is unsupported
+;;  Z: Set if supported, reset if unsupported
+colorSupported:
+    cp a
+    ret
 
 ;; writeLcdRegister [Color]
 ;;  Writes a 16-bit value to a color LCD register
@@ -327,8 +341,25 @@ clearColorLcd:
 ;;  Legacy mode simulates a 96x64 monochrome screen with the help of [[fastCopy]]. Color
 ;;  graphics are not advised in legacy mode.
 setLegacyLcdMode:
-    ld iy, 0x4108
-    call clearColorLcd
+    push hl
+    push af
+        di
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      set 2, (hl)
+        ei
+    pop af
+    pop hl
+setLegacyLcdMode_boot:
+    push iy
+        ld iy, 0x4108
+        call clearColorLcd
+    pop iy
     push af
     push bc
     push hl
@@ -379,6 +410,16 @@ resetLegacyLcdMode:
     push af
     push bc
     push hl
+        di
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      res 2, (hl)
+        ei
         ; Set BASEE = 0, both partial images = 1
         ld a, 0x07
         out (0x10), a \ out (0x10), a
