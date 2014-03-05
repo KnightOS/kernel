@@ -473,6 +473,8 @@ _:  pop hl
     cp a
     ret
 
+;; checkLegacyLcdMode [Color]
+;;  Sets Z if the current thread is in color mode.
 checkLegacyLcdMode:
     push hl
     push af
