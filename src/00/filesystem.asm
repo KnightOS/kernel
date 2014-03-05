@@ -67,7 +67,7 @@ _:  ld h, a
 ;;  DE: Parent ID
 ;;  ABC: Length
 ;;  IY: Section ID
-;; Returns:
+;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: New entry Flash page (on success); Error code (on failure)
 ;;  HL: New entry address relative to 0x4000 (on success)
@@ -258,6 +258,176 @@ findFATEnd:
     ret
 .exitError:
     or 1
+    ret
+
+;; createDirectoryEntry [Filesystem]
+;;  Creates a new directory entry in the FAT.
+;; Inputs:
+;;  HL: Directory name
+;;  DE: Parent ID
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: New entry Flash page (on success); Error code (on failure)
+;;  HL: New entry address relative to 0x4000 (on success)
+createDirectoryEntry:
+    push ix
+    push af
+    push bc
+    push de
+    push hl
+    ld ix, 0
+    add ix, sp
+    ld a, i
+    push af
+    di
+        ; Traverse the FAT
+        ld hl, 0
+        ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
+        ld a, fatStart
+        setBankA
+        ld hl, 0x7FFF
+.search:
+        ld a, (hl)
+        cp fsEndOfTable
+        jr z, .endOfTable
+
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
+
+        cp fsDirectory
+        jr z, .directory
+.skip:
+        or a
+        sbc hl, bc ; Skip to next entry
+        ld a, 0x40
+        cp h
+        jr c, .search
+        ; Swap in next page of FAT
+        dec d
+        ld a, d
+        cp fatStart - 4
+        jp z, .exitError
+        setBankA
+        ld hl, 0x7FFF
+        jr .search
+.directory:
+        dec hl \ dec hl
+        ld e, (hl) \ dec hl
+        ld d, (hl) \ dec hl
+        push hl
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            or a
+            sbc hl, de
+        pop hl
+        jr z, .update
+        jr c, .update
+        jr .search
+.update:
+        ex de, hl
+        inc hl
+        ld (kernelGarbage + kernelGarbageSize - 2), hl
+        ex de, hl
+        inc hl \ inc hl \ inc hl \ inc hl
+        jr .skip
+.endOfTable:
+        ; HL: Address of next entry in FAT
+        ; end of kernel garbage: New directory ID
+        push hl
+            ld l, (ix + 0)
+            ld h, (ix + 1)
+            call stringLength
+            ld hl, 6
+            add hl, bc
+            ld b, h \ ld c, l
+        pop hl
+        ; BC: Length of new entry
+        ld de, kernelGarbage
+        ex de, hl
+        add hl, bc
+        inc hl \ inc hl
+        ld a, fsDirectory
+        ld (hl), a ; Entry type
+        dec hl
+        ld (hl), c ; Length of entry
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        ld c, (ix + 2)
+        ld b, (ix + 3)
+        ld (hl), c ; Parent ID
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        push hl
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld b, h \ ld c, l
+        pop hl
+        ld (hl), c ; New ID
+        dec hl
+        ld (hl), b ; cotd.
+        dec hl
+        ld a, 0xFF ; Flags
+        ld (hl), a
+        dec hl
+        ld c, (ix + 0)
+        ld b, (ix + 1) ; Grab file name from stack
+        push de
+            ld de, 0
+.nameLoop:
+            ld a, (bc)
+            ld (hl), a
+            dec hl
+            inc bc
+            inc de
+            or a ; cp 0
+            jr nz, .nameLoop
+            ld b, d \ ld c, e
+        pop de
+        ; Set BC to full length of entry
+        ld a, 8
+        add c
+        ld c, a
+        jr nc, _
+        inc b
+_:      ; Move DE to end of file entry
+        ex de, hl
+        or a
+        sbc hl, bc
+        ex de, hl
+        inc de
+        ; Write new entry
+        inc hl
+        call unlockFlash
+        call writeFlashBuffer
+        call lockFlash
+        ex de, hl ; HL has file entry address
+        add hl, bc
+        dec hl
+        getBankA
+        ld (ix + 7), a ; Flash page in A (on stack)
+    pop af
+    jp po, _
+    ei
+_:  inc sp \ inc sp ; Skip HL
+    pop de
+    pop bc
+    pop af
+    pop ix
+    ret
+.exitError:
+    pop af
+    jp po, _
+    ei
+_:  pop hl
+    pop de
+    pop bc
+    pop af
+    pop ix
+    or 1
+    ld a, errFilesystemFull
     ret
 
 ;; findFileEntry [Filesystem]

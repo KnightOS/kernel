@@ -301,7 +301,7 @@ test_createFileEntry:
     call fileExists
     jr z, .fail
     ld hl, .newFile
-    ld de, 0x0000
+    ld de, 0
     ld a, 0x00 \ ld bc, 0x0000
     ld iy, 0xFFFF
     call createFileEntry
@@ -315,3 +315,14 @@ test_createFileEntry:
     assert_fail()
 .newFile:
     .db "new", 0
+
+test_createDirectoryEntry:
+    ld hl, .newFile
+    ld de, 0x1234
+    call createDirectoryEntry
+    ; TODO: Write directoryExists and verify this
+    assert_pass()
+.fail:
+    assert_fail()
+.newFile:
+    .db "new_test_dir", 0
