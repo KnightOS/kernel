@@ -535,7 +535,7 @@ _:          ld a, (hl)
 .handleFile:
             push bc
                 push hl
-                    ; 0xCeck parent directory ID
+                    ; Check parent directory ID
                     ld c, (hl) \ dec hl \ ld b, (hl)
                     ld hl, (kernelGarbage)
                     call cpHLBC
@@ -570,8 +570,140 @@ _:  pop af
     cp a
     ret
 
+;; findDirectoryEntry [Filesystem]
+;;  Finds a directory entry in the FAT.
+;; Inputs:
+;;  DE: Path to directory
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Flash page (on success); Error code (on failure)
+;;  HL: Address relative to 0x4000 (on success)
+;; Notes:
+;;  This function returns HL=0 for the root directory. You should
+;;  handle this special case yourself. The root directory has ID 0
+;;  and has no parent directory.
+findDirectoryEntry:
+    push de
+    push bc
+    push af
+    ld a, i
+    push af
+    di
+        ; TODO: Relative paths
+        setBankA(fatStart)
+        ld hl, 0
+        ld (kernelGarbage), hl ; Parent ID
+        ld hl, 0x7FFF
+.search:
+        ld a, (de)
+        cp '/'
+        jr nz, _
+        inc de
+        ld a, (de)
+_:      or a ; cp 0
+        jr z, .done_root ; Root is a special case
+.traversalLoop:
+        ; Traverse the table
+        ld a, (hl)
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
 
-; 0xcecks string at (DE) for '/'
+        cp fsDirectory
+        jr z, .handleDirectory
+        cp fsSymLink ; TODO
+        cp fsEndOfTable
+        jr z, .endOfTable
+_:
+        or a
+        sbc hl, bc
+        ; TODO: Handle swapping out next page
+        jr .traversalLoop
+.skip:
+        inc hl
+        inc hl
+        inc hl
+        inc hl
+        jr -_
+.handleDirectory:
+        ; Check parent IDs
+        push bc
+        push hl
+            ld c, (hl)
+            dec hl
+            ld b, (hl)
+            dec hl
+            push hl
+                ld hl, (kernelGarbage)
+                call cpHLBC
+            pop hl
+            jr z, _
+        pop hl
+        pop bc
+        jr .skip + 2
+_:          ; Parent IDs match, check name
+            ld c, (hl)
+            dec hl
+            ld b, (hl) ; Grab new directory ID just in case
+            dec hl
+            dec hl ; Skip flags
+            push de
+                call compareDirectories
+                jr z, _
+            pop de
+        inc sp \ inc sp ; pop hl
+        pop bc
+        jr .skip
+_:          inc sp \ inc sp ; pop de
+            ; Directories match, update kernelGarbage
+            ld (kernelGarbage), bc
+            ; We might be done here
+            ld a, (de)
+            cp '/'
+            jr nz, _
+            inc de
+            ld a, (de)
+_:          or a ; cp 0
+            jr nz, .continue
+            ; We are done!
+        pop hl
+        pop bc
+        ld bc, 3
+        add hl, bc
+        jr .done
+.continue:
+        inc sp \ inc sp ; pop hl
+        pop bc
+        dec hl
+        jr .traversalLoop
+.endOfTable:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop de
+    or 1
+    ld a, errFileNotFound
+    ret
+.done_root:
+        ld hl, (kernelGarbage)
+.done:
+        getBankA
+        ld b, a
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ld a, b
+    pop bc
+    pop de
+    cp a
+    ret
+
+; Checks string at (DE) for '/'
 ; Z for no slashes, NZ for slashes
 checkForRemainingSlashes:
     ld a, (de)
@@ -582,6 +714,7 @@ checkForRemainingSlashes:
     inc de
     jr checkForRemainingSlashes
 .found:
+    ; Check for one last slash
     or a
     ret
 

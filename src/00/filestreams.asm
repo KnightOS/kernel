@@ -238,7 +238,11 @@ _:  pop af
     push iy
     push af
        ex de, hl ; HL is file name
-       ld de, 0xFFFF ; Parent directory (TODO)
+       ; TODO: Look up parent directory
+       ; This will need to use findDirectoryEntry, but I'll also need to write some
+       ; kind of function to drop the file name so that we aren't looking for a
+       ; directory with our file's name.
+       ld de, 0xFFFF ; Parent directory
        ld a, 0xFF \ ld bc, 0xFFFF ; File length
        ld iy, 0xFFFF ; Section ID
        call createFileEntry

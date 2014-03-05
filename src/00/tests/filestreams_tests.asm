@@ -326,3 +326,39 @@ test_createDirectoryEntry:
     assert_fail()
 .newFile:
     .db "new_test_dir", 0
+
+test_findDirectoryEntry:
+    ld de, .root
+    call findDirectoryEntry
+    ld bc, 0
+    call cpHLBC
+    jr nz, .fail
+
+    ld de, .test
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test2
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test3
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test4
+    call findDirectoryEntry
+    jr z, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.root:
+    .db "/", 0
+.test:
+    .db "/sub", 0
+.test2:
+    .db "/sub/", 0
+.test3:
+    .db "/sub/sub2", 0
+.test4:
+    .db "/does/not/exist", 0
