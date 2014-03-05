@@ -60,6 +60,28 @@ _:  ld h, a
     pop hl
     ret
 
+;; directoryExists [Filesystem]
+;;  Determines if a directory exists.
+;; Inputs:
+;;  DE: Path to directory (string pointer)
+;; Outputs:
+;;  Z: Set if file exists, reset if not
+directoryExists:
+    push hl
+    push af
+        call findDirectoryEntry
+        jr nz, _
+    pop af
+    pop hl
+    cp a
+    ret
+_:  ld h, a
+    pop af
+    or 1
+    ld a, h
+    pop hl
+    ret
+
 ;; createFileEntry [Filesystem]
 ;;  Creates a new file entry in the FAT.
 ;; Inputs:

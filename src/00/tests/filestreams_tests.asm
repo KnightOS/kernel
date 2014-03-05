@@ -362,3 +362,37 @@ test_findDirectoryEntry:
     .db "/sub/sub2", 0
 .test4:
     .db "/does/not/exist", 0
+
+test_directoryExists:
+    ld de, .root
+    call directoryExists
+    jr nz, .fail
+
+    ld de, .test
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test2
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test3
+    call findDirectoryEntry
+    jr nz, .fail
+
+    ld de, .test4
+    call findDirectoryEntry
+    jr z, .fail
+    assert_pass()
+.fail:
+    assert_fail()
+.root:
+    .db "/", 0
+.test:
+    .db "/sub", 0
+.test2:
+    .db "/sub/", 0
+.test3:
+    .db "/sub/sub2", 0
+.test4:
+    .db "/does/not/exist", 0
