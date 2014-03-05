@@ -564,6 +564,14 @@ colorRectangle:
 ; Vertical start
         ld l, b
         ld h, 0
+        ld a, 239
+        cp b
+        jr nc, +_
+        ld a, b
+        rla
+        sbc a, a
+        ld h, a
+_:
         push hl
             call .clipY
             ld a, 0x50
