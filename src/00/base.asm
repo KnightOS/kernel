@@ -41,5 +41,6 @@
 .echo "flashFunctions: 0x{0:X4}" flashFunctions
 .echo "kernelGarbage: 0x{0:X4}" kernelGarbage
 .echo "userMemory: 0x{0:X4}" userMemory
+.echo "{0:X4}" color_mode
 
 .echo "Bytes remaining on page 00: {0}" 0x4000-$ ; TODO: Fix this problem in sass

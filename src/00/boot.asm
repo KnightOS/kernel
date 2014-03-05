@@ -139,7 +139,8 @@ reboot:
     ; Set GPIO config
     ld a, 0xE0
     out (0x39), a
-    call setLegacyLcdMode_boot
+    ld a, 1
+    ld (color_mode), a
 #else
     ; Initialize LCD
     ld a, 0x05

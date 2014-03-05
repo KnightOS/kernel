@@ -47,6 +47,8 @@ bcallHook               .equ currentContrast + 1        ; 2 bytes
 ; TODO: Phase this out
 clip_mask               .equ currentContrast + 2        ; 1 byte
 
+color_mode              .equ clip_mask + 1              ; 1 byte
+
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize
 

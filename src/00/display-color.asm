@@ -2,6 +2,10 @@
 
 setLegacyLcdMode:
     ret
+
+checkLegacyLcdMode:
+    cp a
+    ret
     
 resetLegacyLcdMode:
 clearColorLcd:
@@ -341,9 +345,20 @@ clearColorLcd:
 ;;  Legacy mode simulates a 96x64 monochrome screen with the help of [[fastCopy]]. Color
 ;;  graphics are not advised in legacy mode.
 setLegacyLcdMode:
+    push af
+        ld a, (color_mode)
+        or a
+        jr nz, _
+    pop af
+    ret
+_:      xor a
+        ld (color_mode), a
+    pop af
     push hl
     push af
-        di
+    ld a, i
+    di
+    push af
         call getCurrentThreadId
         call getThreadEntry
         ld a, 5
@@ -351,9 +366,11 @@ setLegacyLcdMode:
         ld l, a
         jr nc, _
         inc h
-_:      set 2, (hl)
-        ei
+_:      res 3, (hl)
     pop af
+    jp po, _
+    ei
+_:  pop af
     pop hl
 setLegacyLcdMode_boot:
     push iy
@@ -405,12 +422,22 @@ setLegacyLcdMode_boot:
     ret
 
 ;; resetLegacyLcdMode [Color]
-;;  Sets the LCD to color mode.
+;;  Sets the LCD to color mode. Call this before you call
+;;  [[getLcdLock]].
 resetLegacyLcdMode:
     push af
+        ld a, (color_mode)
+        cp 1
+        jr nz, _
+    pop af
+    ret
+_:  ld a, 1
+    ld (color_mode), a
     push bc
     push hl
-        di
+    ld a, i
+    push af
+    di
         call getCurrentThreadId
         call getThreadEntry
         ld a, 5
@@ -418,8 +445,7 @@ resetLegacyLcdMode:
         ld l, a
         jr nc, _
         inc h
-_:      res 2, (hl)
-        ei
+_:      set 3, (hl)
         ; Set BASEE = 0, both partial images = 1
         ld a, 0x07
         out (0x10), a \ out (0x10), a
@@ -438,9 +464,46 @@ _:      res 2, (hl)
         lcdout(0x52, 319)
         ; Set entry mode
         lcdout(0x03, 0x10B8)
-    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop hl
     pop bc
     pop af
+    cp a
+    ret
+
+checkLegacyLcdMode:
+    push hl
+    push af
+    ld a, i
+    push af
+    di
+        call getCurrentThreadId
+        call getThreadEntry
+        ld a, 5
+        add l, a
+        ld l, a
+        jr nc, _
+        inc h
+_:      bit 3, (hl)
+        jr z, .legacyMode
+.colorMode:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ld h, a
+    or 1
+    ld a, h
+    pop hl
+    ret
+.legacyMode:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop hl
     cp a
     ret
 #endif
