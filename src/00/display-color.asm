@@ -14,6 +14,7 @@ colorLcdOff:
 colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
+fullScreenWindow:
     or 1
     ld a, errUnsupported
     ret
@@ -47,6 +48,20 @@ writeLcdRegister:
     ld c, 0x11
     out (c), h
     out (c), l
+    ret
+
+fullScreenWindow:
+    push hl
+    push bc
+    push af
+        lcdout(0x50, 0)
+        lcdout(0x51, 239)
+        lcdout(0x53, 319)
+        lcdout(0, 0x20)
+        lcdout(1, 0x21)
+    pop af
+    pop bc
+    pop hl
     ret
 
 ;; readLcdRegister [Color]
