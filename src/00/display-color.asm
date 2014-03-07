@@ -533,11 +533,9 @@ _:  pop af
 ;;  C : height of the rectangle in pixels
 ;;  IY : color of the rectangle in R5G6B5 format
 ;; Notes:
-;;  The LCD has to be configured with colorLcdOn or resetLegacyMode
-;;  for that function to behave correctly.
-;;  Any clipping window setting (LCD registers 0x50 to 0x53) can be used
-;;  though ; the rectangle will be clipped according to them, and they will be restored
-;;  before the function returns.
+;;  The LCD should be in color mode when calling this function.
+;;  The rectangle will be clipped to any LCD window already in
+;;  place, via [[setLcdWindow]] (TODO).
 colorRectangle:
     push hl \ push de \ push bc \ push ix
         dec de
