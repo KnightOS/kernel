@@ -14,11 +14,8 @@ colorLcdOff:
 colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
-<<<<<<< HEAD
 colorRectangle:
-=======
 fullScreenWindow:
->>>>>>> 7e8a2fd456a6a6b714dcd5ae10988dfb5dab6df1
     or 1
     ld a, errUnsupported
     ret
@@ -661,18 +658,18 @@ _:
 .clipX:
     ld    e, (ix + 4)
     ld    d, (ix + 5)
-    call    max
+    call    smax
     ld    e, (ix + 6)
     ld    d, (ix + 7)
-    call    min
+    call    smin
     ret
 .clipY:
     ld    e, (ix + 0)
     ld    d, (ix + 1)
-    call    max
+    call    smax
     ld    e, (ix + 2)
     ld    d, (ix + 3)
-    call    min
+    call    smin
     ret
 
 .readLcdReg:
