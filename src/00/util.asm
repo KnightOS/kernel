@@ -231,16 +231,14 @@ _:  pop af
 ;;  Performs `HL = DE * A`
 DEMulA:
     push bc
-    ld hl, 0 ; Use HL to store the product
-    ld b, 8 ; Eight bits to check
+        ld hl, 0
+        ld b, 8
 .loop:
-    rrca ; Check least-significant bit of accumulator
-    jr nc, .skip ; If zero, skip addition
-    add hl, de
-.skip:
-    sla e ; Shift DE one bit left
-    rl d
-    djnz .loop
+        add hl, hl
+        rla
+        jr nc, $ + 3
+        add hl, de
+        djnz .loop
     pop bc
     ret
 
@@ -828,7 +826,6 @@ randA:
         ld c, a
         ld a, r
         xor (hl)
-        and 7
         ld b, a
         ld a, c
 _:
@@ -900,7 +897,7 @@ cpHLDE_sort:
         call cpHLDE
         jr -_
 
-;; min [Miscellaneous]
+;; smin [Miscellaneous]
 ;;  Returns the smallest between HL and DE. The operation is signed.
 ;; Inputs:
 ;;  HL: integer
@@ -908,7 +905,7 @@ cpHLDE_sort:
 ;; Outputs:
 ;;  HL: the smallest of the previous HL and DE
 ;;  DE: the largest of the previous HL and DE
-min:
+smin:
     ld a, l
     sub e
     ld a, h
@@ -920,7 +917,7 @@ min:
     ex de, hl
     ret
     
-;; max [Miscellaneous]
+;; smax [Miscellaneous]
 ;;  Returns the largest between HL and DE. The operation is signed.
 ;; Inputs:
 ;;  HL: integer
@@ -928,7 +925,7 @@ min:
 ;; Outputs:
 ;;  HL: the largest of the previous HL and DE
 ;;  DE: the smallest of the previous HL and DE
-max:
+smax:
     ld a, l
     sub e
     ld a, h
