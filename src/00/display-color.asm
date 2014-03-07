@@ -14,6 +14,7 @@ colorLcdOff:
 colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
+colorRectangle:
 fullScreenWindow:
     or 1
     ld a, errUnsupported
@@ -276,7 +277,7 @@ _:
     ret
 
 ;; clearColorLcd [Color]
-;;  Sets all pixels on the LCD to grey in color mode.
+;;  Sets all pixels on the LCD to a specified color in color mode.
 ;; Inputs:
 ;;  IY: Color in 0bRRRRRGGGGGGBBBBB format
 clearColorLcd:
@@ -487,7 +488,7 @@ _:  pop hl
     ret
 
 ;; checkLegacyLcdMode [Color]
-;;  Sets Z if the current thread is in color mode.
+;;  Sets Z if the current thread is in legacy mode.
 checkLegacyLcdMode:
     push hl
     push af
@@ -520,5 +521,171 @@ _:  pop af
 _:  pop af
     pop hl
     cp a
+    ret
+
+;; colorRectangle [Color]
+;;  Draws a clipped rectangle of the specified size with the
+;;  specified color in color mode.
+;; Inputs:
+;;  HL : X coordinate in pixels
+;;  B : Y coordinate in pixels
+;;  DE : width of the rectangle in pixels
+;;  C : height of the rectangle in pixels
+;;  IY : color of the rectangle in R5G6B5 format
+;; Notes:
+;;  The LCD has to be configured with colorLcdOn or resetLegacyMode
+;;  for that function to behave correctly.
+;;  Any clipping window setting (LCD registers 0x50 to 0x53) can be used
+;;  though ; the rectangle will be clipped according to them, and they will be restored
+;;  before the function returns.
+colorRectangle:
+    push hl \ push de \ push bc \ push ix
+        dec de
+        push de
+            push bc
+                ld ix, -14
+                add ix, sp
+                push ix
+                    ld a, 0x50
+                    ld b, 4
+                    ld c, 0x11
+.registerSave:
+                    out (0x10), a
+                    out (0x10), a
+                    in d, (c)
+                    in e, (c)
+                    ld (ix + 0), e
+                    ld (ix + 1), d
+                    inc ix
+                    inc ix
+                    inc a
+                    djnz .registerSave
+                pop ix
+; Coordinates clipping
+            pop bc
+; Horizontal start
+            push hl
+                call .clipX
+                ld a, 0x52
+; I can't use the kernel's writeLcdRegister or readLcdRegister here because they destroy C
+                call .writeLcdReg
+; Horizontal end
+            pop hl
+        pop de
+        add hl, de
+        call .clipX
+        ld a, 0x53
+        call .writeLcdReg
+; Vertical start
+        ld l, b
+        ld h, 0
+        ld a, 239
+        cp b
+        jr nc, +_
+        ld a, b
+        rla
+        sbc a, a
+        ld h, a
+_:
+        push hl
+            call .clipY
+            ld a, 0x50
+            call .writeLcdReg
+; Vertical end
+            ld e, c
+            ld d, 0
+        pop hl
+        add hl, de
+        call .clipY
+        ld a, 0x51
+        call .writeLcdReg
+; Actually draw the rect
+        ld a, 0x52
+        call .readLcdReg
+        ld c, l
+        ld b, h
+        ld a, 0x21
+        call .writeLcdReg
+        ld    a, 0x53
+        call .readLcdReg
+        or a
+        sbc hl, bc
+        inc hl
+        ld e, l
+        ld d, h
+        ld a, 0x50
+        call .readLcdReg
+        ld c, l
+        ld b, h
+        ld a, 0x20
+        call .writeLcdReg
+        ld a, 0x51
+        call .readLcdReg
+        or a
+        sbc hl, bc
+        ld a, l
+        call DEMulA
+        ld a, 0x22
+        out (0x10), a
+        out (0x10), a
+        push iy \ pop de
+        ld c, 0x11
+.drawLoop:
+        out (c), d
+        out (c), e
+        dec hl
+        ld a, h
+        or l
+        jr nz, .drawLoop
+; Restore previous clipping window
+        ld a, 0x50
+        ld b, 4
+        ld c, 0x11
+.registerRcl:
+        out (0x10), a
+        out (0x10), a
+        ld e, (ix + 0)
+        ld d, (ix + 1)
+        out (c), d
+        out (c), e
+        inc a
+        inc ix
+        inc ix
+        djnz .registerRcl
+    pop ix \ pop bc \ pop de \ pop hl
+    ret
+
+.clipX:
+    ld    e, (ix + 4)
+    ld    d, (ix + 5)
+    call    smax
+    ld    e, (ix + 6)
+    ld    d, (ix + 7)
+    call    smin
+    ret
+.clipY:
+    ld    e, (ix + 0)
+    ld    d, (ix + 1)
+    call    smax
+    ld    e, (ix + 2)
+    ld    d, (ix + 3)
+    call    smin
+    ret
+
+.readLcdReg:
+    out    (0x10), a
+    out    (0x10), a
+    in    a, (0x11)
+    ld    h, a
+    in    a, (0x11)
+    ld    l, a
+    ret
+.writeLcdReg:
+    out    (0x10), a
+    out    (0x10), a
+    ld    a, h
+    out    (0x11), a
+    ld    a, l
+    out    (0x11), a
     ret
 #endif
