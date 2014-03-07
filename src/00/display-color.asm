@@ -58,8 +58,6 @@ fullScreenWindow:
         lcdout(0x50, 0)
         lcdout(0x51, 239)
         lcdout(0x53, 319)
-        lcdout(0, 0x20)
-        lcdout(1, 0x21)
     pop af
     pop bc
     pop hl
