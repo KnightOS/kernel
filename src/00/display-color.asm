@@ -388,8 +388,7 @@ _:  pop af
     pop hl
 setLegacyLcdMode_boot:
     push iy
-        ; ld iy, 0x4108
-        ld iy, 0b1100011000011000
+        ld iy, 0x4108
         call clearColorLcd
     pop iy
     push af
@@ -525,7 +524,8 @@ _:  pop af
     ret
 
 ;; colorRectangle [Color]
-;;  Draws a clipped rectangle of the specified size with the specified color in color mode.
+;;  Draws a clipped rectangle of the specified size with the
+;;  specified color in color mode.
 ;; Inputs:
 ;;  HL : X coordinate in pixels
 ;;  B : Y coordinate in pixels
@@ -533,8 +533,10 @@ _:  pop af
 ;;  C : height of the rectangle in pixels
 ;;  IY : color of the rectangle in R5G6B5 format
 ;; Notes:
-;;  The LCD has to be configured with colorLcdOn or resetLegacyMode for that function to behave correctly.
-;;  Any clipping window setting (LCD registers $50 to $53) can be used though ; the rectangle will be clipped according to them, and they will be restored
+;;  The LCD has to be configured with colorLcdOn or resetLegacyMode
+;;  for that function to behave correctly.
+;;  Any clipping window setting (LCD registers 0x50 to 0x53) can be used
+;;  though ; the rectangle will be clipped according to them, and they will be restored
 ;;  before the function returns.
 colorRectangle:
     push hl \ push de \ push bc \ push ix
