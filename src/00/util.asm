@@ -816,25 +816,16 @@ _:      inc hl
 ;;  A: random byte
 ;;  A': reseeded
 randA:
-    push hl \ push bc
+    push bc
         ex af, af'
-        ld a, i
-        add a, (hl)
-        inc hl
-        sbc a, (hl)
-        inc hl
-        ld c, a
-        ld a, r
-        xor (hl)
-        ld b, a
-        ld a, c
+        rrca
+        jr nc, +_
+        xor 0b00111000
 _:
-        rra
-        djnz -_
         ld b, a
         ex af, af'
         ld a, b
-    pop bc \ pop hl
+    pop bc
     ret
 
 ;; indirect16HLDE [Miscellaneous]
