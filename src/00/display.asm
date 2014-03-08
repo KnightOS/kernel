@@ -110,6 +110,11 @@ getPixel:
         add hl, de
 
         push iy \ pop de
+        push bc
+            ld bc, 0x300
+            call cpHLBC
+        pop bc
+        jr nc, .outOfBounds
         add hl, de
         and 7
         ld b, a
@@ -121,20 +126,11 @@ getPixel:
 _:  pop bc
     pop de
     ret
-    
-;; setPixel [Display]
-;;  Sets (turns on) a pixel on the screen buffer.
-;; Inputs:
-;;  IY: Screen buffer
-;;  A,L: X, Y
-setPixel:
-    push hl
-    push af
-        call getPixel
-        or (hl)
-        ld (hl), a
-    pop af
-    pop hl
+.outOfBounds:
+        ld hl, 0
+        xor a
+    pop bc
+    pop de
     ret
 
 ;; resetPixel [Display]

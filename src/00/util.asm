@@ -533,15 +533,118 @@ _: add hl, hl
 ;;  HL: Remainder
 divACbyDE:
    ld hl, 0
-   ld b, 16
-_: srl c
+   .db 0xCB, 0x31 ; sll c
    rla
    adc hl, hl
    sbc hl, de
-   jr nc, $ + 4
+   jr nc, $+4
    add hl, de
    dec c
-   djnz -_
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
+   .db 0xCB, 0x31 ; sll c
+   rla
+   adc hl, hl
+   sbc hl, de
+   jr nc, $+4
+   add hl, de
+   dec c
    ret
 
 ;; getBootCodeVersionString [Miscellaneous]
