@@ -18,6 +18,8 @@ kcall:
     cp 0xDD
     jr z, _
     cp 0xFD
+    jr z, _
+    cp 0xED
     jr nz, ++_
 _:
     inc hl ; Handle IX/IY prefix
