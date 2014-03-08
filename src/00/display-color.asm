@@ -15,6 +15,7 @@ colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
 colorRectangle:
+setLcdWindow:
 fullScreenWindow:
     or 1
     ld a, errUnsupported

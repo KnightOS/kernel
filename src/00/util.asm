@@ -227,6 +227,23 @@ _:  pop af
     ret
 #endif
 
+;; DEMulBC [Miscellaneous]
+;;  Performs `HL = DE * BC`
+DEMulBC:
+    push af
+        ld hl, 0
+        ld a, 16
+.loop:
+        add hl, hl
+        sla c
+        rl b
+        jr nc, $ + 3
+        add hl, de
+        dec a
+        jr nz, .loop
+    pop af
+    ret
+    
 ;; DEMulA [Miscellaneous]
 ;;  Performs `HL = DE * A`
 DEMulA:
@@ -503,7 +520,7 @@ divHLbyC:
 _: add hl, hl
    rla
    cp c
-   jr c, $+4
+   jr c, $ + 4
    sub c
    inc l
    djnz -_
@@ -521,7 +538,7 @@ _: srl c
    rla
    adc hl, hl
    sbc hl, de
-   jr nc, $+4
+   jr nc, $ + 4
    add hl, de
    dec c
    djnz -_
