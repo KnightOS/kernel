@@ -15,6 +15,7 @@ colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
 colorRectangle:
+setLcdWindow:
 fullScreenWindow:
     or 1
     ld a, errUnsupported
@@ -51,6 +52,44 @@ writeLcdRegister:
     out (c), l
     ret
 
+;; setLcdWindow [Color]
+;;  Sets the LCD's clipping window. Values are inclusive.
+;; Inputs:
+;;  HL: left border
+;;  DE: right border
+;;  B: top border
+;;  C: bottom border 
+;; Notes:
+;;  Destroys C
+setLcdWindow:
+    push af \ push hl
+        push bc
+            ld a, 0x52
+            call writeLcdRegister
+            inc a
+            out (0x10), a
+            out (0x10), a
+            out (c), d
+            out (c), e
+        pop bc
+        ld a, 0x50
+        ld h, 0
+        ld l, c
+        ld c, 0x11
+        out (0x10), a
+        out (0x10), a
+        out (c), h
+        out (c), b
+        inc a
+        out (0x10), a
+        out (0x10), a
+        out (c), h
+        out (c), l
+    pop hl \ pop af
+    ret
+    
+;; fullScreenWindow [Color]
+;;  Sets the clipping window to fit the LCD screen in color mode.
 fullScreenWindow:
     push hl
     push bc
@@ -280,6 +319,8 @@ _:
 ;;  Sets all pixels on the LCD to a specified color in color mode.
 ;; Inputs:
 ;;  IY: Color in 0bRRRRRGGGGGGBBBBB format
+;; Notes:
+;;  Overwrites the current clipping window.
 clearColorLcd:
     push af
     push hl
