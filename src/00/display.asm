@@ -133,6 +133,21 @@ _:  pop bc
     pop de
     ret
 
+;; setPixel [Display]
+;;  Sets (turns on) a pixel on the screen buffer.
+;; Inputs:
+;;  IY: Screen buffer
+;;  A,L: X, Y
+setPixel:
+    push hl
+    push af
+        call getPixel
+        or (hl)
+        ld (hl), a
+    pop af
+    pop hl
+    ret
+
 ;; resetPixel [Display]
 ;;  Sets (turns on) a pixel on the screen buffer.
 ;; Inputs:

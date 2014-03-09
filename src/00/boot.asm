@@ -113,8 +113,9 @@ reboot:
 #endif
 
     ; Set intterupt mode
-    ld a, 0b000001111
+    ld a, 0b000001011
     out (3), a
+    ; Set timer frequency
 
     ; Clear RAM
     ld hl, 0x8000

@@ -137,7 +137,7 @@ memSeekToEnd:
         push ix \ pop hl
         dec hl \ ld b, (hl)
         dec hl \ ld c, (hl)
-        inc hl \ inc hl \ add hl, bc
+        inc hl \ add hl, bc
         push hl \ pop ix
     pop bc
     pop hl
