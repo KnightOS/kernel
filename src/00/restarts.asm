@@ -1,4 +1,4 @@
-; rst $08
+; rst 0x08
 kcall:
     push hl
     inc sp \ inc sp
@@ -61,7 +61,7 @@ _:
     pop hl
     ret
 
-; rst $10
+; rst 0x10
 lcall:
     push hl
     inc sp \ inc sp
@@ -123,6 +123,86 @@ _:
     pop de
     pop hl
     ret
+
+; rst 0x20
+; Here be dragons
+pcall:
+    push af ; Save AF
+        ld a, i
+        jp po, .pcall_noInt
+    pop af
+    push hl ; This will become .returnPoint
+        push hl ; This will become the pcall address
+            push hl ; This saves HL
+            inc sp \ inc sp
+        inc sp \ inc sp
+    inc sp \ inc sp
+pop hl \ push hl ; Grab return address
+    push hl
+        push hl
+            dec sp \ dec sp
+                ; HL is the byte following the RST that got us here
+                push af
+                    ld a, (hl)
+                    inc hl
+                    setBankA
+                    ld a, (hl)
+                    inc a
+                    ; HL = 0x8000 - (A * 3)
+                    ld h, 0x80
+                    ld l, a
+                    xor a
+                    sub l \ jr nc, $+3 \ dec h
+                    sub l \ jr nc, $+3 \ dec h
+                    sub l \ jr nc, $+3 \ dec h
+                    ld l, a
+                    ; HL is now the address of the jump table call, back up in the stack
+                pop af
+            inc sp \ inc sp ; Saved HL
+        inc sp \ inc sp ; pcall address
+        push hl \ pop hl
+    inc sp \ inc sp ; .returnPoint
+    ld hl, .returnPoint
+    push hl
+        dec sp \ dec sp
+            dec sp \ dec sp
+            pop hl
+        ret ; Jump to pcall
+.returnPoint:
+    ei
+    ret
+.pcall_noInt:
+    pop af
+    push hl ; This will become the pcall address
+        push hl ; This saves HL
+        inc sp \ inc sp
+    inc sp \ inc sp
+pop hl \ push hl ; Grab return address
+    push hl
+        dec sp \ dec sp
+            ; HL is the byte following the RST that got us here
+            push af
+                ld a, (hl)
+                inc hl
+                setBankA
+                ld a, (hl)
+                inc a
+                ; HL = 0x8000 - (A * 3)
+                ld h, 0x80
+                ld l, a
+                xor a
+                sub l \ jr nc, $+3 \ dec h
+                sub l \ jr nc, $+3 \ dec h
+                sub l \ jr nc, $+3 \ dec h
+                ld l, a
+                ; HL is now the address of the jump table call, back up in the stack
+            pop af
+        inc sp \ inc sp ; Saved HL
+    inc sp \ inc sp ; pcall address
+    push hl
+        dec sp \ dec sp
+        pop hl
+    ret ; Jump to pcall
 
 ; rst $28
 bcall:

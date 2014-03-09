@@ -25,7 +25,7 @@ rlcall:
 .fill 0x20-$
 ; 0x0020
 ; RST 0x20
-    ret
+    jp pcall
 .fill 0x28-$
 ; 0x0028
 ; RST 0x28

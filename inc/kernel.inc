@@ -3,6 +3,7 @@
 ; Macros
 rkcall .equ 0x08
 rlcall .equ 0x10
+rpcall .equ 0x20
 
 .macro kcall(addr)
     rst rkcall
@@ -75,6 +76,11 @@ rlcall .equ 0x10
     rst rlcall
     .db libId
     ld to, from
+.endmacro
+
+.macro pcall(function)
+    rst rpcall
+    .dw function
 .endmacro
 ; /Macros
 
