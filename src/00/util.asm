@@ -679,7 +679,7 @@ getBootCodeVersionString:
     ret
 
 ; This is the sentinel byte for all RLE routines.
-rleSentinel .equ 0x9B
+runIndicator .equ 0x9B
 
 ;; rleCompress [Miscellaneous]
 ;;  Compresses data using a simple Run-Length-Encoding scheme.
@@ -707,7 +707,7 @@ rleCompress:
         ld a, (hl)
         cp (ix + 1)
         jr nz, .literal
-        cp rleSentinel              ; Except if the run is of the sentinel; then we only need a 2-byte run.
+        cp runIndicator              ; Except if the run is of the sentinel; then we only need a 2-byte run.
         jr z, .run
         cp (ix + 2)
         jr nz, .literal
@@ -729,7 +729,7 @@ _:          inc hl
             jp nz, -_
 _:          ex (sp), hl
             ; DEstination now in HL
-            ld (hl), rleSentinel
+            ld (hl), runIndicator
             inc hl
             ld (hl), d
             inc hl
@@ -743,12 +743,12 @@ _:          ex (sp), hl
 .literal:
         ld (de), a
         inc de
-        cp rleSentinel          ; Check if byte is the sentinel, if so it must be escaped.
+        cp runIndicator          ; Check if byte is the sentinel, if so it must be escaped.
         jr nz, _
         ld a, 1
         ld (de), a
         inc de
-        ld a, rleSentinel
+        ld a, runIndicator
         ld (de), a
         inc de
 _:      inc hl
@@ -790,7 +790,7 @@ rleCalculateCompressedLength:
         ld a, (hl)
         cp (ix + 1)
         jr nz, .literal
-        cp rleSentinel              ; Except if the run is of the sentinel; then we only need a 2-byte run.
+        cp runIndicator              ; Except if the run is of the sentinel; then we only need a 2-byte run.
         jr z, .run
         cp (ix + 2)
         jr nz, .literal
@@ -819,7 +819,7 @@ _:      pop de
         ld a, (hl)
 .literal:
         inc de
-        cp rleSentinel          ; Check if byte is the sentinel, if so it must be escaped.
+        cp runIndicator          ; Check if byte is the sentinel, if so it must be escaped.
         jr nz, _
         inc de
         inc de
@@ -850,7 +850,7 @@ rleDecompress:
 .repeat:
         ld a, b \ or c \ jr z, .done
         ld a, (hl)
-        cp rleSentinel              ; Check for sentinel byte
+        cp runIndicator              ; Check for sentinel byte
         jr z, .expand
         ld (de), a                  ; Copy literal
         jr .nextBytes
@@ -910,7 +910,7 @@ rleCalculateDecompressedLength:
         inc de                          ; Output gets larger
         dec bc                          ; Input gets smaller
         inc hl                          ; Next input byte
-        cp rleSentinel
+        cp runIndicator
         jr nz, .nextByte
         dec de                          ; Sentinel byte doesn't affect output size
         ld a, e
