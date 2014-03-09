@@ -130,6 +130,8 @@ pcall:
     push af ; Save AF
         ld a, i
         jp po, .pcall_noInt
+        ld a, i
+        jp po, .pcall_noInt
     pop af
     push hl ; This will become .returnPoint
         push hl ; This will become the pcall address
