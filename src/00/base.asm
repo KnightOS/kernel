@@ -25,6 +25,7 @@
 #include "keyboard.asm"
 #include "time.asm"
 
+#include "math.asm"
 #include "util.asm"
 #include "crypto.asm"
 
