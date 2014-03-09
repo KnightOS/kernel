@@ -132,6 +132,7 @@ pcall:
         jp po, .pcall_noInt
         ld a, i
         jp po, .pcall_noInt
+        di
     pop af
     push hl ; This will become .returnPoint
         push hl ; This will become the pcall address
@@ -139,12 +140,13 @@ pcall:
             inc sp \ inc sp
         inc sp \ inc sp
     inc sp \ inc sp
-pop hl \ push hl ; Grab return address
+pop hl \ inc hl \ inc hl \ push hl ; Grab return address
     push hl
         push hl
             dec sp \ dec sp
                 ; HL is the byte following the RST that got us here
                 push af
+                    dec hl \ dec hl
                     ld a, (hl)
                     inc hl
                     setBankA
@@ -179,11 +181,12 @@ pop hl \ push hl ; Grab return address
         push hl ; This saves HL
         inc sp \ inc sp
     inc sp \ inc sp
-pop hl \ push hl ; Grab return address
+pop hl \ inc hl \ inc hl \ push hl ; Grab return address
     push hl
         dec sp \ dec sp
             ; HL is the byte following the RST that got us here
             push af
+                dec hl \ dec hl
                 ld a, (hl)
                 inc hl
                 setBankA

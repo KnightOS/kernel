@@ -21,7 +21,7 @@ rlcall:
 .fill 0x18-$
 ; 0x0018
 ; RST 0x18
-    ret
+    jp reboot
 .fill 0x20-$
 ; 0x0020
 ; RST 0x20

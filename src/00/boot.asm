@@ -4,8 +4,6 @@ boot:
     jr _
 ;; shutdown [System]
 ;;  Shuts off the device.
-;; Notes:
-;;  This will never return. Call it with `jp shutdown`
 shutdown:
     ; TODO: Crash detection
 _:  di
@@ -44,8 +42,6 @@ _:  di
 #endif
 ;; reboot [System]
 ;;  Restarts the device.
-;; Notes:
-;;  This will never return. Call it with `jp reboot`
 reboot:
     di
 

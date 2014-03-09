@@ -75,7 +75,7 @@ _:      di
                     ld a, b
                     add a, b
                     ld b, 0
-                    add a, 24 ; Required minimum stack size for system use
+                    add a, 64 ; Required minimum stack size for system use
                     ld c, a
                     jr nc, $+3 \ inc b
                     call malloc
@@ -125,8 +125,7 @@ startThread_mem: ; Out of memory
 ;;  the exit function specified by the caller.
 ;;
 ;;  This function cleans up all resources owned by that thread, including
-;;  allocated memory, loaded libraries, file handles, etc. This function
-;;  will never return; invoke it with `jp killCurrentThread`.
+;;  allocated memory, loaded libraries, file handles, etc.
 killCurrentThread:
     di
     ; The stack is going to be deallocated, so let's move it

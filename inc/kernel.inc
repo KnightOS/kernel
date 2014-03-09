@@ -82,6 +82,12 @@ rpcall .equ 0x20
     rst rpcall
     .dw function
 .endmacro
+.macro pcall(flags, function)
+    jr flags, $+4
+    jr $+5
+    rst rpcall
+    .dw function
+.endmacro
 ; /Macros
 
 ; Errors
