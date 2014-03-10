@@ -92,7 +92,7 @@ _:
 _:      push de
             ld de, 6
             sub 0x20
-            pcall(DEMulA)
+            call DEMulA
             ex de, hl
             ld hl, kernel_font
             add hl, de
@@ -103,11 +103,11 @@ _:      push de
         push af
             ld a, ixl
             or a
-            pcall(z, putSpriteOR)
+            call z, putSpriteOR
             dec a
-            pcall(z, putSpriteAND)
+            call z, putSpriteAND
             dec a
-            pcall(z, putSpriteXOR)
+            call z, putSpriteXOR
         pop af
         add a, d
         ld d, a
@@ -198,7 +198,7 @@ _:  pop af
 ;;  Stream is advanced to byte after 0.
 drawStrFromStream:
     push af
-_:      pcall(streamReadByte)
+_:      call streamReadByte
         jr nz, _
         or a
         jr z, _
@@ -266,7 +266,7 @@ measureChar:
     push af
         ld de, 6
         sub 0x20
-        pcall(DEMulA)
+        call DEMulA
         ex de, hl
         ld hl, kernel_font
         add hl, de
