@@ -22,11 +22,9 @@
 #include "display.asm"
 #include "display-color.asm"
 #include "keyboard.asm"
-#include "time.asm"
 
 #include "math.asm"
 #include "util.asm"
-#include "crypto.asm"
 
 #ifdef TEST
 #include "testrunner.asm"

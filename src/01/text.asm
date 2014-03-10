@@ -111,7 +111,7 @@ _:      push de
         pop af
         add a, d
         ld d, a
-    pop bc
+_:  pop bc
     pop hl
     pop af
     ret
