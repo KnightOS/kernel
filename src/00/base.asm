@@ -21,7 +21,6 @@
 
 #include "display.asm"
 #include "display-color.asm"
-#include "text.asm"
 #include "keyboard.asm"
 #include "time.asm"
 

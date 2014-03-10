@@ -1,3 +1,6 @@
+.equ drawHexA 0x0800
+.equ drawStr 0x0400
+
 ; Kernel error screen - give error code in A. Will not return.
 ; Set bit 7 of A if it may be possible to recover
 panic:
@@ -41,9 +44,11 @@ _:  call clearBuffer
     ld de, 0
     ld b, 0
     ld hl, errorMessage
-    call drawStr
+    rst 0x20
+    .dw drawStr
     push af
-        call drawHexA ; TODO: Does this destroy A?
+        rst 0x20
+        .dw drawHexA
     pop af
     ld c, 0
     bit 7, a
@@ -61,12 +66,14 @@ _:  ld e, (hl)
     ld d, (hl)
     ex de, hl
     ld de, 0x0006
-    call drawStr
+    rst 0x20
+    .dw drawStr
     ld a, c
     cp 1
     jr z, attemptRecovery
     ld hl, continueMessage
-    call drawStr
+    rst 0x20
+    .dw drawStr
     ; We could just directly output to the screen and maybe be a
     ; little safer, but we need to clear the screen as well and
     ; this saves enough space to make it worth doing.
@@ -79,7 +86,8 @@ _:  call getKey_skipCheck
     jp boot
 attemptRecovery:
     ld hl, recoveryMessage
-    call drawStr
+    rst 0x20
+    .dw drawStr
     call fastCopy_skipCheck
 _:  call getKey_skipCheck
     cp kPlus

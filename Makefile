@@ -7,7 +7,7 @@ ASPREFIX=mono
 EMPREFIX=wine 
 endif
 AS=$(ASPREFIX)build/sass.exe
-INCLUDE=inc/
+INCLUDE=inc/;bin/
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 
@@ -72,18 +72,17 @@ runtest: test
 # Build kernel
 kernel: page00 page01 pageBoot pagePrivledged
 	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/01.bin:4000 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
-	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom inc/kernel.inc bin/kernel.inc
-	cat inc/kernelmem.inc >> bin/kernel.inc
-	rm bin/00.bin
-	rm bin/boot.bin
-	rm bin/privileged.bin
-	rm bin/00.sym
+	cat inc/kernel.inc inc/kernelmem.inc bin/00.inc bin/01.inc > bin/kernel.inc
+	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom
+	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config bin/01.sym bin/kernel-$(PLATFORM).rom
 
 page00:
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin --listing bin/00.list
+	$(ASPREFIX)build/CreateJumpTable.exe --symbols 00 src/00/jumptable.config bin/00.sym bin/00.inc
 
-page01:
+page01: page00
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols bin/01.sym src/01/base.asm bin/01.bin --listing bin/01.list
+	$(ASPREFIX)build/CreateJumpTable.exe --symbols 01 src/01/jumptable.config bin/01.sym bin/01.inc
 
 pageBoot:
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin --listing bin/boot.list
