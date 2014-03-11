@@ -46,7 +46,6 @@ rlcall:
     jp boot
 ; 0x0056
 .db 0xFF, 0xA5, 0xFF
-#ifdef TI84pSE
 .fill 0x64-$
-    .db '2' ; For the sake of WabbitEmu
-#endif
+    .exec git describe ; Version string
+	.db 0
