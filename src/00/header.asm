@@ -4,9 +4,6 @@
 ; Magic Number
 ; 0x0003
 .db "KK"
-; 0x0005
-.db 0 ; Major version
-.db 1 ; Minor version
 
 ; 0x0008
 ; RST 0x08
@@ -47,5 +44,5 @@ rlcall:
 ; 0x0056
 .db 0xFF, 0xA5, 0xFF
 .fill 0x64-$
-    .exec git describe ; Version string
-	.db 0
+.exec git describe ; Version string
+.db 0
