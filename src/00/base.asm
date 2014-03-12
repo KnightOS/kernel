@@ -7,7 +7,7 @@
 #include "boot.asm"
 #include "restarts.asm"
 #include "interrupt.asm"
-#include "errors.asm"
+#include "panic.asm"
 
 #include "memory.asm"
 #include "flash.asm"
