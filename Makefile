@@ -74,13 +74,6 @@ TI84pCSE: directories kernel
 
 DEFINES=$(PLATFORM)
 
-test: DEFINES=TI84pSE,TEST
-test: TI84pSE
-	$(ASPREFIX)build/BuildFS.exe 77 bin/kernel-TI84pSE.rom src/00/tests/testfs
-
-runtest: test
-	$(EMPREFIX)build/Wabbitemu.exe bin/kernel-TI84pSE.rom
-
 # Build kernel
 kernel: page00 page01 page02 pageBoot pagePrivledged
 	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/01.bin:4000 bin/02.bin:8000 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)

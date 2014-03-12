@@ -299,9 +299,6 @@ createDirectoryEntry:
     push hl
     ld ix, 0
     add ix, sp
-    ld a, i
-    push af
-    di
         ; Traverse the FAT
         ld hl, 0
         ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
@@ -430,20 +427,14 @@ _:      ; Move DE to end of file entry
         dec hl
         getBankA
         ld (ix + 7), a ; Flash page in A (on stack)
-    pop af
-    jp po, _
-    ei
-_:  inc sp \ inc sp ; Skip HL
+    inc sp \ inc sp ; Skip HL
     pop de
     pop bc
     pop af
     pop ix
     ret
 .exitError:
-    pop af
-    jp po, _
-    ei
-_:  pop hl
+    pop hl
     pop de
     pop bc
     pop af
@@ -451,6 +442,19 @@ _:  pop hl
     or 1
     ld a, errFilesystemFull
     ret
+
+;; createDirectory [Filesystem]
+;;  Creates a new directory in the filesystem and returns information about the new
+;;  filesystem entry.
+;; Inputs:
+;;  DE: Path to new directory
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Flash page (on success); Error code (on failure)
+;;  HL: Address relative to 0x4000 (on success)
+createDirectory:
+    ret
+
 
 ;; findFileEntry [Filesystem]
 ;;  Finds a file entry in the FAT.
@@ -464,9 +468,6 @@ findFileEntry:
     push de
     push bc
     push af
-    ld a, i
-    push af ; Save interrupt state
-    di
         ; Skip initial / if present
         ; TODO: Allow for relative paths somehow
         ld a, (de)
@@ -532,10 +533,7 @@ _:          ld a, (hl)
             jr findFileEntry_fileLoop
 findFileEntry_handleEndOfTable:
         pop af
-    pop af ; Restore interrupts
-    jp po, _
-    ei
-_:  pop af
+    pop af
     ld a, errFileNotFound
     or a ; Resets z
     pop bc
@@ -582,10 +580,7 @@ _:          ld a, (hl)
             ld bc, 3
             add hl, bc
         pop bc ; pop af
-    pop af ; pop af
-    jp po, _
-    ei
-_:  pop af
+    pop af
     ld a, b
     pop bc
     pop de
@@ -608,9 +603,6 @@ findDirectoryEntry:
     push de
     push bc
     push af
-    ld a, i
-    push af
-    di
         ; TODO: Relative paths
         setBankA(fatStart)
         ld hl, 0
@@ -702,9 +694,6 @@ _:          or a ; cp 0
         jr .traversalLoop
 .endOfTable:
     pop af
-    jp po, _
-    ei
-_:  pop af
     pop bc
     pop de
     or 1
@@ -716,9 +705,6 @@ _:  pop af
         getBankA
         ld b, a
     pop af
-    jp po, _
-    ei
-_:  pop af
     ld a, b
     pop bc
     pop de
