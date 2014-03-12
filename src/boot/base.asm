@@ -1,7 +1,7 @@
 ; Dummy boot page to get emulators to boot the OS
     jr _
     .fill 0x0F - $
-    .db "n.nn", 0
+    .db "Emulated", 0
 _:
 #ifdef TI84p
     in a, (0x21)

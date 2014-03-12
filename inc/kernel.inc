@@ -104,6 +104,8 @@ errTooManySignals   .equ 10
 errFilesystemFull   .equ 11
 errNameTooLong      .equ 12
 
+kernelVersion       .equ 0x64
+
 ; Keypad codes
 kDown               .equ 0x01
 kLeft               .equ 0x02
