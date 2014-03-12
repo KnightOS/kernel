@@ -65,7 +65,7 @@ _:  ld h, a
 ;; Inputs:
 ;;  DE: Path to directory (string pointer)
 ;; Outputs:
-;;  Z: Set if file exists, reset if not
+;;  Z: Set if directory exists, reset if not
 directoryExists:
     push hl
     push af
@@ -301,7 +301,7 @@ createDirectoryEntry:
     add ix, sp
         ; Traverse the FAT
         ld hl, 0
-        ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
+        ld (kernelGarbage + 256), hl ; Working directory ID
         ld a, fatStart
         setBankA
         ld hl, 0x7FFF
@@ -337,7 +337,7 @@ createDirectoryEntry:
         ld e, (hl) \ dec hl
         ld d, (hl) \ dec hl
         push hl
-            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld hl, (kernelGarbage + 256)
             or a
             sbc hl, de
         pop hl
@@ -347,7 +347,7 @@ createDirectoryEntry:
 .update:
         ex de, hl
         inc hl
-        ld (kernelGarbage + kernelGarbageSize - 2), hl
+        ld (kernelGarbage + 256), hl
         ex de, hl
         inc hl \ inc hl \ inc hl \ inc hl
         jr .skip
@@ -381,7 +381,7 @@ createDirectoryEntry:
         ld (hl), b ; cotd.
         dec hl
         push hl
-            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld hl, (kernelGarbage + 256)
             ld b, h \ ld c, l
         pop hl
         ld (hl), c ; New ID
@@ -432,6 +432,7 @@ _:      ; Move DE to end of file entry
     pop bc
     pop af
     pop ix
+    cp a
     ret
 .exitError:
     pop hl
@@ -453,8 +454,78 @@ _:      ; Move DE to end of file entry
 ;;  A: Flash page (on success); Error code (on failure)
 ;;  HL: Address relative to 0x4000 (on success)
 createDirectory:
+    call directoryExists
+    call nz, fileExists ; TODO: Make a combined "entryExists" or something?
+    jr nz, _
+    or 1
+    ld a, errAlreadyExists
     ret
-
+_:  push de
+    push hl
+        ; Move string to RAM
+        push bc
+            ld h, d \ ld l, e
+            ld bc, 0x8000
+            scf
+            sbc hl, bc
+            jr nc, _ ; It's already in RAM
+            ld h, d \ ld l, e
+            call stringLength
+            ld de, kernelGarbage + 10 ; + 10 gets us past what findDirectoryEntry uses
+            ldir
+            ld de, kernelGarbage + 10
+_:      pop bc
+        ld hl, 0
+        ld a, (de)
+        cp '/' ; Skip leading / (todo: working directories, see issue 75)
+        jr nz, _
+        inc de
+_:      push de
+            call checkForRemainingSlashes
+        pop de
+        ex de, hl
+        jr z, .createRootEntry
+        ; Find parent directory
+        push bc
+            xor a
+            ld d, h \ ld e, l
+            ld bc, 0
+            cpir
+            dec hl
+            ld a, '/'
+            ld bc, 0
+            cpdr
+            inc hl
+            xor a
+            ld (hl), a ; Remove final '/'
+            push hl
+                call findDirectoryEntry
+                jr nz, .error
+                ld bc, 4
+                scf
+                sbc hl, bc ; Skip some stuff we don't need
+                ld e, (hl)
+                dec hl
+                ld d, (hl)
+            pop hl
+            ld a, '/'
+            ld (hl), a ; Replace / in path
+            inc hl ; HL is name of new directory
+        pop bc
+        jr .createEntry
+.createRootEntry:
+        ld de, 0
+.createEntry:
+        call createDirectoryEntry
+    inc sp \ inc sp ; pop hl
+    pop de
+    ret
+                .error:
+            pop hl
+        pop bc
+    pop hl
+    pop de
+    ret
 
 ;; findFileEntry [Filesystem]
 ;;  Finds a file entry in the FAT.
@@ -640,6 +711,7 @@ _:
         inc hl
         inc hl
         inc hl
+        inc hl
         jr -_
 .handleDirectory:
         ; Check parent IDs
@@ -656,7 +728,7 @@ _:
             jr z, _
         pop hl
         pop bc
-        jr .skip + 2
+        jr .skip + 5
 _:          ; Parent IDs match, check name
             ld c, (hl)
             dec hl
@@ -700,7 +772,7 @@ _:          or a ; cp 0
     ld a, errFileNotFound
     ret
 .done_root:
-        ld hl, (kernelGarbage)
+        ld hl, 0
 .done:
         getBankA
         ld b, a

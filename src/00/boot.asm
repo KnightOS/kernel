@@ -175,11 +175,7 @@ reboot:
     call lcdDelay
     out (0x10), a ; Contrast
 #endif
-
-#ifdef TEST
-    jp testrunner
-#endif
-
+    
     ld de, bootFile
     call fileExists
     ld a, panic_init_not_found
@@ -192,3 +188,5 @@ reboot:
 
 bootFile:
     .db "/bin/init", 0
+testPath:
+    .db "/etc/test", 0

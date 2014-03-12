@@ -11,6 +11,7 @@ errUnsupported .equ 9
 errTooManySignals .equ 10
 errFilesystemFull .equ 11
 errNameTooLong .equ 12
+errAlreadyExists .equ 13
 
 #include "kernelmem.inc"
 
