@@ -956,7 +956,17 @@ putSpriteOR:
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 rectXOR: ; by Quigibo
-    ld a, 96        ;Clip Top
+    push af
+    push bc
+    push hl
+    push de
+        call _
+    pop de
+    pop hl
+    pop bc
+    pop af
+    ret
+_:  ld a, 96        ;Clip Top
     sub e
     ret c
     ret z
@@ -1021,8 +1031,7 @@ rectXOR: ; by Quigibo
 .boxInvShift2:
     rrca
     djnz .boxInvShift2
-
-.boxInvLoop1:            ;(e, d) = (width, height)
+.boxInvLoop1:                ;(e, d) = (width, height)
     push hl              ;     a = bitmask
         ld b, d
         ld c, a
