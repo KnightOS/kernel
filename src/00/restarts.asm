@@ -127,99 +127,103 @@ _:
 ; rst 0x20
 ; Here be dragons
 pcall:
-    push af ; Save AF
+    ; Stack state : calling addr
+    push af
+        ; Stack state : calling addr, original AF
         ld a, i
         jp po, .pcall_noInt
         ld a, i
         jp po, .pcall_noInt
         di
-    pop af
-    push hl ; This will become .returnPoint
-        push hl ; This will become the pcall address
-            push hl ; This saves HL
-            inc sp \ inc sp
-        inc sp \ inc sp
-    inc sp \ inc sp
-pop hl \ inc hl \ inc hl \ push hl ; Grab return address
-    push hl
         push hl
-            dec sp \ dec sp
-                ; HL is the byte following the RST that got us here
-                push af
-                    dec hl \ dec hl
-                    ld a, (hl)
-                    inc hl
-                    or a ; cp 0
-                    jr nz, _
-                    ld a, (hl)
-                    inc a
-                    ; HL = 0x8000 - (A * 3)
-                    ld h, 0x40
-                    jr ++_
-_:                  setBankA
-                    ld a, (hl)
-                    inc a
-                    ld h, 0x80
-_:                  ld l, a
-                    xor a
-                    sub l \ jr nc, $+3 \ dec h
-                    sub l \ jr nc, $+3 \ dec h
-                    sub l \ jr nc, $+3 \ dec h
-                    ld l, a
-                    ; HL is now the address of the jump table call, back up in the stack
-                pop af
-            inc sp \ inc sp ; Saved HL
-        inc sp \ inc sp ; pcall address
-        push hl \ pop hl
-    inc sp \ inc sp ; .returnPoint
-    ld hl, .returnPoint
-    push hl
+            ; Stack state : calling addr, original AF, original HL
+            ld hl, .returnPoint
+        pop af
+        ; Stack state : calling addr, original AF #### AF contains original HL
+        ex (sp), hl
+        ; Stack state : calling addr, .returnPoint #### AF contains original HL, HL contains original AF
+        push af
+            ; Stack state : calling addr, .returnPoint, original HL
+            ex (sp), hl
+            ; Stack state : calling addr, .returnPoint, original AF
+            ; also, no registers are stashed - excepting AF, but that's part of the plan
+            ; and since we can destroy AF, we do that instead of inc sp \ inc sp
+        pop af
+    pop af
+    ; SP is on calling addr
+    ex (sp), hl
+    ; Stack state : original HL, .returnPoint, original AF
+    ld a, (hl)
+    setBankA
+    inc hl
+    ld a, (hl)
+    inc hl
+    ex (sp), hl
+    ; Stack state : calling addr + 2 (ret addr), .returnPoint, original AF
+    dec sp \ dec sp
         dec sp \ dec sp
-            dec sp \ dec sp
-            pop hl
-        ret ; Jump to pcall
+            ; SP is on original AF
+            push hl
+                ; Stack state : ret addr, .returnPoint, original AF, original HL
+                inc a
+                ld l, a
+                xor a
+                ld h, 0x7F
+                sub l
+                sub l \ jr nc, $ + 3 \ dec h
+                sub l \ jr nc, $ + 3 \ dec h
+                ld l, a
+            pop af
+            ; Stack state : ret addr, .returnPoint, original AF #### AF contains original HL
+            ex (sp), hl
+            ; Stack state : ret addr, .returnPoint, pcall addr #### AF contains original HL, HL contains original AF
+            push af
+            ; Stack state : ret addr, .returnPoint, pcall addr, original HL #### HL contains original AF
+                ex (sp), hl
+                ; Stack state : ret addr, .returnPoint, pcall addr, original AF
+            pop af
+            ; Stack state : ret addr, .returnPoint, pcall addr
+            ret
 .returnPoint:
     ei
     ret
+    
 .pcall_noInt:
+        ; Stack state : calling addr, original AF
     pop af
-    push hl ; This will become the pcall address
-        push hl ; This saves HL
-        inc sp \ inc sp
-    inc sp \ inc sp
-pop hl \ inc hl \ inc hl \ push hl ; Grab return address
-    push hl
+    ; SP is on calling addr
+    ex (sp), hl
+    ; Stack state : original HL, original AF
+    ld a, (hl)
+    setBankA
+    inc hl
+    ld a, (hl)
+    inc hl
+    ex (sp), hl
+    ; Stack state : calling addr + 2 (ret addr), original AF
         dec sp \ dec sp
-            ; HL is the byte following the RST that got us here
-            push af
-                dec hl \ dec hl
-                ld a, (hl)
-                inc hl
-                or a ; cp 0
-                jr nz, _
-                ld a, (hl)
-                inc a
-                ; HL = 0x8000 - (A * 3)
-                ld h, 0x40
-                jr ++_
-_:              setBankA
-                ld a, (hl)
-                inc a
-                ld h, 0x80
-_:              ld l, a
-                xor a
-                sub l \ jr nc, $+3 \ dec h
-                sub l \ jr nc, $+3 \ dec h
-                sub l \ jr nc, $+3 \ dec h
-                ld l, a
-                ; HL is now the address of the jump table call, back up in the stack
-            pop af
-        inc sp \ inc sp ; Saved HL
-    inc sp \ inc sp ; pcall address
-    push hl
-        dec sp \ dec sp
-        pop hl
-    ret ; Jump to pcall
+        ; SP is on original AF
+        push hl
+            ; Stack state : ret addr, original AF, original HL
+            inc a
+            ld l, a
+            xor a
+            ld h, 0x7F
+            sub l
+            sub l \ jr nc, $ + 3 \ dec h
+            sub l \ jr nc, $ + 3 \ dec h
+            ld l, a
+        pop af
+        ; Stack state : ret addr, original AF #### AF contains original HL
+        ex (sp), hl
+        ; Stack state : ret addr, pcall addr #### AF contains original HL, HL contains original AF
+        push af
+            ; Stack state : ret addr, pcall addr, original HL #### HL contains original AF
+            ex (sp), hl
+            ; Stack state : ret addr, pcall addr, original AF
+        pop af
+        ; Stack state : ret addr, pcall addr
+        ret ; jump to the actual pcall
 
 ; rst $28
 bcall:
