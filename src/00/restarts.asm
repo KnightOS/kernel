@@ -196,15 +196,16 @@ pop hl \ inc hl \ inc hl \ push hl ; Grab return address
                 ld a, (hl)
                 inc hl
                 or a ; cp 0
-                jr nc, _
-                setBankA
-_:              ld a, (hl)
+                jr nz, _
+                ld a, (hl)
                 inc a
                 ; HL = 0x8000 - (A * 3)
-                jr nc, _
-                ld h, 0x80
+                ld h, 0x40
                 jr ++_
-_:              ld h, 0x40
+_:              setBankA
+                ld a, (hl)
+                inc a
+                ld h, 0x80
 _:              ld l, a
                 xor a
                 sub l \ jr nc, $+3 \ dec h

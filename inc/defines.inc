@@ -13,8 +13,6 @@ errFilesystemFull .equ 11
 errNameTooLong .equ 12
 errAlreadyExists .equ 13
 
-#include "kernelmem.inc"
-
 threadRangeMask .equ 0b11111
 
 ; Filesystem stuff

@@ -90,20 +90,6 @@ rpcall .equ 0x20
 .endmacro
 ; /Macros
 
-; Errors
-errOutOfMem         .equ 1
-errTooManyThreads   .equ 2
-errStreamNotFound   .equ 3
-errEndOfStream      .equ 4
-errFileNotFound     .equ 5
-errTooManyStreams   .equ 6
-errNoSuchThread     .equ 7
-errTooManyLibraries .equ 8
-errUnsupported      .equ 9
-errTooManySignals   .equ 10
-errFilesystemFull   .equ 11
-errNameTooLong      .equ 12
-
 kernelVersion       .equ 0x64
 
 ; Keypad codes

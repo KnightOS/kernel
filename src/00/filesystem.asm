@@ -65,7 +65,7 @@ _:  ld h, a
 ;; Inputs:
 ;;  DE: Path to directory (string pointer)
 ;; Outputs:
-;;  Z: Set if directory exists, reset if not
+;;  Z: Set if file exists, reset if not
 directoryExists:
     push hl
     push af
@@ -81,6 +81,149 @@ _:  ld h, a
     ld a, h
     pop hl
     ret
+
+;; listDirectory [Filesystem]
+;;  Lists the contents of a directory on the filesystem.
+;; Inputs:
+;;  DE: Path to directory
+;;  HL: Callback
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code on failure, preserved on success
+;; Notes:
+;;  This function will call your callback every time it encounters a
+;;  relevant entry on the filesystem. You are free to use IX, IY, and
+;;  the shadow registers in this callback, but must preserve all other
+;;  registers. Your function will be called with the following state:
+;;
+;;   - HL: Address of entry
+;;   - BC: Length of entry
+;;   - A: Type of entry
+;;   - kernelGarbage: Name of entry
+;;   - Correct page swapped into bank A
+;;   - Interrupts disabled (do not enable them)
+;;
+;;  You must leave these registers intact.
+listDirectory:
+    push af
+    push de
+    push bc
+    push hl
+    push hl
+        call findDirectoryEntry
+        ;jr nz, .error ; TODO
+        ld bc, 0
+        call cpHLBC
+        call z, .correctForRoot
+        jr z, .loop
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
+        ; Grab directory ID
+        dec hl \ dec hl
+        ld e, (hl)
+        dec hl
+        ld d, (hl)
+        ex de, hl
+        ld (kernelGarbage + 0x100), hl
+        ex de, hl
+        inc hl \ inc hl
+        getBankA
+        ld (kernelGarbage + 0x102), a
+        inc hl
+        jr .skip
+.loop:
+        ld a, (hl)
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
+
+        cp fsFile
+        jr z, .handleFile
+        cp fsDirectory
+        jr z, .handleDirectory
+        cp fsEndOfTable
+        jp z, .endOfTable
+.skip:
+        or a
+        sbc hl, bc
+        ; TODO: Handle swapping out next page
+        jr .loop
+.handleFile:
+.handleDirectory:
+        push hl
+            push bc
+                ld c, (hl)
+                dec hl
+                ld b, (hl)
+                ld hl, (kernelGarbage + 0x100)
+                call cpHLBC
+                jr z, .matchingItem
+            pop bc
+        pop hl
+        jr .skip
+.matchingItem:
+            pop bc
+            pop hl \ push hl
+            cp fsDirectory
+            jr nz, _
+            ; Handle directory
+            ld bc, 5
+            jr ++_
+_:          ; Handle file
+            ld bc, 8
+_:          or a
+            sbc hl, bc ; Move HL to first character of name
+            ld bc, kernelGarbage
+_:          ld a, (hl)
+            ld (bc), a
+            inc bc
+            dec hl
+            or a
+            jr nz, -_
+        pop bc
+        inc bc \ inc bc \ inc bc
+        ld a, (bc)
+        ld hl, .returnPoint
+        ex (sp), hl
+        push hl
+        ld h, b \ ld l, c
+    ret
+.returnPoint:
+    pop hl \ push hl
+    push hl
+        ld h, b
+        ld l, c
+        ld a, (kernelGarbage + 0x102)
+        setBankA
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        dec hl
+        jp .skip
+.endOfTable:
+    pop hl
+    pop hl
+    pop bc
+    pop de
+    pop af
+    cp a
+    ret
+.correctForRoot:
+    ld (kernelGarbage + 0x100), hl
+    ld hl, 0x7FFF
+    ld a, fatStart
+    setBankA
+    ld (kernelGarbage + 0x102), a
+    ret
+
+testString:
+    .db "bin", 0
 
 ;; createFileEntry [Filesystem]
 ;;  Creates a new file entry in the FAT.
@@ -301,7 +444,7 @@ createDirectoryEntry:
     add ix, sp
         ; Traverse the FAT
         ld hl, 0
-        ld (kernelGarbage + 256), hl ; Working directory ID
+        ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
         ld a, fatStart
         setBankA
         ld hl, 0x7FFF
@@ -337,7 +480,7 @@ createDirectoryEntry:
         ld e, (hl) \ dec hl
         ld d, (hl) \ dec hl
         push hl
-            ld hl, (kernelGarbage + 256)
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
             or a
             sbc hl, de
         pop hl
@@ -347,7 +490,7 @@ createDirectoryEntry:
 .update:
         ex de, hl
         inc hl
-        ld (kernelGarbage + 256), hl
+        ld (kernelGarbage + kernelGarbageSize - 2), hl
         ex de, hl
         inc hl \ inc hl \ inc hl \ inc hl
         jr .skip
@@ -381,7 +524,7 @@ createDirectoryEntry:
         ld (hl), b ; cotd.
         dec hl
         push hl
-            ld hl, (kernelGarbage + 256)
+            ld hl, (kernelGarbage + kernelGarbageSize - 2)
             ld b, h \ ld c, l
         pop hl
         ld (hl), c ; New ID
@@ -432,7 +575,6 @@ _:      ; Move DE to end of file entry
     pop bc
     pop af
     pop ix
-    cp a
     ret
 .exitError:
     pop hl
@@ -454,28 +596,9 @@ _:      ; Move DE to end of file entry
 ;;  A: Flash page (on success); Error code (on failure)
 ;;  HL: Address relative to 0x4000 (on success)
 createDirectory:
-    call directoryExists
-    call nz, fileExists ; TODO: Make a combined "entryExists" or something?
-    jr nz, _
-    or 1
-    ld a, errAlreadyExists
-    ret
-_:  push de
+    push de
     push hl
-        ; Move string to RAM
-        push bc
-            ld h, d \ ld l, e
-            ld bc, 0x8000
-            scf
-            sbc hl, bc
-            jr nc, _ ; It's already in RAM
-            ld h, d \ ld l, e
-            call stringLength
-            ld de, kernelGarbage + 10 ; + 10 gets us past what findDirectoryEntry uses
-            ldir
-            ld de, kernelGarbage + 10
-_:      pop bc
-        ld hl, 0
+    push af
         ld a, (de)
         cp '/' ; Skip leading / (todo: working directories, see issue 75)
         jr nz, _
@@ -483,49 +606,14 @@ _:      pop bc
 _:      push de
             call checkForRemainingSlashes
         pop de
-        ex de, hl
-        jr z, .createRootEntry
+        jr z, .createRootEntry ; Go for it at the root
         ; Find parent directory
-        push bc
-            xor a
-            ld d, h \ ld e, l
-            ld bc, 0
-            cpir
-            dec hl
-            ld a, '/'
-            ld bc, 0
-            cpdr
-            inc hl
-            xor a
-            ld (hl), a ; Remove final '/'
-            push hl
-                call findDirectoryEntry
-                jr nz, .error
-                ld bc, 4
-                scf
-                sbc hl, bc ; Skip some stuff we don't need
-                ld e, (hl)
-                dec hl
-                ld d, (hl)
-            pop hl
-            ld a, '/'
-            ld (hl), a ; Replace / in path
-            inc hl ; HL is name of new directory
-        pop bc
-        jr .createEntry
 .createRootEntry:
-        ld de, 0
+        ex de, hl
+        ld hl, 0
 .createEntry:
         call createDirectoryEntry
-    inc sp \ inc sp ; pop hl
-    pop de
-    ret
-                .error:
-            pop hl
-        pop bc
-    pop hl
-    pop de
-    ret
+
 
 ;; findFileEntry [Filesystem]
 ;;  Finds a file entry in the FAT.
@@ -728,7 +816,7 @@ _:
             jr z, _
         pop hl
         pop bc
-        jr .skip + 5
+        jr .skip + 3
 _:          ; Parent IDs match, check name
             ld c, (hl)
             dec hl
@@ -772,7 +860,7 @@ _:          or a ; cp 0
     ld a, errFileNotFound
     ret
 .done_root:
-        ld hl, 0
+        ld hl, (kernelGarbage)
 .done:
         getBankA
         ld b, a

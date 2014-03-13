@@ -77,7 +77,7 @@ DEFINES=$(PLATFORM)
 # Build kernel
 kernel: page00 page01 page02 pageBoot pagePrivledged
 	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/01.bin:4000 bin/02.bin:8000 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
-	cat inc/kernel.inc inc/kernelmem.inc bin/00.inc bin/01.inc bin/02.inc > bin/kernel.inc
+	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc bin/00.inc bin/01.inc bin/02.inc > bin/kernel.inc
 	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom
 	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config bin/01.sym bin/kernel-$(PLATFORM).rom
 	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config bin/02.sym bin/kernel-$(PLATFORM).rom
