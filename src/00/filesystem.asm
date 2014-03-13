@@ -596,9 +596,28 @@ _:      ; Move DE to end of file entry
 ;;  A: Flash page (on success); Error code (on failure)
 ;;  HL: Address relative to 0x4000 (on success)
 createDirectory:
-    push de
+    call directoryExists
+    call nz, fileExists ; TODO: Make a combined "entryExists" or something?
+    jr nz, _
+    or 1
+    ld a, errAlreadyExists
+    ret
+_:  push de
     push hl
-    push af
+        ; Move string to RAM
+        push bc
+            ld h, d \ ld l, e
+            ld bc, 0x8000
+            scf
+            sbc hl, bc
+            jr nc, _ ; It's already in RAM
+            ld h, d \ ld l, e
+            call stringLength
+            ld de, kernelGarbage + 10 ; + 10 gets us past what findDirectoryEntry uses
+            ldir
+            ld de, kernelGarbage + 10
+_:      pop bc
+        ld hl, 0
         ld a, (de)
         cp '/' ; Skip leading / (todo: working directories, see issue 75)
         jr nz, _
@@ -606,14 +625,49 @@ createDirectory:
 _:      push de
             call checkForRemainingSlashes
         pop de
-        jr z, .createRootEntry ; Go for it at the root
-        ; Find parent directory
-.createRootEntry:
         ex de, hl
-        ld hl, 0
+        jr z, .createRootEntry
+        ; Find parent directory
+        push bc
+            xor a
+            ld d, h \ ld e, l
+            ld bc, 0
+            cpir
+            dec hl
+            ld a, '/'
+            ld bc, 0
+            cpdr
+            inc hl
+            xor a
+            ld (hl), a ; Remove final '/'
+            push hl
+                call findDirectoryEntry
+                jr nz, .error
+                ld bc, 4
+                scf
+                sbc hl, bc ; Skip some stuff we don't need
+                ld e, (hl)
+                dec hl
+                ld d, (hl)
+            pop hl
+            ld a, '/'
+            ld (hl), a ; Replace / in path
+            inc hl ; HL is name of new directory
+        pop bc
+        jr .createEntry
+.createRootEntry:
+        ld de, 0
 .createEntry:
         call createDirectoryEntry
-
+    inc sp \ inc sp ; pop hl
+    pop de
+    ret
+                .error:
+            pop hl
+        pop bc
+    pop hl
+    pop de
+    ret
 
 ;; findFileEntry [Filesystem]
 ;;  Finds a file entry in the FAT.
