@@ -59,20 +59,20 @@ At a bare minimum, you'll need to write an init program. A basic one is supplied
     .org 0
     start:
         ; Get an LCD lock so we can use it
-        call getLcdLock
+        pcall(getLcdLock)
         ; Allocate a 768-byte buffer for drawing things on
-        call allocScreenBuffer
-        call clearBuffer
+        pcall(allocScreenBuffer)
+        pcall(clearBuffer)
         ; Relative-load the address of our message
         kld(hl, testMessage)
         ; Draw it to our buffer
-        call drawStr
+        pcall(drawStr)
         ; Copy our buffer to the LCD
-        call fastCopy
+        pcall(fastCopy)
         ; Loop forever
         jr $
     testMessage:
-        .db "It works!", 0 ; The kernel uses the Windows 1252 character set
+        .db "It works!", 0 ; The kernel uses the Windows-1252 character set
 
 Assemble this and use BuildFS to patch the kernel image with a filesystem. You should be
 able to boot up the kernel in an emulator now, and on hardware if you use CreateUpgrade to
