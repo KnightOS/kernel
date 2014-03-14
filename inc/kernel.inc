@@ -79,14 +79,22 @@ rpcall .equ 0x20
 .endmacro
 
 .macro pcall(function)
-    rst rpcall
-    .dw function
+    .if function & 0xFF
+        rst rpcall
+        .dw function
+    .else
+        call 0x4000 - (((function >> 8) + 1) * 3)
+    .endif
 .endmacro
 .macro pcall(flags, function)
-    jr flags, $+4
-    jr $+5
-    rst rpcall
-    .dw function
+    .if function & 0xFF
+        jr flags, $+4
+        jr $+5
+        rst rpcall
+        .dw function
+    .else
+        call flags, 0x4000 - (((function >> 8) + 1) * 3)
+    .endif
 .endmacro
 ; /Macros
 
