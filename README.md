@@ -18,7 +18,7 @@ If you have a pre-compiled kernel image, skip this section.
 The kernel uses an entirely open-source purpose-built toolchain, most of which can be found
 [here](https://github.com/KnightSoft). In order to build it, you'll need GNU make and Mono installed. On
 Windows systems, build the kernel with cygwin and Microsoft.NET (you may also be able to build with Mono
-on Windows).
+on Windows). When building with cygwin, also ensure that git for cygwin is installed.
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
 supported calculator model, use the given make target:
