@@ -7,17 +7,10 @@ ASPREFIX=mono
 EMPREFIX=wine 
 endif
 AS=$(ASPREFIX)build/sass.exe
-INCLUDE=inc/;bin/
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
-
-all:
-	make TI73
-	make TI83p
-	make TI83pSE
-	make TI84p
-	make TI84pSE
-	make TI84pCSE
+PLATFORM:=TI84pSE
+OUTDIR=bin/
 
 # Platforms:
 # Variables (all in hex):
@@ -30,7 +23,7 @@ TI73: KEY := 02
 TI73: UPGRADEEXT := 73u
 TI73: BOOT := 7C000
 TI73: LENGTH := 80000
-TI73: directories kernel
+TI73: kernel
 
 TI83p: PLATFORM := TI83p
 TI83p: PRIVILEGED := 70000
@@ -38,7 +31,7 @@ TI83p: KEY := 04
 TI83p: UPGRADEEXT := 8xu
 TI83p: BOOT := 7C000
 TI83p: LENGTH := 80000
-TI83p: directories kernel
+TI83p: kernel
 
 TI83pSE: PLATFORM := TI83pSE
 TI83pSE: PRIVILEGED := 1F0000
@@ -46,7 +39,7 @@ TI83pSE: KEY := 04
 TI83pSE: UPGRADEEXT := 8xu
 TI83pSE: BOOT := 1FC000
 TI83pSE: LENGTH := 200000
-TI83pSE: directories kernel
+TI83pSE: kernel
 
 TI84p: PLATFORM := TI84p
 TI84p: PRIVILEGED := F0000
@@ -54,7 +47,7 @@ TI84p: KEY := 0A
 TI84p: UPGRADEEXT := 8xu
 TI84p: BOOT := FC000
 TI84p: LENGTH := 100000
-TI84p: directories kernel
+TI84p: kernel
 
 TI84pSE: PLATFORM := TI84pSE
 TI84pSE: PRIVILEGED := 1F0000
@@ -62,7 +55,7 @@ TI84pSE: KEY := 0A
 TI84pSE: UPGRADEEXT := 8xu
 TI84pSE: BOOT := 1FC000
 TI84pSE: LENGTH := 200000
-TI84pSE: directories kernel
+TI84pSE: kernel
 
 TI84pCSE: PLATFORM := TI84pCSE
 TI84pCSE: PRIVILEGED := 3F0000
@@ -70,40 +63,49 @@ TI84pCSE: KEY := 0F
 TI84pCSE: UPGRADEEXT := 8cu
 TI84pCSE: BOOT := 3FC000
 TI84pCSE: LENGTH := 400000
-TI84pCSE: directories kernel
+TI84pCSE: kernel $(OUTDIR)
 
 DEFINES=$(PLATFORM)
+BINDIR=$(OUTDIR)$(PLATFORM)/
+INCLUDE=inc/;$(BINDIR)
 
-# Build kernel
-kernel: page00 page01 page02 pageBoot pagePrivledged
-	$(ASPREFIX)build/MakeROM.exe bin/kernel-$(PLATFORM).rom $(LENGTH) bin/00.bin:0 bin/01.bin:4000 bin/02.bin:8000 bin/boot.bin:$(BOOT) bin/privileged.bin:$(PRIVILEGED)
-	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc bin/00.inc bin/01.inc bin/02.inc > bin/kernel.inc
-	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config bin/00.sym bin/kernel-$(PLATFORM).rom
-	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config bin/01.sym bin/kernel-$(PLATFORM).rom
-	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config bin/02.sym bin/kernel-$(PLATFORM).rom
-	$(ASPREFIX)build/CreateUpgrade.exe $(PLATFORM) bin/kernel-$(PLATFORM).rom build/$(KEY).key \
-		bin/kernel-$(PLATFORM).$(UPGRADEEXT) 00 01 02 03
+.PHONY: clean kernel \
+	TI73 TI83p TI83pSE TI84p TI84pSE TI84pCSE
 
-page00:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols bin/00.sym src/00/base.asm bin/00.bin --listing bin/00.list
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 00 src/00/jumptable.config bin/00.sym bin/00.inc
+kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATFORM)/02.bin $(OUTDIR)$(PLATFORM)/privileged.bin $(OUTDIR)$(PLATFORM)/boot.bin 
+	$(ASPREFIX)build/MakeROM.exe $(BINDIR)kernel.rom $(LENGTH) \
+		$(BINDIR)00.bin:0 $(BINDIR)01.bin:4000 \
+		$(BINDIR)02.bin:8000 $(BINDIR)boot.bin:$(BOOT) \
+		$(BINDIR)privileged.bin:$(PRIVILEGED)
+	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)kernel.inc
+	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom
+	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom
+	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom
+	$(ASPREFIX)build/CreateUpgrade.exe $(PLATFORM) $(BINDIR)kernel.rom build/$(KEY).key \
+		$(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
-page01: page00
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols bin/01.sym src/01/base.asm bin/01.bin --listing bin/01.list
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 01 src/01/jumptable.config bin/01.sym bin/01.inc
+$(OUTDIR)$(PLATFORM)/00.bin: $(OUTDIR)$(PLATFORM)/privileged.bin src/00/*.asm
+	@mkdir -p $(BINDIR)
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols $(BINDIR)00.sym --listing $(BINDIR)00.list src/00/base.asm $(BINDIR)00.bin
+	$(ASPREFIX)build/CreateJumpTable.exe --symbols 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)00.inc
 
-page02: page00
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/02/" --symbols bin/02.sym src/02/base.asm bin/02.bin --listing bin/02.list
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 02 src/02/jumptable.config bin/02.sym bin/02.inc
+$(OUTDIR)$(PLATFORM)/01.bin: $(OUTDIR)$(PLATFORM)/00.bin src/01/*.asm
+	@mkdir -p $(BINDIR)
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols $(BINDIR)01.sym --listing $(BINDIR)01.list src/01/base.asm $(BINDIR)01.bin
+	$(ASPREFIX)build/CreateJumpTable.exe --symbols 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)01.inc
 
-pageBoot:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" src/boot/base.asm bin/boot.bin --listing bin/boot.list
+$(OUTDIR)$(PLATFORM)/02.bin: $(OUTDIR)$(PLATFORM)/00.bin src/02/*.asm
+	@mkdir -p $(BINDIR)
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/02/" --symbols $(BINDIR)02.sym --listing $(BINDIR)02.list src/02/base.asm $(BINDIR)02.bin
+	$(ASPREFIX)build/CreateJumpTable.exe --symbols 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)02.inc
 
-pagePrivledged:
-	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" src/privileged/base.asm bin/privileged.bin --listing bin/priviledged.list
+$(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm
+	@mkdir -p $(BINDIR)
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm $(BINDIR)privileged.bin
 
-directories:
-	mkdir -p bin
+$(OUTDIR)$(PLATFORM)/boot.bin: src/boot/*.asm
+	@mkdir -p $(BINDIR)
+	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm $(BINDIR)boot.bin
 
 clean:
-	rm -r bin
+	rm -rf $(OUTDIR)

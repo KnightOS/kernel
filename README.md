@@ -37,9 +37,7 @@ supported calculator model, use the given make target:
 
 Simply run `make [target]` to build the kernel. The default target, when omitted, is `TI84pSE`. This will
 produce a kernel image in the `bin/` directory. This will also generate a `kernel.inc` file, which you
-can use to link your userspace with the kernel.
-
-You may also run `make all` to build all platforms at once.
+can use to link your userspace with the kernel. Run `make clean` before trying to switch platforms.
 
 ## Usage
 
