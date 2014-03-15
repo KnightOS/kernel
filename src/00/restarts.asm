@@ -99,10 +99,12 @@ _:      inc hl
         
         ex de, hl
 
-        ld a, 0xDD ; Handle IX/IY cases
-        cp (hl)
+        ld a, (hl) ; Handle IX/IY cases
+        cp 0xDD
         jr z, _
-        ld a, 0xFD
+        cp 0xFD
+        jr z, _
+        cp 0xED
         jr nz, ++_
 _:
         inc hl
