@@ -153,8 +153,15 @@ pcall:
     ; SP is on calling addr
     ex (sp), hl
     ; Stack state : original HL, .returnPoint, original AF
+#ifdef FLASH4MB
+    xor a
+    out (0x0E), a
+    ld a, (hl)
+    out (0x06), a
+#else
     ld a, (hl)
     setBankA
+#endif
     inc hl
     ld a, (hl)
     inc hl
@@ -194,8 +201,15 @@ pcall:
     ; SP is on calling addr
     ex (sp), hl
     ; Stack state : original HL, original AF
+#ifdef FLASH4MB
+    xor a
+    out (0x0E), A
+    ld a, (hl)
+    out (0x06), a
+#else
     ld a, (hl)
     setBankA
+#endif
     inc hl
     ld a, (hl)
     inc hl
