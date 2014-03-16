@@ -295,7 +295,7 @@ divACbyDE:
 ;;  HL: remainder
 ;; Notes:
 ;;  B is destroyed
-sdivACbyDE:
+sDivACbyDE:
     xor d
     push af
         xor d
