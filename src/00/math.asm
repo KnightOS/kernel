@@ -393,7 +393,7 @@ isin:
 ;; Notes:
 ;;  To fit assembly, both the input and output have an uncommon format :
 ;;  the input angle has a period of 256, and the outputted value will
-;;  be in the range [-64, 64] instead of [-1,1].
+;;  be in the range [-63, 63] instead of [-1,1].
 icos:
     push hl \ push de
         ld hl, .cosLUT
@@ -403,7 +403,7 @@ icos:
         ld a, (hl)
     pop de \ pop hl
     ret
-    ; scale : 64
+    ; scale : 63
 .cosLUT:
     .db 63, 63, 63, 63, 63, 63, 63, 63, 62, 62, 62, 61, 61, 60, 60, 59
     .db 59, 58, 57, 57, 56, 55, 54, 54, 53, 52, 51, 50, 49, 48, 47, 46
