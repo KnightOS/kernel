@@ -59,8 +59,10 @@ getTimeInTicks:
 
 ;; The number of days before a given month
 #ifdef CLOCK
-.daysPerMonth:
+daysPerMonth:
     .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ; Normal
+
+daysPerMonthLeap:
     .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 ; Leap year
 #endif
 
@@ -75,7 +77,7 @@ getTimeInTicks:
 ;;    D: Current second, from 0-59
 ;;    C: Current minute, from 0-59
 ;;    B: Current hour, from 0-23
-;;    H: Current day, from 1-31
+;;    H: Current day, from 0-30
 ;;    L: Current month, from 1-12
 ;;   IX: Current year
 ;;    A: errUnsupported if there is no clock, otherwise the 
@@ -104,24 +106,100 @@ convertTimeFromTicks:
             call div32by16
             push hl                 ; hours on stack
                 push ix \ pop hl
-                call .getYearsFromDays
-                ld de, 1997
-                add hl, de
-                push hl \ pop ix    ; Years
-            pop hl
-            ld b, l                 ; Hours
-        pop hl
-        ld c, l                     ; Minutes
-    pop hl
-    ld d, l                         ; Seconds
+                inc hl \ inc hl \ inc hl
+                ld c, 7
+                call divHLbyC
+                push af             ; day of the week on stack
+                    push ix \ pop hl
+                    push ix \ pop bc
+                    call .getYearFromDays
+                    call .getLeapsToDate
+                    push bc \ pop hl
+                    sbc hl, de
+                    push hl \ pop bc
+                    call .getYearFromDays
+                    push hl         ; Years on stack
+                        ex hl, de
+                        push bc \ pop hl
+                        call .getMonth
+                        ld h, b
+                        ld l, a
+                    pop ix          ; Years
+                pop de              ; Day of the week
+                ld a, d
+            pop de
+            ld b, e                 ; Hours
+        pop de
+        ld c, e                     ; Minutes
+    pop de
+    ld d, e                         ; Seconds
 
     ret
 
-;; Inputs: HL, number of days
-;; Outputs: HL, the number of years
+;; Inputs:
+;;   HL: The year
+;; Outputs: 
+;;   DE: The number of leap years (and thus days) since 1997
 ;; 
-;; This is inaccurate at the moment, doesn't consider leap years
-.getYearsFromDays:
+;; Does (a - 1)/4 - 3(a - 1)/400 - 484
+.getLeapsToDate:
+    push hl \ push af \ push bc 
+        dec hl
+        push hl 
+            push hl \ pop de
+            ld a, 3
+            call DEMulA
+
+            ld a, h
+            ld c, l
+            ld de, 400
+            call divACByDE
+            ld d, a
+            ld e, c
+        pop hl
+
+        push de
+            ld a, h
+            ld c, l
+            ld de, 4
+            call divACByDE
+            ld h, a
+            ld l, c
+        pop de
+
+        sbc hl, de
+        ld de, 484
+        sbc hl, de
+        ex hl, de
+        
+    pop bc \ pop af \ pop hl
+    ret
+
+;; Inputs:
+;;   HL: The year
+;; Outsputs:
+;;    A: 1 if it is a leap year, 0 otherwise
+;; 
+;; Does getLeapsToDate( hl + 1 ) - getLeapsToDate( hl )
+.isLeapYear:
+    push hl \ push bc \ push de
+        call .getLeapsToDate
+        push de \ pop bc
+
+        inc hl
+        call .getLeapsToDate
+        ex de, hl
+        sbc hl, bc
+
+        ld a, l
+    pop de \ pop bc \ pop hl
+    ret
+
+;; Inputs: HL, number of days
+;; Outputs: HL, the current year
+;;
+;; Does hl / 365
+.getYearFromDays:
     push af \ push bc \ push de
         ld a, h
         ld c, l
@@ -129,9 +207,58 @@ convertTimeFromTicks:
         call divACByDE
         ld h, a
         ld l, c
+
+        ld de, 1997
+        add hl, de
+
     pop de \ pop bc \ pop af
     ret
 
+;; Inputs:
+;;   HL: the number of days
+;;   DE: the year
+;; Outputs:
+;;    A: The current month
+;;    B: The day of the month
+.getMonth:
+    push ix \ push hl \ push de
+        push af \ push bc 
+            ld a, h
+            ld c, l
+            ld de, 365
+            call divACByDE
+        pop bc \ pop af
+        pop de \ push de
+
+        ld ix, daysPerMonth
+
+        ex hl, de
+        call .isLeapYear
+        cp 1
+        jr nz, _  
+        ld ix, daysPerMonthLeap
+_:
+        ld b, 11
+        push bc
+            ld bc, 22
+            add ix, bc
+        pop bc
+_:
+        ld h, (ix+1)
+        ld l, (ix)
+        call cpHLDE
+        jr c, _
+        dec ix \ dec ix
+        dec b
+        jr -_ 
+_:
+        ex hl, de
+        sbc hl, de
+        ld a, b
+        ld b, l
+    pop de \ pop hl \ pop ix
+
+    ret
 #endif
 
 ; H: Day
