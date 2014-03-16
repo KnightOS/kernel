@@ -288,6 +288,48 @@ divACbyDE:
    dec c
    ret
 
+;; sdivACbyDE [Maths]
+;;  Performs `AC = AC / DE`. The operation is signed.
+;; Outputs:
+;;  As described above, and
+;;  HL: remainder
+;; Notes:
+;;  B is destroyed
+sdivACbyDE:
+    xor d
+    push af
+        xor d
+        jp p, .nosign1
+        ld b, a
+        xor a
+        sub c
+        ld c, a
+        sbc a, a
+        sub b
+.nosign1:
+        ld b, a
+        bit 7, d
+        jr z, .nosign2
+        xor a
+        sub e
+        ld e, a
+        sbc a, a
+        sub d
+        ld d, a
+.nosign2:
+        ld a, b
+        call divACbyDE
+        ld b, a
+    pop af
+    ld a, b
+    ret p
+    xor a
+    sub c
+    ld c, a
+    sbc a, a
+    sub b
+    ret
+   
 ;; smin [Maths]
 ;;  Returns the smallest between HL and DE. The operation is signed.
 ;; Inputs:
@@ -363,7 +405,7 @@ icos:
     ret
     ; scale : 64
 .cosLUT:
-    .db 64, 63, 63, 63, 63, 63, 63, 63, 62, 62, 62, 61, 61, 60, 60, 59
+    .db 63, 63, 63, 63, 63, 63, 63, 63, 62, 62, 62, 61, 61, 60, 60, 59
     .db 59, 58, 57, 57, 56, 55, 54, 54, 53, 52, 51, 50, 49, 48, 47, 46
     .db 45, 44, 42, 41, 40, 39, 38, 36, 35, 34, 32, 31, 30, 28, 27, 25
     .db  24, 23, 21, 20, 18, 17, 15, 14, 12, 10, 9, 7, 6, 4, 3, 1
@@ -371,7 +413,7 @@ icos:
     .db -24, -25, -27, -28, -30, -31, -32, -34, -35, -36, -38, -39, -40, -41, -42, -44
     .db -45, -46, -47, -48, -49, -50, -51, -52, -53, -54, -54, -55, -56, -57, -57, -58
     .db -59, -59, -60, -60, -61, -61, -62, -62, -62, -63, -63, -63, -63, -63, -63, -63
-    .db -64, -63, -63, -63, -63, -63, -63, -63, -62, -62, -62, -61, -61, -60, -60, -59
+    .db -63, -63, -63, -63, -63, -63, -63, -63, -62, -62, -62, -61, -61, -60, -60, -59
     .db -59, -58, -57, -57, -56, -55, -54, -54, -53, -52, -51, -50, -49, -48, -47, -46
     .db -45, -44, -42, -41, -40, -39, -38, -36, -35, -34, -32, -31, -30, -28, -27, -25
     .db -24, -23, -21, -20, -18, -17, -15, -14, -12, -10, -9, -7, -6, -4, -3, -1
