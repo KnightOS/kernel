@@ -57,7 +57,7 @@ _:  pop af
                 ; Create a buffer
                 ld bc, 256
                 call malloc
-                jr nz, .outOfMemory
+                jp nz, .outOfMemory
                 push ix \ pop bc
                 ld (iy + 1), c ; Buffer
                 ld (iy + 2), b
@@ -136,15 +136,13 @@ _:  pop af
 openFileWrite:
     push hl
     push bc
-.retry:
+    push af
+    ld a, i
+    push af
+    di
         call findFileEntry
         jp nz, .fileNotFound
 .fileCreated:
-        ld b, a
-        push af
-        ld a, i
-        push af
-        di
         push iy
         push bc
             ld iy, fileHandleTable
@@ -164,7 +162,7 @@ openFileWrite:
             ; anyway, we may as well do it here and save some space.
         pop bc
         pop iy
-        pop af
+    pop af
     jp po, _
     ei
 _:  pop af
@@ -181,11 +179,13 @@ _:  pop af
             push ix
                 call getCurrentThreadId
                 and 0b111111
+                or 0b01000000 ; Set writable
                 ld (iy), a ; Flags & owner
                 ; Create a buffer
                 ld bc, 256
-                call malloc
-                jr nz, .outOfMemory
+                ld a, 1
+                call calloc
+                jp nz, .outOfMemory
                 push ix \ pop bc
                 ld (iy + 1), c ; Buffer
                 ld (iy + 2), b
@@ -209,7 +209,7 @@ _:  pop af
                 ld a, (hl)
                 ld (iy + 7), a
                 jr .notFinal
-dec hl
+                ;dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
@@ -226,7 +226,7 @@ dec hl
             pop ix
             pop de
         pop iy
-        pop af
+    pop af
     jp po, _
     ei
 _:  pop af
@@ -237,25 +237,49 @@ _:  pop af
     push de
     push iy
     push af
-       ex de, hl ; HL is file name
-       ; TODO: Look up parent directory
-       ; This will need to use findDirectoryEntry, but I'll also need to write some
-       ; kind of function to drop the file name so that we aren't looking for a
-       ; directory with our file's name.
-       ld de, 0xFFFF ; Parent directory
-       ld a, 0xFF \ ld bc, 0xFFFF ; File length
-       ld iy, 0xFFFF ; Section ID
-       call createFileEntry
-       jr nz, .unableToCreateFile
+        ld h, d \ ld l, e
+        call stringLength
+        inc bc
+        ld de, kernelGarbage + 0x100
+        push bc
+            ldir
+        pop bc
+        ld hl, kernelGarbage + 0x100
+        add hl, bc
+        ld a, '/'
+        cpdr
+        inc hl
+        xor a
+        ld (hl), a
+        push hl
+            ld de, kernelGarbage + 0x100
+            call findDirectoryEntry
+            jr nz, .unableToCreateFile_pop1
+        pop de
+        ex de, hl
+        ld a, '/'
+        ld (hl), a
+        inc hl
+        push hl
+            ex de, hl
+            dec hl \ dec hl \ dec hl
+            dec hl \ dec hl
+            ld e, (hl) \ dec hl \ ld d, (hl) ; Parent directory
+            ld a, 0xFF \ ld bc, 0xFFFF ; File length
+            ld iy, 0xFFFF ; Section ID
+        pop hl
+        call createFileEntry
+        jr nz, .unableToCreateFile
     pop af
     pop iy
     pop de
     jp .fileCreated
- .unableToCreateFile:
+.unableToCreateFile:
             ld b, a
             pop ix
             pop de
         pop iy
+.unableToCreateFile_pop1:
         pop af
     jp po, _
     ei
@@ -282,7 +306,14 @@ _:  pop af
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af
-        getBankA
+        ld a, 0xFF
+        cp b
+        jr nz, _
+        cp c
+        jr nz, _
+    pop af
+    ret ; Don't bother populating new buffers
+_:      getBankA
         push af
         push de
         push hl

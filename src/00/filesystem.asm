@@ -228,9 +228,6 @@ _:  pop af
     ld (kernelGarbage + 0x102), a
     ret
 
-testString:
-    .db "bin", 0
-
 ;; createFileEntry [Filesystem]
 ;;  Creates a new file entry in the FAT.
 ;; Inputs:

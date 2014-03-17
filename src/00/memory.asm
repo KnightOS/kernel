@@ -61,11 +61,17 @@ calloc:
         jr nz, .fail
         xor a
         call memset
-.fail:
     pop hl
     pop de
     pop bc
     pop af
+    cp a
+    ret
+.fail:
+    pop hl
+    pop de
+    pop bc
+    inc sp \ inc sp ;pop af
     ret
     
 ;; memset [System]
