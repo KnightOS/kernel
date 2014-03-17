@@ -176,6 +176,10 @@ reboot:
     out (0x10), a ; Contrast
 #endif
     
+    ld de, testPath
+    call openFileWrite
+    call closeStream
+    
     ld de, bootFile
     call fileExists
     ld a, panic_init_not_found

@@ -48,9 +48,10 @@ _:  pop af
 .entryFound:
             ; We can put the stream entry at (iy) and use d as the ID
             pop bc
-            ld a, b
             push de
             push ix
+            push hl
+            push af
                 call getCurrentThreadId
                 and 0b111111
                 ld (iy), a ; Flags & owner
@@ -95,8 +96,19 @@ dec hl
                 call populateStreamBuffer
                 xor a
                 ld (iy + 3), a ; Stream pointer
+            pop af
+            pop hl
             pop ix
             pop de
+            ; Load file entry info
+            ld (iy + 8), a
+            ld (iy + 9), l
+            ld (iy + 10), h
+            ; And the working file size
+            xor a
+            ld (iy + 11), a ; This doesn't matter for ro streams
+            ld (iy + 12), a
+            ld (iy + 13), a
         pop iy
         pop af
     jp po, _
@@ -174,9 +186,10 @@ _:  pop af
 .entryFound:
             ; We can put the stream entry at (iy) and use d as the ID
             pop bc
-            ld a, b
             push de
             push ix
+            push hl
+            push af
                 call getCurrentThreadId
                 and 0b111111
                 or 0b01000000 ; Set writable
@@ -223,9 +236,38 @@ _:  pop af
                 call populateStreamBuffer
                 xor a
                 ld (iy + 3), a ; Stream pointer
+            pop af
+            pop hl
             pop ix
             pop de
-        pop iy
+            ; Load file entry info
+            ld (iy + 8), a
+            ld (iy + 9), l
+            ld (iy + 10), h
+            ; Working file size
+            ld a, 0xFF
+            cp (iy + 4)
+            jr nz, _
+            cp (iy + 5)
+            jr nz, _
+            ; This is a brand-new file
+            xor a
+            ld (iy + 11), a
+            ld (iy + 12), a
+            ld (iy + 13), a
+            jr ++_
+_:          ; This is an existing file, load the existing size from the entry
+            setBankA
+            ld bc, 6
+            or a
+            sbc hl, bc
+            ld a, (hl)
+            ld (iy + 11), a
+            dec hl \ ld a, (hl)
+            ld (iy + 12), a
+            dec hl \ ld a, (hl)
+            ld (iy + 13), a
+_:      pop iy
     pop af
     jp po, _
     ei
