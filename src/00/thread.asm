@@ -78,7 +78,8 @@ _:      di
                     add a, 64 ; Required minimum stack size for system use
                     ld c, a
                     jr nc, $+3 \ inc b
-                    call malloc
+                    ld a, 1
+                    call calloc
                     jr nz, startThread_mem
                     push ix \ pop hl
                     dec ix \ dec ix
