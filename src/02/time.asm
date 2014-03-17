@@ -65,9 +65,8 @@ daysPerMonthLeap:
     .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 ; Leap year
 
 ;; convertTimeFromTicks [Time]
-;;   Convert from ticks to time
+;;   Convert from ticks in seconds to time
 ;;   Epoch is January 1st, 1997 (Wednesday)
-;;   See https://github.com/torvalds/linux/blob/master/kernel/time/timeconv.c
 ;; Inputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
@@ -91,18 +90,22 @@ convertTimeFromTicks:
 
     ld de, 60
     call div32by16
-    push hl                         ; seconds on stack
+    ;seconds on stack
+    push hl                         
         ld de, 60
         call div32by16
-        push hl                     ; minutes on stack
+        ; minutes on stack
+        push hl                     
             ld de, 24
+            ; hours on stack
             call div32by16
-            push hl                 ; hours on stack
+            push hl
                 push ix \ pop hl
                 inc hl \ inc hl \ inc hl
                 ld c, 7
                 call divHLbyC
-                push af             ; day of the week on stack
+                ; day of the week on stack
+                push af             
                     push ix \ pop hl
                     push ix \ pop bc
                     call .getYearFromDays
@@ -112,30 +115,36 @@ convertTimeFromTicks:
                     inc hl \ inc hl
                     push hl \ pop bc
                     call .getYearFromDays
-                    push hl         ; Years on stack
+                    ; Years on stack
+                    push hl          
                         ex hl, de
                         push bc \ pop hl
                         call .getMonth
                         ld h, b
                         ld l, a
-                    pop ix          ; Years
-                pop de              ; Day of the week
+                    ; Years
+                    pop ix          
+                ; Day of the week
+                pop de
                 ld a, d
+            ; Hours
             pop de
-            ld b, e                 ; Hours
+            ld b, e
+        ; Minutes
         pop de
-        ld c, e                     ; Minutes
+        ld c, e
+    ; Seconds
     pop de
-    ld d, e                         ; Seconds
+    ld d, e
 
     ret
 
-;; Inputs:
-;;   HL: The year
-;; Outputs: 
-;;   DE: The number of leap years (and thus days) since 1997
-;; 
-;; Does (a - 1)/4 - 3(a - 1)/400 - 484
+; Inputs:
+;   HL: The year
+; Outputs: 
+;   DE: The number of leap years (and thus days) since 1997
+; 
+; Does (a - 1)/4 - 3(a - 1)/400 - 484
 .getLeapsToDate:
     push hl \ push af \ push bc 
         dec hl
@@ -169,12 +178,12 @@ convertTimeFromTicks:
     pop bc \ pop af \ pop hl
     ret
 
-;; Inputs:
-;;   HL: The year
-;; Outsputs:
-;;    A: 1 if it is a leap year, 0 otherwise
-;; 
-;; Does getLeapsToDate( hl + 1 ) - getLeapsToDate( hl )
+; Inputs:
+;   HL: The year
+; Outsputs:
+;    A: 1 if it is a leap year, 0 otherwise
+; 
+; Does getLeapsToDate( hl + 1 ) - getLeapsToDate( hl )
 .isLeapYear:
     push hl \ push bc \ push de
         call .getLeapsToDate
@@ -189,10 +198,10 @@ convertTimeFromTicks:
     pop de \ pop bc \ pop hl
     ret
 
-;; Inputs: HL, number of days
-;; Outputs: HL, the current year
-;;
-;; Does hl / 365
+; Inputs: HL, number of days
+; Outputs: HL, the current year
+;
+; Does hl / 365
 .getYearFromDays:
     push af \ push bc \ push de
         ld a, h
@@ -208,12 +217,12 @@ convertTimeFromTicks:
     pop de \ pop bc \ pop af
     ret
 
-;; Inputs:
-;;   HL: the number of days
-;;   DE: the year
-;; Outputs:
-;;    A: The current month
-;;    B: The day of the month
+; Inputs:
+;   HL: the number of days
+;   DE: the year
+; Outputs:
+;    A: The current month
+;    B: The day of the month
 .getMonth:
     push ix \ push hl \ push de
         push af \ push bc 
