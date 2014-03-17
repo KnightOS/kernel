@@ -244,6 +244,8 @@ _:  pop af
             ld (iy + 8), a
             ld (iy + 9), l
             ld (iy + 10), h
+            ld a, 1 ; Stream is flushed
+            ld (iy + 14), a ; Set stream write flags (TODO: Move flags around)
             ; Working file size
             ld a, 0xFF
             cp (iy + 4)
@@ -459,6 +461,8 @@ closeStream:
     di
         call getStreamEntry
         jr nz, .fail
+        bit 6, (ix)
+        jr nz, .closeWritableStream
         push hl
             ld (ix), 0xFF
             ld l, (ix + 1)
@@ -478,6 +482,70 @@ _:  pop af
 .fail:
     pop ix
     ret
+.closeWritableStream:
+        call flush_withStream
+        push hl
+            ld (ix), 0xFF
+            ld l, (ix + 1)
+            ld h, (ix + 2)
+            push hl \ pop ix
+            call free
+            ld hl, activeFileStreams
+            dec (hl)
+        pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    cp a
+    ret
+
+;; flush [File Stream]
+;;  Flushes pending writes to disk.
+;; Inputs:
+;;  D: Stream ID
+;; Outputs:
+;;  A: Preserved on success; error code on error
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  This happens periodically as you write to the stream, and happens
+;;  automatically on closeStream. Try not to use it unless you have to.
+flush:
+    push ix
+    push af
+    ld a, i
+    push af
+    di
+        call getStreamEntry
+        jr nz, _flush_fail
+_flush_withStream:
+        bit 0, (ix + 0xD) ; Check if flushed
+        jr nz, .exitEarly
+        ; TODO: Actually flush
+.exitEarly:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    cp a
+    ret
+_flush_fail:
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    or 1
+    ld a, errStreamNotFound
+    ret
+flush_withStream:
+    push ix
+    push af
+    ld a, i
+    push af
+        jp _flush_withStream
 
 ;; streamReadByte [File Stream]
 ;;  Reads a single byte from a file stream and advances the stream.
