@@ -4,7 +4,8 @@
 ;;   HL: Lower word of a 32-bit tick value
 ;;   DE: Upper word of a 32-bit tick value
 ;; Outputs:
-;;   A: errUnsupported if there is no clock, 0 otherwise
+;;   A: Preserved on success, error code on failure
+;;   Z: Set on success, reset on failure
 setClock:
 #ifndef CLOCK
     ld a, errUnsupported
@@ -36,7 +37,8 @@ setClock:
 ;; Outputs:
 ;;   HL: Lower word of the 32-bit tick value
 ;;   DE: Upper word of the 32-bit tick value
-;;    A: errUnsupported if there is no clock, 0 otherwise
+;;    A: Preserved on success, error code on failure
+;;    Z: Set on success, reset on failure
 getTimeInTicks:
 #ifndef CLOCK
     ld a, errUnsupported
@@ -57,7 +59,7 @@ getTimeInTicks:
     ret
 #endif
 
-;; The number of days before a given month
+; The number of days before a given month
 daysPerMonth:
     .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ; Normal
 
@@ -77,10 +79,9 @@ daysPerMonthLeap:
 ;;    H: Current day, from 0-30
 ;;    L: Current month, from 1-12
 ;;   IX: Current year
-;;    A: errUnsupported if there is no clock, otherwise the 
-;;       day of the week, from 0-6 with 0 being sunday
+;;    A: Day of the week, from 0-6 with 0 being sunday
 convertTimeFromTicks:
-    ;; Time is in big-endian, have to convert to little-endian 
+    ; Time is in big-endian, have to convert to little-endian 
     ld a, e
     ld c, d
     ld b, l
