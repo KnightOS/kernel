@@ -58,13 +58,11 @@ getTimeInTicks:
 #endif
 
 ;; The number of days before a given month
-#ifdef CLOCK
 daysPerMonth:
     .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ; Normal
 
 daysPerMonthLeap:
     .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 ; Leap year
-#endif
 
 ;; convertTimeFromTicks [Time]
 ;;   Convert from ticks to time
@@ -83,11 +81,6 @@ daysPerMonthLeap:
 ;;    A: errUnsupported if there is no clock, otherwise the 
 ;;       day of the week, from 0-6 with 0 being sunday
 convertTimeFromTicks:
-#ifndef CLOCK
-    ld a, errUnsupported
-    or a
-    ret
-#else
     ;; Time is in big-endian, have to convert to little-endian 
     ld a, e
     ld c, d
@@ -263,7 +256,6 @@ _:
     pop de \ pop hl \ pop ix
 
     ret
-#endif
 
 ; H: Day
 ; L: Month
