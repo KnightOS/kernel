@@ -106,6 +106,9 @@ _:  ld h, a
 ;;  You must leave these registers intact.
 listDirectory:
     push af
+    ld a, i
+    push af
+    di
     push de
     push bc
     push hl
@@ -212,6 +215,9 @@ _:          ld a, (hl)
     pop bc
     pop de
     pop af
+    jp po, _
+    ei
+_:  pop af
     cp a
     ret
 .correctForRoot:
@@ -437,6 +443,9 @@ findFATEnd:
 createDirectoryEntry:
     push ix
     push af
+    ld a, i
+    push af
+    di
     push bc
     push de
     push hl
@@ -574,6 +583,9 @@ _:      ; Move DE to end of file entry
     pop de
     pop bc
     pop af
+    jp po, _
+    ei
+_:  pop af
     pop ix
     ret
 .exitError:
@@ -602,7 +614,11 @@ createDirectory:
     or 1
     ld a, errAlreadyExists
     ret
-_:  push de
+_:  push af
+    ld a, i
+    push af
+    di
+    push de
     push hl
         ; Move string to RAM
         push bc
@@ -661,12 +677,20 @@ _:      push de
         call createDirectoryEntry
     inc sp \ inc sp ; pop hl
     pop de
+    pop af
+    jp po, _
+    ei
+_:  pop af
     ret
                 .error:
             pop hl
         pop bc
     pop hl
     pop de
+    pop af
+    jp po, _
+    ei
+_:  pop af
     ret
 
 ;; findFileEntry [Filesystem]
@@ -681,6 +705,9 @@ findFileEntry:
     push de
     push bc
     push af
+    ld a, i
+    push af
+    di
         ; Skip initial / if present
         ; TODO: Allow for relative paths somehow
         ld a, (de)
@@ -747,6 +774,9 @@ _:          ld a, (hl)
 findFileEntry_handleEndOfTable:
         pop af
     pop af
+    jp po, _
+    ei
+_:  pop af
     ld a, errFileNotFound
     or a ; Resets z
     pop bc
@@ -794,6 +824,9 @@ _:          ld a, (hl)
             add hl, bc
         pop bc ; pop af
     pop af
+    jp po, _
+    ei
+_:  pop af
     ld a, b
     pop bc
     pop de
@@ -816,6 +849,9 @@ findDirectoryEntry:
     push de
     push bc
     push af
+    ld a, i
+    push af
+    di
         ; TODO: Relative paths
         setBankA(fatStart)
         ld hl, 0
@@ -908,6 +944,9 @@ _:          or a ; cp 0
         jr .traversalLoop
 .endOfTable:
     pop af
+    jp po, _
+    ei
+_:  pop af
     pop bc
     pop de
     or 1
@@ -919,6 +958,9 @@ _:          or a ; cp 0
         getBankA
         ld b, a
     pop af
+    jp po, _
+    ei
+_:  pop af
     ld a, b
     pop bc
     pop de
