@@ -116,6 +116,7 @@ convertTimeFromTicks:
                     call .getLeapsToDate
                     push bc \ pop hl
                     sbc hl, de
+                    inc hl \ inc hl
                     push hl \ pop bc
                     call .getYearFromDays
                     push hl         ; Years on stack
@@ -246,6 +247,9 @@ _:
 _:
         ld h, (ix+1)
         ld l, (ix)
+        ld a, b
+        cp 0
+        jr z, _
         call cpHLDE
         jr c, _
         dec ix \ dec ix
