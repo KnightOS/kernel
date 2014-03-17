@@ -453,6 +453,10 @@ getStreamEntry:
 ;;  A: Error code (on failure)
 closeStream:
     push ix
+    push af
+    ld a, i
+    push af
+    di
         call getStreamEntry
         jr nz, .fail
         push hl
@@ -464,6 +468,10 @@ closeStream:
             ld hl, activeFileStreams
             dec (hl)
         pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
     pop ix
     cp a
     ret
