@@ -14,13 +14,13 @@ setClock:
 #else
     push af
         ld a, h
-        out (0x41), a
-        ld a, l
         out (0x42), a
+        ld a, l
+        out (0x41), a
         ld a, d
-        out (0x43), a
-        ld a, e
         out (0x44), a
+        ld a, e
+        out (0x43), a
         ld a, 1
         out (0x40), a
         ld a, 3
@@ -46,13 +46,13 @@ getTimeInTicks:
     ret
 #else
     push af
-        in a, (0x45)
-        ld h, a
         in a, (0x46)
+        ld h, a
+        in a, (0x45)
         ld l, a
-        in a, (0x47)
-        ld d, a
         in a, (0x48)
+        ld d, a
+        in a, (0x47)
         ld e, a
     pop af
     cp a
@@ -77,16 +77,13 @@ daysPerMonthLeap:
 ;;    C: Current minute, from 0-59
 ;;    B: Current hour, from 0-23
 ;;    H: Current day, from 0-30
-;;    L: Current month, from 1-12
+;;    L: Current month, from 0-11
 ;;   IX: Current year
 ;;    A: Day of the week, from 0-6 with 0 being sunday
+;;    E: Garbage
 convertTimeFromTicks:
-    ; Time is in big-endian, have to convert to little-endian 
-    ld a, e
-    ld c, d
-    ld b, l
-    ld l, h
-    ld h, b
+    ld a, d
+    ld c, e
     push hl \ pop ix
 
     ld de, 60
