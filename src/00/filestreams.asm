@@ -558,8 +558,9 @@ _:          pop hl
             sla l \ sla l ; L /= 4 to get index
             ld h, a
             ; Section IDs are 0bFFFFFFFF FFFIIIII ; F is flash page, I is index
-            sra h \ sra h \ sra h
-            rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
+            ; sra h \ sra h \ sra h
+            .db 0xCB, 0x2C, 0xCB, 0x2C, 0xCB, 0x2C
+             rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
             ; HL should now be section ID
          pop de \ push de
             push hl
