@@ -399,7 +399,7 @@ _:      getBankA
 ;;  IX: Stream buffer (on success)
 ;; Notes:
 ;;  For read-only streams, modifying this buffer could have unforseen consequences and it will not be copied back to the file.
-;;  For writable streams, make sure you call flushStream if you modify this buffer and want to make the changes persist to the file.
+;;  For writable streams, make sure you call flush if you modify this buffer and want to make the changes persist to the file.
 getStreamBuffer:
     push ix
         call getStreamEntry
@@ -512,17 +512,51 @@ _:  pop af
 ;;  This happens periodically as you write to the stream, and happens
 ;;  automatically on closeStream. Try not to use it unless you have to.
 flush:
-    push ix
-    push af
-    ld a, i
-    push af
-    di
-        call getStreamEntry
-        jr nz, _flush_fail
+   push ix
+   push af
+   ld a, i
+   push af
+   di
+         call getStreamEntry
+         jr nz, _flush_fail
+         bit 6, (ix)
+         jr z, _flush_fail ; Fail if not writable
 _flush_withStream:
-        bit 0, (ix + 0xD) ; Check if flushed
-        jr nz, .exitEarly
-        ; TODO: Actually flush
+         bit 0, (ix + 0xD) ; Check if flushed
+         jr nz, .exitEarly
+         ; TODO: Actually flush
+         push hl
+         push bc
+         push de
+            ; Find a free block
+            ld a, 4
+.pageLoop:
+            setBankA
+            ld hl, 0x4000 + 4
+.searchLoop:
+            ld c, (hl) \ inc hl
+            ld b, (hl) \ inc hl
+            ld e, (hl) \ inc hl
+            ld d, (hl) \ inc hl
+            push hl
+               ld hl, 0xFFFF
+               call cpHLDE
+               jr nz, _
+               call cpBCDE
+               jr z, .freeBlockFound
+_:          pop hl
+            ld bc, 0x8000
+            call cpHLBC
+            jr nz, .searchLoop
+            ; Next page
+            inc a
+            ; TODO: Stop at end of filesystem
+            jr .pageLoop
+.freeBlockFound:
+            jr $
+         pop de
+         pop bc
+         pop hl
 .exitEarly:
     pop af
     jp po, _

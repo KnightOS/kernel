@@ -964,6 +964,17 @@ _:  pop af
     cp a
     ret
 
+;; formatUnusedPages [Filesystem]
+;;  If /bin/init is called with A set to 0xFF, this function
+;;  should be called. It may be appropriate to show the user
+;;  some sort of UI while this is processing, as it will take
+;;  some time to run.
+;; Notes:
+;;  This function is only relevant to system-level programmers.
+;;  Most programmers do not have to concern themselves with it.
+formatUnusedPages:
+    ret
+
 ; Checks string at (DE) for '/'
 ; Z for no slashes, NZ for slashes
 checkForRemainingSlashes:
