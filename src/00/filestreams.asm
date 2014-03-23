@@ -524,10 +524,11 @@ flush:
 _flush_withStream:
          bit 0, (ix + 0xD) ; Check if flushed
          jr nz, .exitEarly
-         ; TODO: Actually flush
+         push ix
          push hl
          push bc
          push de
+            call getStreamBuffer
             ; Find a free block
             ld a, 4
 .pageLoop:
@@ -553,10 +554,31 @@ _:          pop hl
             ; TODO: Stop at end of filesystem
             jr .pageLoop
 .freeBlockFound:
-            jr $
+            ; Convert HL into section ID
+            sla l \ sla l ; L /= 4 to get index
+            ld h, a
+            ; Section IDs are 0bFFFFFFFF FFFIIIII ; F is flash page, I is index
+            sra h \ sra h \ sra h
+            rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
+            ; HL should now be section ID
+         pop de \ push de
+            push hl
+               ; Write buffer to disk
+               ld a, l
+               or 0x40
+               ld d, a
+               ld e, 0
+               push ix \ pop hl
+               ld bc, 0x100
+               call unlockFlash
+               call writeFlashBuffer
+               ; TODO: Write section header
+               call lockFlash
+            pop hl
          pop de
          pop bc
          pop hl
+         pop ix
 .exitEarly:
     pop af
     jp po, _
