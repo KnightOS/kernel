@@ -578,120 +578,127 @@ _:  pop af
 ;;  The rectangle will be clipped to any LCD window already in
 ;;  place, via [[setLcdWindow]] (TODO).
 colorRectangle:
-    push hl \ push de \ push bc \ push ix
-        dec de
-        push de
-            push bc
-                ld ix, -14
-                add ix, sp
-                push ix
-                    ld a, 0x50
-                    ld b, 4
-                    ld c, 0x11
+    push af
+        ld a, i
+        di
+        push af \ push hl \ push de \ push bc \ push ix
+            dec de
+            push de
+                push bc
+                    ld ix, -14
+                    add ix, sp
+                    push ix
+                        ld a, 0x50
+                        ld b, 4
+                        ld c, 0x11
 .registerSave:
-                    out (0x10), a
-                    out (0x10), a
-                    in d, (c)
-                    in e, (c)
-                    ld (ix + 0), e
-                    ld (ix + 1), d
-                    inc ix
-                    inc ix
-                    inc a
-                    djnz .registerSave
-                pop ix
-; Coordinates clipping
-            pop bc
-; Horizontal start
-            push hl
-                call .clipX
-                ld a, 0x52
-; I can't use the kernel's writeLcdRegister or readLcdRegister here because they destroy C
-                call .writeLcdReg
-; Horizontal end
-            pop hl
-        pop de
-        add hl, de
-        call .clipX
-        ld a, 0x53
-        call .writeLcdReg
-; Vertical start
-        ld l, b
-        ld h, 0
-        ld a, 239
-        cp b
-        jr nc, +_
-        ld a, b
-        rla
-        sbc a, a
-        ld h, a
-_:
-        push hl
-            call .clipY
-            ld a, 0x50
+                        out (0x10), a
+                        out (0x10), a
+                        in d, (c)
+                        in e, (c)
+                        ld (ix + 0), e
+                        ld (ix + 1), d
+                        inc ix
+                        inc ix
+                        inc a
+                        djnz .registerSave
+                    pop ix
+                    ; Coordinates clipping
+                pop bc
+                ; Horizontal start
+                push hl
+                    call .clipX
+                    ld a, 0x52
+                    ; I can't use the kernel's writeLcdRegister or readLcdRegister here because they destroy C
+                    call .writeLcdReg
+                    ; Horizontal end
+                pop hl
+            pop de
+            add hl, de
+            call .clipX
+            ld a, 0x53
             call .writeLcdReg
-; Vertical end
-            ld e, c
-            ld d, 0
-        pop hl
-        add hl, de
-        call .clipY
-        ld a, 0x51
-        call .writeLcdReg
-; Actually draw the rect
-        ld a, 0x52
-        call .readLcdReg
-        ld c, l
-        ld b, h
-        ld a, 0x21
-        call .writeLcdReg
-        ld    a, 0x53
-        call .readLcdReg
-        or a
-        sbc hl, bc
-        inc hl
-        ld e, l
-        ld d, h
-        ld a, 0x50
-        call .readLcdReg
-        ld c, l
-        ld b, h
-        ld a, 0x20
-        call .writeLcdReg
-        ld a, 0x51
-        call .readLcdReg
-        or a
-        sbc hl, bc
-        ld a, l
-        call DEMulA
-        ld a, 0x22
-        out (0x10), a
-        out (0x10), a
-        push iy \ pop de
-        ld c, 0x11
+            ; Vertical start
+            ld l, b
+            ld h, 0
+            ld a, 239
+            cp b
+            jr nc, +_
+            ld a, b
+            rla
+            sbc a, a
+            ld h, a
+_:
+            push hl
+                call .clipY
+                ld a, 0x50
+                call .writeLcdReg
+                ; Vertical end
+                ld e, c
+                ld d, 0
+            pop hl
+            add hl, de
+            call .clipY
+            ld a, 0x51
+            call .writeLcdReg
+            ; Actually draw the rect
+            ld a, 0x52
+            call .readLcdReg
+            ld c, l
+            ld b, h
+            ld a, 0x21
+            call .writeLcdReg
+            ld    a, 0x53
+            call .readLcdReg
+            or a
+            sbc hl, bc
+            inc hl
+            ld e, l
+            ld d, h
+            ld a, 0x50
+            call .readLcdReg
+            ld c, l
+            ld b, h
+            ld a, 0x20
+            call .writeLcdReg
+            ld a, 0x51
+            call .readLcdReg
+            or a
+            sbc hl, bc
+            ld a, l
+            call DEMulA
+            ld a, 0x22
+            out (0x10), a
+            out (0x10), a
+            push iy \ pop de
+            ld c, 0x11
 .drawLoop:
-        out (c), d
-        out (c), e
-        dec hl
-        ld a, h
-        or l
-        jr nz, .drawLoop
-; Restore previous clipping window
-        ld a, 0x50
-        ld b, 4
-        ld c, 0x11
+            out (c), d
+            out (c), e
+            dec hl
+            ld a, h
+            or l
+            jr nz, .drawLoop
+            ; Restore previous clipping window
+            ld a, 0x50
+            ld b, 4
+            ld c, 0x11
 .registerRcl:
-        out (0x10), a
-        out (0x10), a
-        ld e, (ix + 0)
-        ld d, (ix + 1)
-        out (c), d
-        out (c), e
-        inc a
-        inc ix
-        inc ix
-        djnz .registerRcl
-    pop ix \ pop bc \ pop de \ pop hl
+            out (0x10), a
+            out (0x10), a
+            ld e, (ix + 0)
+            ld d, (ix + 1)
+            out (c), d
+            out (c), e
+            inc a
+            inc ix
+            inc ix
+            djnz .registerRcl
+        pop ix \ pop bc \ pop de \ pop hl \ pop af
+        jp po, _
+        ei
+_:
+    pop af
     ret
 
 .clipX:
