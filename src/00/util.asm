@@ -280,6 +280,9 @@ getBootCodeVersionString:
 randA:
     push bc
         ex af, af'
+        ld b, a
+        ld a, r
+        xor b
         rrca
         jr nc, +_
         xor 0b00111000
