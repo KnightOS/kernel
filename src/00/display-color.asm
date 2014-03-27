@@ -17,14 +17,12 @@ writeLcdRegister:
 colorRectangle:
 setLcdWindow:
 fullScreenWindow:
-    or 1
-    ld a, errUnsupported
-    ret
-
 colorSupported:
     or 1
     ld a, errUnsupported
     ret
+
+; monochrome displayImage is in display.asm
 
 #else
 ; Color screen is 320x240
@@ -735,3 +733,116 @@ _:
     out    (0x11), a
     ret
 #endif
+
+;; drawImage [Color]
+;;  Vanity function for automated handling of differents
+;;  image formats. See docs/images.md for more information
+;; Inputs:
+;;  HL: pointer to image data
+;;  DE: X
+;;  B: Y
+;; Outputs:
+;;  A: errUnsupported if necessary  
+drawImage:
+    ld a, i
+    di
+    push af \ push hl \ push de \ push bc
+        ld b, 4
+        ld de, imagesMagicString
+_:
+        ld a, (de)
+        cp (hl)
+        jr nz, exitEarly
+        inc de
+        inc hl
+        djnz -_
+        ld a, (hl)
+        rra
+        jr nc, exitEarly_noSupport
+        ld b, 3
+_:
+        rra
+        jr c, exitEarly_noSupport
+        djnz -_
+        
+    pop bc \ pop de \ push de \ push bc
+        inc hl
+        call drawRawColorImage
+exitEarly:
+    pop bc \ pop de \ pop hl \ pop af
+    ret po
+    ei
+    ret
+exitEarly_noSupport:
+    pop bc \ pop de \ pop hl \ pop af
+    jp po, +_
+    ei
+_:
+    ld a, errUnsupported
+    ret
+    
+imagesMagicString:
+    .db "KIMG"
+    
+;; drawRawColorImage [Color]
+;;  Displays a non-paletted color image to the LCD.
+;; Inputs:
+;;  HL: pointer to width word of the image
+;;  DE: X
+;;  B: Y
+;; Outputs:
+;;  A: errUnsupported if color is unsupported
+;; Notes:
+;;  Does no clipping.
+drawRawColorImage:
+    push af \ push bc \ push de \ push hl
+        push hl \ push hl \ pop ix
+            ld l, (ix + 0)
+            ld h, (ix + 1)
+            push hl
+                add hl, hl
+                ld a, (ix + 2)
+                push de
+                    ex de, hl
+                    call DEmulA
+                pop de
+                ex (sp), hl
+                add hl, de
+                ex de, hl
+                dec de
+                ld a, (ix + 2)
+                add a, b
+                ld c, a
+                dec c
+                call setLcdWindow
+            pop hl
+            ld a, 0x22
+            out (0x10), a
+            out (0x10), a
+            ld c, 0x11
+            xor a
+            or h
+            ld b, h
+            ex (sp), hl
+            inc hl
+            inc hl
+            inc hl
+            jr z, .noOuterLoop
+.outerLoop:
+            push bc
+                ld b, 0
+                otir
+            pop bc
+            djnz .outerLoop
+.noOuterLoop:
+            ex (sp), hl
+            ld b, l
+        pop hl
+        xor a
+        or b
+        jr z, $ + 4
+        otir
+    pop hl \ pop de \ pop bc \ pop af
+    call fullScreenWindow
+    ret
+    
