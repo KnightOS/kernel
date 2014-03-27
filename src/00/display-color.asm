@@ -564,7 +564,7 @@ _:  pop af
     cp a
     ret
 
-;; colorRectangle [Color]
+;; clipColorRectangle [Color]
 ;;  Draws a clipped rectangle of the specified size with the
 ;;  specified color in color mode.
 ;; Inputs:
@@ -574,10 +574,9 @@ _:  pop af
 ;;  C : height of the rectangle in pixels
 ;;  IY : color of the rectangle in R5G6B5 format
 ;; Notes:
-;;  The LCD should be in color mode when calling this function.
 ;;  The rectangle will be clipped to any LCD window already in
-;;  place, via [[setLcdWindow]] (TODO).
-colorRectangle:
+;;  place, and restore it afterwards.
+clipColorRectangle:
     push af
         ld a, i
         di
