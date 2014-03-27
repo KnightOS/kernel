@@ -702,36 +702,36 @@ _:
     ret
 
 .clipX:
-    ld    e, (ix + 4)
-    ld    d, (ix + 5)
-    call    smax
-    ld    e, (ix + 6)
-    ld    d, (ix + 7)
-    call    smin
+    ld e, (ix + 4)
+    ld d, (ix + 5)
+    call smax
+    ld e, (ix + 6)
+    ld d, (ix + 7)
+    call smin
     ret
 .clipY:
-    ld    e, (ix + 0)
-    ld    d, (ix + 1)
-    call    smax
-    ld    e, (ix + 2)
-    ld    d, (ix + 3)
-    call    smin
+    ld e, (ix + 0)
+    ld d, (ix + 1)
+    call smax
+    ld e, (ix + 2)
+    ld d, (ix + 3)
+    call smin
     ret
 
 .readLcdReg:
-    out    (0x10), a
-    out    (0x10), a
-    in    a, (0x11)
-    ld    h, a
-    in    a, (0x11)
-    ld    l, a
+    out (0x10), a
+    out (0x10), a
+    in a, (0x11)
+    ld h, a
+    in a, (0x11)
+    ld l, a
     ret
 .writeLcdReg:
-    out    (0x10), a
-    out    (0x10), a
-    ld    a, h
-    out    (0x11), a
-    ld    a, l
-    out    (0x11), a
+    out (0x10), a
+    out (0x10), a
+    ld a, h
+    out (0x11), a
+    ld a, l
+    out (0x11), a
     ret
 #endif
