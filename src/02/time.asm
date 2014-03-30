@@ -31,14 +31,12 @@ setClock:
 #endif
     
 ;; getClock [Time]
-;;   Sets the internal clock.
-;; Inputs:
-;;   None
+;;   Gets the internal clock.
 ;; Outputs:
 ;;   HL: Lower word of the 32-bit tick value
 ;;   DE: Upper word of the 32-bit tick value
-;;    A: Preserved on success, error code on failure
-;;    Z: Set on success, reset on failure
+;;   A: Preserved on success, error code on failure
+;;   Z: Set on success, reset on failure
 getTimeInTicks:
 #ifndef CLOCK
     ld a, errUnsupported
@@ -264,25 +262,34 @@ _:
 
     ret
 
-; H: Day
-; L: Month
-; IX: Year
-; B: Hour
-; C: Minute
-; D: Second
-; A: Day of Week
-; Output: HLDE: Ticks
+;; convertTimeToTicks [Time]
+;;  Converts a time structure to seconds since epoch.
+;; Inputs:
+;;  D: Current second, from 0-59
+;;  C: Current minute, from 0-59
+;;  B: Current hour, from 0-23
+;;  H: Current day, from 0-30
+;;  L: Current month, from 0-11
+;;  IX: Current year
+;;  A: Day of the week, from 0-6 with 0 being sunday
+;; Outputs:
+;;   HL: Lower word of tick value
+;;   DE: Upper word of tick value
 convertTimeToTicks:
     ; TODO
     ret
     
-; H: Day
-; L: Month
-; D: Year
-; B: Hours
-; C: Minutes
-; E: Seconds
-; A: Day of Week
+;; getTime [Time]
+;;   Gets the current time.
+;; Outputs:
+;;    D: Current second, from 0-59
+;;    C: Current minute, from 0-59
+;;    B: Current hour, from 0-23
+;;    H: Current day, from 0-30
+;;    L: Current month, from 0-11
+;;   IX: Current year
+;;    A: Day of the week, from 0-6 with 0 being sunday
+;;    E: Garbage
 getTime:
 #ifndef CLOCK
     ld a, errUnsupported
