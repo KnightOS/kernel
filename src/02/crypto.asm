@@ -106,7 +106,7 @@ sha1_block_ptr .equ sha1_f_op_ptr + 2
 sha1_block_front_ptr .equ sha1_block_ptr + 2
 sha1Memblock_size .equ sha1_block_front_ptr + 2
 
-;; sha1Clean [Crypto]
+;; sha1Clean [Cryptography]
 ;;  Safely deallocates a SHA1 state block allocated by
 ;;  sha1Init.
 ;; Inputs:
