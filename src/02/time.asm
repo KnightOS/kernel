@@ -67,8 +67,8 @@ daysPerMonthLeap:
     .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 ; Leap year
 
 ;; convertTimeFromTicks [Time]
-;;   Convert from ticks in seconds to time
-;;   Epoch is January 1st, 1997 (Wednesday)
+;;   Convert from ticks in seconds to time.
+;;   The epoch is January 1st, 1997 (a Wednesday)
 ;; Inputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
