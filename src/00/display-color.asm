@@ -568,11 +568,11 @@ _:  pop af
 ;;  Draws a clipped rectangle of the specified size with the
 ;;  specified color in color mode.
 ;; Inputs:
-;;  HL : X coordinate in pixels
-;;  B : Y coordinate in pixels
-;;  DE : width of the rectangle in pixels
-;;  C : height of the rectangle in pixels
-;;  IY : color of the rectangle in R5G6B5 format
+;;  HL: X coordinate in pixels
+;;  B: Y coordinate in pixels
+;;  DE: width of the rectangle in pixels
+;;  C: height of the rectangle in pixels
+;;  IY: color of the rectangle in R5G6B5 format
 ;; Notes:
 ;;  The LCD should be in color mode when calling this function.
 ;;  The rectangle will be clipped to any LCD window already in

@@ -378,11 +378,10 @@ _:  or 1
     ret
 
 ;; exitThread [Threading]
-;;  Immediately terminates the running thread. This function will never return;
-;;  call it with `jp exitThread`.
+;;  Immediately terminates the running thread.
 ;; Notes:
-;;  This is preferred to [[killThread]], since it will go through the caller-set
-;;  exit function. This is often [[killThread]] anyway, but it may be set to a
+;;  This is preferred to [[killCurrentThread]], since it will go through the caller-set
+;;  exit function. This is often [[killCurrentThread]] anyway, but it may be set to a
 ;;  custom value by the code that intitialized the thread.
 exitThread:
     ; Not returning; we can clobber registers at will!
@@ -401,8 +400,6 @@ exitThread:
     pop af
     jp (hl)
 
-; Input:  A: Thread ID
-; Output: HL: Thread entry
 ;; getThreadEntry [Threading]
 ;;  Gets a pointer to the specified thread's entry in the thread table.
 ;; Inputs:
@@ -412,6 +409,10 @@ exitThread:
 ;; Notes:
 ;;  You must disable interrupts while manipulating the thread table to
 ;;  guarantee that it will not change while you do so.
+;;
+;;  Programs that manipulate the thread table directly should force a
+;;  specific major kernel version, as this is liable to change between
+;;  versions.
 getThreadEntry:
     push bc
         ld c, a
@@ -627,8 +628,7 @@ sharedSetInitial:
 ;; suspendCurrentThread [Threading]
 ;;  Suspends the currently executing thread.
 ;; Notes:
-;;  This function will not return until a second thread resumes the
-;;  current thread.
+;;  This function will not return until a second thread resumes the current thread.
 suspendCurrentThread:
     push hl
     push af

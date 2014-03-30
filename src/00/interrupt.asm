@@ -1,5 +1,6 @@
 ;; contextSwitch [System]
-;;  Triggers a context switch early.
+;;  Triggers a context switch early. This will transfer control from your thread to
+;;  another and eventaully return to yours with interrupts enabled.
 contextSwitch:
     di
     push af

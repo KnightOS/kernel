@@ -1,4 +1,4 @@
-;; openFileRead [File Stream]
+;; openFileRead [Filestreams]
 ;;  Opens a file stream in read-only mode.
 ;; Inputs:
 ;;  DE: Path to file (string pointer)
@@ -135,7 +135,7 @@ _:  pop af
     or a
     ret
 
-;; openFileWrite [File Stream]
+;; openFileWrite [Filestreams]
 ;;  Opens a file stream in write mode. If the file does not exist,
 ;;  it is created.
 ;; Inputs:
@@ -389,7 +389,7 @@ _:      getBankA
     pop af
     ret
 
-;; getStreamBuffer [File Stream]
+;; getStreamBuffer [Filestreams]
 ;;  Gets the address of a stream's memory buffer.
 ;; Inputs:
 ;;  D: Stream ID
@@ -412,7 +412,7 @@ getStreamBuffer:
     pop ix
     ret
 
-;; getStreamEntry [File Stream]
+;; getStreamEntry [Filestreams]
 ;;  Gets the address of a stream entry in the kernel file stream table.
 ;; Inputs:
 ;;  D: Stream ID
@@ -446,7 +446,7 @@ getStreamEntry:
     ld a, errStreamNotFound
     ret
 
-;; closeStream [File Stream]
+;; closeStream [Filestreams]
 ;;  Closes an open stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -501,7 +501,7 @@ _:  pop af
     cp a
     ret
 
-;; flush [File Stream]
+;; flush [Filestreams]
 ;;  Flushes pending writes to disk.
 ;; Inputs:
 ;;  D: Stream ID
@@ -603,7 +603,7 @@ flush_withStream:
     push af
         jp _flush_withStream
 
-;; streamReadByte [File Stream]
+;; streamReadByte [Filestreams]
 ;;  Reads a single byte from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -719,7 +719,7 @@ selectSection:
     and 0b11111
     ret
 
-;; streamReadWord [File Stream]
+;; streamReadWord [Filestreams]
 ;;  Reads a 16-bit word from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -747,7 +747,7 @@ streamReadWord:
     inc sp \ inc sp
     ret
 
-;; streamReadBuffer [File Stream]
+;; streamReadBuffer [Filestreams]
 ;;  Reads a number of bytes from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -894,7 +894,7 @@ _:          ; Handle any other buffer
     cp a
     ret
 
-;; getStreamInfo [File Stream]
+;; getStreamInfo [Filestreams]
 ;;  Gets the amount of space remaining in a file stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -1001,7 +1001,7 @@ _:          bit 7, (ix)
     cp a
     ret
 
-;; streamReadToEnd [File Stream]
+;; streamReadToEnd [Filestreams]
 ;;  Reads the remainder of a file stream into memory.
 ;; Inputs:
 ;;  D: Stream ID

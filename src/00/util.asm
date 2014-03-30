@@ -362,7 +362,7 @@ indirect16HL:
 ;;  Z: Set if equal, reset if not equal
 ;;  C: Set if string (HL) is alphabetically earlier than string (DE)
 ;; Notes:
-;;  This routine is extremely useful as the callback for the callbackSort routine.
+;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
 ;;  It allows sorting a list of pointers to strings by the strings' sort order.
 compareStrings_sort:
     push hl
@@ -382,7 +382,7 @@ _:  pop de
 ;; Outputs:
 ;;  Same as z80 CP instruction.
 ;; Notes:
-;;  This routine is extremely useful as the callback for the callbackSort routine.
+;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
 ;;  It allows sorting a list of 16-bit numbers.
 cpHLDE_sort:
     push hl

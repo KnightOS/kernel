@@ -5,6 +5,15 @@
 ;           B:  Message type
 ;           HL: Message payload
 ; Adds a signal to the signal queue
+;; createSignal [Threading]
+;;  Signals another thread with a simple message.
+;; Inputs:
+;;  A: Target thread ID
+;;  B: Message type
+;;  HL: Message payload
+;; Notes:
+;;  The receiving thread may use [[readSignal]] to consume this
+;;  message.
 createSignal:
     push af
     push hl
@@ -53,6 +62,12 @@ _:  pop af
 ;           B:  Message type
 ;           HL: Message payload
 ; Reads the next signal for the current thread.
+;; readSignal [Threading]
+;;  Reads the next pending signal from this thread's signal queue.
+;; Outputs:
+;;  Z: Set if a signal was read, reset if there are no pending signals
+;;  B: Message type
+;;  HL: Message payload
 readSignal:
     push af
         call getCurrentThreadId

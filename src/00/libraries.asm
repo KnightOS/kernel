@@ -3,10 +3,11 @@
 ; Allocate space to track usage; use maxThreads so that all threads may
 ; use it at once.
 
-; Inputs:    DE: Pointer to full path of library
-; Output:    A: Preserved unless error
-;            Z: Success
-;            NZ: Failure
+;; loadLibrary [System]
+;;  Loads a library into memory, or references one that may already be loaded.
+;; Inputs:
+;;  DE: Pointer to full path of library
+;;  Z: Set on success, reset on failure
 loadLibrary:
     push af
     ld a, i
