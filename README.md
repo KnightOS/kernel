@@ -102,7 +102,7 @@ After this completes, you'll get a ROM file you can use with emulators. Read the
 documentation if you'd like to turn this into an upgrade file for use on real calculators.
 
 You should be able to take things from here. Make sure you read over the
-[documentation](https://github.com/KnightSoft/kernel/tree/master/docs) for more information.
+[documentation](http://knightos.org/documentation) for more information.
 
 ## Versioning
 
