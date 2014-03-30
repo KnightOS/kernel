@@ -95,14 +95,14 @@ _:  ld h, a
 ;;  relevant entry on the filesystem. You are free to use IX, IY, and
 ;;  the shadow registers in this callback, but must preserve all other
 ;;  registers. Your function will be called with the following state:
-;;
+;;  
 ;;  * HL: Address of entry
 ;;  * BC: Length of entry
 ;;  * A: Type of entry
 ;;  * kernelGarbage: Name of entry
 ;;  * Correct page swapped into bank A
 ;;  * Interrupts disabled (do not enable them)
-;;
+;;  
 ;;  You must leave these registers intact.
 listDirectory:
     push af
