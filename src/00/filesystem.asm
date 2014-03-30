@@ -428,15 +428,15 @@ findFATEnd:
     or 1
     ret
 
-;; createDirectoryEntry [Filesystem]
-;;  Creates a new directory entry in the FAT.
-;; Inputs:
-;;  HL: Directory name
-;;  DE: Parent ID
-;; Outputs:
-;;  Z: Set on success, reset on failure
-;;  A: New entry Flash page (on success); Error code (on failure)
-;;  HL: New entry address relative to 0x4000 (on success)
+; createDirectoryEntry [Filesystem] - Internal function
+;  Creates a new directory entry in the FAT.
+; Inputs:
+;  HL: Directory name
+;  DE: Parent ID
+; Outputs:
+;  Z: Set on success, reset on failure
+;  A: New entry Flash page (on success); Error code (on failure)
+;  HL: New entry address relative to 0x4000 (on success)
 createDirectoryEntry:
     push ix
     push af
