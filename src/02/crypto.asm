@@ -1,4 +1,4 @@
-;; crc16 [Crypto]
+;; crc16 [Cryptography]
 ;;  Performs a Cyclic Redundancy Check on data.
 ;; Inputs:
 ;;  HL: Pointer to data
@@ -33,7 +33,7 @@ _:          djnz .rotlp
     pop hl
     ret
 
-;; sha1Init [Crypto]
+;; sha1Init [Cryptography]
 ;;  Allocates a memory block to keep the state and result of
 ;;  a SHA1 hash operation.  The result is kept in the first 20 bytes
 ;;  of the allocated block.  You must use [[sha1Clean]] to deallocate
@@ -123,7 +123,7 @@ sha1Clean:
     pop hl
     ret
 
-;; sha1Pad [Crypto]
+;; sha1Pad [Cryptography]
 ;;  Finishes the SHA1 computation by appending the
 ;;  required bits to the input.  Call this routine once after
 ;;  calling [[sha1AddByte]] for each input byte.  After this routine,
@@ -160,7 +160,7 @@ sha1Pad_noPush:
     ldir
     jr sha1ProcessBlock
 
-;; sha1AddByte [Crypto]
+;; sha1AddByte [Cryptography]
 ;;  Adds a single byte to the SHA1 hash input stream.
 ;;  Call this function once for each byte in the input
 ;;  stream, then call [[sha1Pad]].
@@ -451,7 +451,7 @@ _:  ld a, (de)
     djnz -_
     ret
 
-;; sha1AddRange [Crypto]
+;; sha1AddRange [Cryptography]
 ;;  Adds a range of bytes to a SHA1 hash.  This
 ;;  routine is equivalent to, but faster than, calling
 ;;  [[sha1AddByte]] many times.
