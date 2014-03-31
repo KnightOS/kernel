@@ -14,7 +14,7 @@ colorLcdOff:
 colorLcdWait:
 readLcdRegister:
 writeLcdRegister:
-colorRectangle:
+clipColorRectangle:
 setLcdWindow:
 fullScreenWindow:
     or 1
