@@ -538,7 +538,7 @@ _flush_withStream:
             ld c, (hl) \ inc hl
             ld b, (hl) \ inc hl
             ld e, (hl) \ inc hl
-            ld d, (hl) \ inc hl
+            ld d, (hl)
             push hl
                ld hl, 0xFFFF
                call cpHLDE
@@ -546,6 +546,7 @@ _flush_withStream:
                call cpBCDE
                jr z, .freeBlockFound
 _:          pop hl
+            inc hl
             ld bc, 0x8000
             call cpHLBC
             jr nz, .searchLoop
@@ -554,17 +555,20 @@ _:          pop hl
             ; TODO: Stop at end of filesystem
             jr .pageLoop
 .freeBlockFound:
+               ; Note: The free block search in here is flawed and needs to be rewritten.
+               pop hl
+            dec hl \ dec hl \ dec hl
             ; Convert HL into section ID
-            sla l \ sla l ; L /= 4 to get index
+            sra l \ sra l ; L /= 4 to get index
             ld h, a
             ; Section IDs are 0bFFFFFFFF FFFIIIII ; F is flash page, I is index
             sra h \ sra h \ sra h
-             rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
+            rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
             ; HL should now be section ID
-         pop de \ push de
             push hl
                ; Write buffer to disk
                ld a, l
+               and 0b11111
                or 0x40
                ld d, a
                ld e, 0
