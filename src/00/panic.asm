@@ -1,5 +1,5 @@
-.equ drawHexA 0x0800
-.equ drawStr 0x0400
+.equ drawHexA 0x0701
+.equ drawStr 0x0401
 
 ; Kernel error screen - give error code in A. Will not return.
 ; Set bit 7 of A if it may be possible to recover

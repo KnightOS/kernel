@@ -176,12 +176,6 @@ reboot:
     out (0x10), a ; Contrast
 #endif
     
-    ; Check to see if filesystem is formatted
-    setBankA(4)
-    ld a, (0x4000)
-    cp 0xFF
-    jr z, .boot_badFilesystem
-
     ld de, bootFile
     call fileExists
     ld a, panic_init_not_found
@@ -192,21 +186,5 @@ reboot:
 
     jp contextSwitch_manual
 
-.boot_badFilesystem:
-    ; The filesystem isn't fully formatted, which will cause issues later on
-    ; We should notify userspace so that they can provide a nice UI for
-    ; formatting the filesystem.
-    ld de, bootFile
-    call fileExists
-    ld a, panic_init_not_found
-    jp nz, panic
-    call launchProgram
-    ld h, 0xFF
-    call setInitialA
-
-    jp contextSwitch_manual
-
 bootFile:
     .db "/bin/init", 0
-testPath:
-    .db "/etc/test", 0
