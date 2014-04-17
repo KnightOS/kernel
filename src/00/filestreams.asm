@@ -82,16 +82,16 @@ _:  pop af
                 ld a, (hl)
                 ld (iy + 7), a
                 jr .notFinal
-dec hl
+                dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
                 ld (iy + 6), a ; Length of final block
-                dec hl \ dec hl ; Move to section ID
-                ld b, (hl)
-                ld (iy + 5), b
-                dec hl \ ld c, (hl)
+                dec hl \ dec hl \ dec hl ; Move to section ID
+                ld c, (hl)
                 ld (iy + 4), c
+                dec hl \ ld b, (hl)
+                ld (iy + 5), b
                 ; Section ID in BC
                 call populateStreamBuffer
                 xor a
@@ -350,31 +350,26 @@ _:  pop af
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af
-        ld a, 0xFF
-        cp b
-        jr nz, _
-        cp c
-        jr nz, _
-    pop af
-    ret ; Don't bother populating new buffers
-_:      getBankA
+        getBankA
         push af
         push de
         push hl
         push bc
+            ; Get page number
             ld a, c
-            or a \ rra \ rra \ rra \ rra \ rra
-            and 0b1111
+            or a \ rra \ rra \ rra \ rra \ rra \ rra
+            and 0b11
             push bc
                 ld c, a
                 ld a, b
-                rla \ rla \ rla
-                and 0b11111000
+                rla \ rla
+                and 0b11111100
                 or c
             pop bc
             setBankA
+            ; Get address
             ld a, c
-            and 0b11111
+            and 0b111111
             add a, 0x40
             ld h, a
             ld l, 0
@@ -561,14 +556,14 @@ _:          pop hl
             ; Convert HL into section ID
             sra l \ sra l ; L /= 4 to get index
             ld h, a
-            ; Section IDs are 0bFFFFFFFF FFFIIIII ; F is flash page, I is index
-            sra h \ sra h \ sra h
-            rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
+            ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
+            sra h \ sra h \ sra h \ sra h
+            rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
             ; HL should now be section ID
             push hl
                ; Write buffer to disk
                ld a, l
-               and 0b11111
+               and 0b111111
                or 0x40
                ld d, a
                ld e, 0
@@ -713,14 +708,14 @@ _:      pop hl
 ; Destroys B
 selectSection:
     ld a, (ix + 4)
-    rra \ rra \ rra \ rra \ rra \ and 0b111
+    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
     ld b, a
     ld a, (ix + 5)
-    rla \ rla \ rla \ and 0b11111000
+    rla \ rla \ and 0b11111100
     or b
     setBankA
     ld a, (ix + 4)
-    and 0b11111
+    and 0b111111
     ret
 
 ;; streamReadWord [Filestreams]
@@ -947,15 +942,15 @@ _:          bit 7, (ix)
 .loop:
                 push hl
                     ld a, l
-                    rra \ rra \ rra \ rra \ rra \ and 0b111
+                    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
                     ld l, a
                     ld a, h
-                    rla \ rla \ rla \ and 0b11111000
+                    rla \ rla \ and 0b11111100
                     or l
                     setBankA
                 pop hl
                 ld a, l
-                and 0b11111
+                and 0b111111
                 rlca \ rlca \ inc a \ inc a
                 ld h, 0x40
                 ld l, a
@@ -967,7 +962,7 @@ _:          bit 7, (ix)
                     ex de, hl
                 pop de
                 ; HL is the next section ID
-                ; Check if it's 0xFFFF - if it is, we're done.
+                ; Check if it's 0xFFFE - if it is, we're done.
                 ld a, 0xFF
                 cp h
                 jr nz, .continue
