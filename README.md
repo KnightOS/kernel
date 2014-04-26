@@ -6,7 +6,8 @@ z80 systems, including:
 * A tree-based filesystem
 * Multitasking (up to 32 concurrent processes)
 * Dynamic memory management
-* Vanity functions for TI displays, keypads, etc
+* Drivers for most of the embedded hardware
+* Support for the color TI-84+ SE
 
 This kernel is the basis of [KnightOS](https://github.com/KnightSoft/KnightOS), which is a good resource
 for others hoping to implement a userspace.
@@ -15,10 +16,16 @@ for others hoping to implement a userspace.
 
 If you have a pre-compiled kernel image, skip this section.
 
-The kernel uses an entirely open-source purpose-built toolchain, most of which can be found
-[here](https://github.com/KnightSoft). In order to build it, you'll need GNU make and Mono installed. On
-Windows systems, build the kernel with cygwin and Microsoft.NET (you may also be able to build with Mono
-on Windows). When building with cygwin, also ensure that git for cygwin is installed.
+The toolchain for the kernel was built mostly from scratch, since old z80 tools are, well, old. The new
+toolchain supports a lot of the kernel's needs on newer platforms, and works well on Linux, Mac, and
+Windows. You'll need to install:
+
+* Mono (or Microsoft.NET on Windows)
+* GNU Make
+* [genkfs](https://github.com/KnightOS/genkfs)
+
+The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
+install Cygwin and perform the build from there.
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
 supported calculator model, use the given make target:
@@ -41,77 +48,55 @@ can use to link your userspace with the kernel. Run `make clean` before trying t
 
 ## Usage
 
-The basic kernel image doesn't do anything on its own. If you were to send it to a calculator, you'd get
-a kernel error upon booting. It has no filesystem and you need to provide the userspace. In order to do
-so, you should use the [BuildFS](https://github.com/KnightSoft/BuildFS) tool to build the filesystem and
-embed it into a kernel image (aka "ROM file"). You can then use a tool like
-[CreateUpgrade](https://github.com/KnightSoft/CreateUpgrade) to build and sign an OS upgrade file (an
-8xu or 73u file) that you can send to a real calculator.
+The kernel does not do anything on its own. Instead, it forms the basis for more complex systems. Upon
+booting, the kernel loads up the filesystem and runs `/bin/init`. You need to provide this init program
+yourself. Here is a simple example init program, which can be assembled with the assembler of your choice:
 
-At a bare minimum, you'll need to write an init program. A basic one is supplied here:
-
-    .nolist
-    #include <kernel.inc>
-    .list
-        .db 0, 20 ; Flags, stack size
-    .org 0
+    #include "kernel.inc"
+        ; Program header
+        .db "KEXC"
+        .db KEXC_STACK_SIZE
+        .dw 20
+        .db KEXC_ENTRY_POINT
+        .dw start
+        .db KEXC_KERNEL_VER
+        .db 0, 1 ; Minimum kernel is 0.1.x
+        .db 0xFF
     start:
-        ; Get an LCD lock so we can use it
         pcall(getLcdLock)
-        ; Allocate a 768-byte buffer for drawing things on
         pcall(allocScreenBuffer)
-        pcall(clearBuffer)
-        ; Relative-load the address of our message
-        kld(hl, testMessage)
-        ; Draw it to our buffer
+        kld(hl, message)
+        ld de, 0
         pcall(drawStr)
-        ; Copy our buffer to the LCD
         pcall(fastCopy)
-        ; Loop forever
-        jr $
-    testMessage:
-        .db "It works!", 0 ; The kernel uses the Windows-1252 character set
+    _:  jr _
+        
+    message:
+        .asciiz "Hello, userspace!"
 
-Assemble this and use BuildFS to patch the kernel image with a filesystem. You should be
-able to boot up the kernel in an emulator now, and on hardware if you use CreateUpgrade to
-make an upgrade file. We suggest using [sass](https://github.com/KnightSoft/sass) to
-assemble your userspace, but you may use any assembler you wish. To build this init file,
-try this:
+When you compile the kernel, you'll get a ROM file with an empty filesystem. To build the filesystem, you
+will need to make an example on your own system to build it from. Then, you can use
+[genkfs](https://github.com/KnightOS/genkfs) to generate and write a filesystem to the ROM. If you wish
+to build an OS upgrade that you can send to your calculator, use
+[mktiupgrade](https://github.com/KnightOS/mktiupgrade).
 
-    mkdir -p temp/bin/
-    [mono] sass.exe --include "path/to/kernel.inc/folder/" --encoding "Windows-1252" init.asm temp/bin/init
+When you build the kernel, in addition to the ROM file, you will receive a kernel upgrade file (this will
+be the .73u, .8xu, or .8cu file in the output directory). This can be used on any KnightOS system to
+upgrade the kernel without touching the userspace filesystem.
 
-Include `mono` if you are on Linux or want to use Mono to run the toolchain.
+## Kernel API
 
-Then, you can patch the kernel image with your filesystem like so:
-
-    [mono] BuildFS.exe 77 kernel.rom temp/
-
-Note the use of `77` here - BuildFS accepts a page number to start the FAT on here. You
-should use these page numbers:
-
-Model   | Page Number
-------- | -----------
-TI73    | 17
-TI83p   | 17
-TI83pSE | 77
-TI84p   | 37
-TI84pSE | 77
-
-After this completes, you'll get a ROM file you can use with emulators. Read the CreateUpgrade
-documentation if you'd like to turn this into an upgrade file for use on real calculators.
-
-You should be able to take things from here. Make sure you read over the
-[documentation](http://knightos.org/documentation) for more information.
+The kernel offers an API to userspace to interact with things like threads, memory, hardware, the
+filesystem, and more. The API is documented through special comments in the source code, which are
+extracted to generate the [online API reference](http://www.knightos.org/documentation/).
 
 ## Versioning
 
 The kernel uses semantic versioning. Version numbers are indicated by the latest git tag, and
 take the form of `major.minor.patch`. "Patch" is updated when bugs are fixed and for very
 minor changes. "Minor" is updated for new features and major non-breaking changes. "Major" is
-updated with breaking changes. The current version is 0.4.0 and version 1.0.0 is scheduled for
-sometime within the next couple of months, after the filesystem is made writable and a few
-other issues are dealt with.
+updated with breaking changes. When you compile your kernel, the kernel version (as an ASCII
+string) will be written to address 0x64 on page 0x00.
 
 ## Getting Help
 
@@ -123,7 +108,8 @@ not always listening, so stick around - it may be a while before your question i
 
 Contributions to the kernel should follow our
 [contribution guidelines](https://github.com/KnightSoft/kernel/blob/master/CONTRIBUTING.md).
-All offers are welcome, but not all will be accepted.
+All offers are welcome, but not all will be accepted. You might want to join #knightos (see previous
+section) to join in on development discussion before you start writing code.
 
 ## Licensing
 
