@@ -161,6 +161,11 @@ stringLength:
 ;;  For 6MHz CPUs, B is either 0 or 1, where 0 is critical and 1 is good.
 getBatteryLevel:
 #ifdef CPU15
+#ifdef COLOR
+   ; TODO
+   ld b, 4
+   ret
+#else
     push af
         ld bc, 0x0000
         ; Reset battery threshold
@@ -175,7 +180,7 @@ _:      push bc
             out (4), a
             in a, (2)
             bit 0, a
-            jr z, +_
+            jr z, ++_
         pop bc
         inc c
         inc b
@@ -185,7 +190,11 @@ _:      push bc
 
 _:  pop af
     ret
- #else
+_:  pop bc
+    pop af
+    ret
+#endif
+#else
     push af
         in a, (2)
         and 0x1
