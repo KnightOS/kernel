@@ -45,3 +45,8 @@ KEXC_KERNEL_VER         .equ 0x03
 KEXC_THREAD_FLAGS       .equ 0x04
 KEXC_NAME               .equ 0x05
 KEXC_DESCRIPTION        .equ 0x06
+
+; Thread flags
+THREAD_NON_SUSPENDABLE  .equ 2
+;THREAD_IS_SUSPENDED    .equ 4 ; Not a public flag
+THREAD_COLOR            .equ 8

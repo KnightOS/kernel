@@ -365,6 +365,7 @@ launchProgram:
 
 _:          ld b, KEXC_THREAD_FLAGS
             push ix \ call _getThreadHeader \ pop ix
+            ld a, l
             jr z, _
             xor a ; Default flags
 _:          ld b, c
