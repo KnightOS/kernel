@@ -29,10 +29,6 @@ default_stack_size .equ 20
 #include "math.asm"
 #include "util.asm"
 
-#ifdef TEST
-#include "testrunner.asm"
-#endif
-
 .echo "Assigned kernel memory:"
 .echo "threadTable: 0x{0:X4}" threadTable
 .echo "libraryTable: 0x{0:X4}" libraryTable
