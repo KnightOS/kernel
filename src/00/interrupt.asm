@@ -161,8 +161,11 @@ sysInterruptDone:
 
 handleKeyboard:
     call getKey_skipCheck
+    call flushKeys_skipCheck
     cp kK
     jr z, handleOnK
+    cp kR
+    jp z, reboot
     cp kMODE
     jr z, handleOnMODE
     jr sysInterruptDone

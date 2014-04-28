@@ -108,7 +108,7 @@ reboot:
     #endif
 #endif
 
-    ; Set intterupt mode
+    ; Set interrupt mode
     ld a, 0b000001011
     out (3), a
     ; Set timer frequency
