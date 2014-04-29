@@ -25,6 +25,17 @@ allocScreenBuffer:
     pop bc
     ret
 
+;; freeScreenBuffer [Display]
+;;  Deallocates a screen buffer allocated with [[allocScreenBuffer]]
+;; Inputs:
+;;  IY: Screen buffer
+freeScreenBuffer:
+    push ix
+        push iy \ pop ix
+        call free
+    pop ix
+    ret
+
 ;; reassignMemory [System]
 ;;  Reassigns a given block of memory to the specified thread ID.
 ;; Inputs:
