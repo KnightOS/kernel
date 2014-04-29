@@ -463,7 +463,7 @@ _:      ld a, 8
     ld a, errNoSuchThread
     ret
 
-;; getHeaderValue [[Threading]]
+;; getHeaderValue [Threading]
 ;;  Finds a header in the specified thread, and returns its value.
 ;; Inputs:
 ;;  A: Thread ID
