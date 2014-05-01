@@ -391,10 +391,10 @@ populateStreamBuffer:
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
-;;  IX: Stream buffer (on success)
+;;  HL: Stream buffer (on success)
 ;; Notes:
 ;;  For read-only streams, modifying this buffer could have unforseen consequences and it will not be copied back to the file.
-;;  For writable streams, make sure you call flush if you modify this buffer and want to make the changes persist to the file.
+;;  For writable streams, make sure you call [[flush]] if you modify this buffer and want to make the changes persist to the file.
 getStreamBuffer:
     push ix
         call getStreamEntry
@@ -523,61 +523,57 @@ _flush_withStream:
          push hl
          push bc
          push de
-            call getStreamBuffer
             ; Find a free block
             ld a, 4
 .pageLoop:
             setBankA
-            ld hl, 0x4000 + 4
+            ld hl, 0x4000 + 5
 .searchLoop:
-            ld c, (hl) \ inc hl
-            ld b, (hl) \ inc hl
-            ld e, (hl) \ inc hl
-            ld d, (hl)
-            push hl
-               ld hl, 0xFFFF
-               call cpHLDE
-               jr nz, _
-               call cpBCDE
-               jr z, .freeBlockFound
-_:          pop hl
-            inc hl
-            ld bc, 0x8000
+            ld a, (hl)
+            bit 7, a
+            jr nz, .freeBlockFound
+            inc hl \ inc hl \ inc hl \ inc hl
+            ld bc, 0x4101 ; End of section
             call cpHLBC
             jr nz, .searchLoop
             ; Next page
+            getBankA
             inc a
             ; TODO: Stop at end of filesystem
             jr .pageLoop
 .freeBlockFound:
-               ; Note: The free block search in here is flawed and needs to be rewritten.
-               pop hl
-            dec hl \ dec hl \ dec hl
-            ; Convert HL into section ID
-            sra l \ sra l ; L /= 4 to get index
-            ld h, a
-            ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
-            sra h \ sra h \ sra h \ sra h
-            rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
-            ; HL should now be section ID
+            dec hl
             push hl
-               ; Write buffer to disk
-               ld a, l
-               and 0b111111
-               or 0x40
-               ld d, a
-               ld e, 0
-               push ix \ pop hl
-               ld bc, 0x100
-               call unlockFlash
-               call writeFlashBuffer
-               ; TODO: Write section header
-               call lockFlash
-            pop hl
+               ; Convert HL into section ID
+               sra l \ sra l ; L /= 4 to get index
+               getBankA
+               ld h, a
+               ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
+               sra h \ sra h
+               rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
+               ; HL should now be section ID
+               push hl
+                  ; Write buffer to disk
+                  ld a, l
+                  and 0b111111
+                  or 0x40
+                  call getStreamBuffer ; At this point, D is still the stream ID
+                  ld d, a
+                  ld e, 0
+                  ld bc, 0x100
+                  call unlockFlash
+                  call writeFlashBuffer
+               pop hl
+            pop de
+            ; HL is new section ID, DE is header pointer
+            ; TODO: Write the new ID to the previous section header, and the previous
+            ; section header to this new section
+            call lockFlash
          pop de
          pop bc
          pop hl
          pop ix
+         set 0, (ix + 0xD) ; Mark as flushed
 .exitEarly:
     pop af
     jp po, _
