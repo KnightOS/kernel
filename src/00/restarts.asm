@@ -132,92 +132,80 @@ pcall:
     ; Stack state : calling addr
     push af
         ; Stack state : calling addr, original AF
-        getBankA
+        ld a, i
+        ; safety first
+        ld a, i
+        di
         push af
-            ; Stack state : calling addr, original AF, page
-            ld a, i
-            ld a, i
+            ; Stack state : calling addr, original AF, interrupt state
+            ; we can't use getBankA because it behaves differently on the 84+CSE, and we don't want that
+            in a, (6)
             push af
-                ; Stack state : calling addr, original AF, page, interrupt state
-                di
-                ex (sp), hl
-                ; Stack state : calling addr, original AF, page, original HL #### HL = interrupt state
-            inc sp \ inc sp
-        inc sp \ inc sp
-        ex (sp), hl
-        ; Stack state : calling addr, interrupt state, page, original HL #### HL = original AF
-            dec sp \ dec sp
-                dec sp \dec sp
-                push hl \ pop af
-                ld hl, .returnPoint
-                ex (sp), hl
-                ; Stack state : calling addr, interrupt state, page, return point
-                push af
-                    ; Stack state ; calling addr, interrupt state, page, return point, original AF
-                    ; now the fun really starts, since we can trash AF as much as we want
-                    ; avoid inc sp \ inc sp by precisely trashing AF
+                ; Stack state : calling addr, original AF, interrupt state, page
+                push hl
+                    ; Stack state : calling addr, original AF, interrupt state, page, original HL
+                    ld hl, .returnPoint
+                    ex (sp), hl
+                    push hl
+                        ; Stack state : calling addr, original AF, interrupt state, page, return point, original HL
+                    pop af
                 pop af
             pop af
         pop af
     pop af
-    ; SP points on calling addr
+    ; SP points on calling addr and tadaaa ! AF holds its original value
+    ; too bad that we don't care about it at the moment
     ex (sp), hl
-    ; Stack state ; original HL, interrupt state, page, return point, original AF #### HL contains calling addr
+    ; Stack state : original HL, original AF, interrupt state, page, return point, original HL #### HL contains calling addr
 #ifdef FLASH4MB
     xor a
     out (0x0E), a
+#endif
     ld a, (hl)
     out (0x06), a
-#else
-    ld a, (hl)
-    setBankA
-#endif
     inc hl
     ld a, (hl)
     inc hl
     ex (sp), hl
-    ; Stack state ; calling addr + 2 (ret addr), interrupt state, page, return point, original AF
+    inc a
+    ld l, a
+    ; Stack state : calling addr + 2 (ret addr), original AF, interrupt state, page, return point, original HL
     ; SP still points on ret addr
     dec sp \ dec sp
+        ; Loads AF with its original value
+        pop af \ dec sp \ dec sp
         dec sp \ dec sp
             dec sp \ dec sp
                 dec sp \ dec sp
-                    ; SP is on original AF
-                    push hl
-                        ; Stack state ; calling addr + 2 (ret addr), interrupt state, page, return point, original AF, original HL
-                        ; Does HL = 0x8000 - (a + 1) * 3
-                        inc a
-                        ld l, a
-                        xor a
-                        ld h, 0x7f
-                        sub l
-                        sub l \ jr nc, $ + 3 \ dec h
-                        sub l \ jr nc, $ + 3 \ dec h
-                        ld l, a
-                    pop af
-                    ; Stack state ; calling addr + 2 (ret addr), interrupt state, page, return point, original AF #### AF contains original HL
-                    ex (sp), hl
-                    ; Stack state ; calling addr + 2 (ret addr), interrupt state, page, return point, pcall addr #### AF contains original HL, HL contains original AF
-                    ; gives back registers their respective values
-                    push af
+                    dec sp \ dec sp
+                    ; SP is on original HL
+                        push af
+                            ; Stack state : ret addr, original AF, interrupt state, page, return point, original HL, original AF
+                            ; HL = 0x8000 - (l + 1) * 3
+                            xor a
+                            ld h, 0x7f
+                            sub l
+                            sub l \ jr nc, $ + 3 \ dec h
+                            sub l \ jr nc, $ + 3 \ dec h
+                            ld l, a
+                        pop af
+                        ; Stack state : ret addr, original AF, interrupt state, page, return point, original HL
                         ex (sp), hl
-                    pop af
-                    ; Stack state ; calling addr + 2 (ret addr), interrupt state, page, return point, pcall addr
-                    ret
+                        ; Stack state : ret addr, original AF, interrupt state, page, return point, pcall addr
+                        ret
 .returnPoint:
-    ; Stack state : ret address, interrupt state, page
+    ; Stack state : ret address, original AF, interrupt state, page
 #ifdef FLASH4MB
-            xor a
-            out (0x0E), A
-        pop af
-        out (0x06), a
-#else
-        pop af
-        setBankA
+                xor a
+                out (0x0E), A
 #endif
+            pop af
+            out (0x06), a
+        pop af
+        jp po, _
+        ei
+_:
     pop af
-    ret po
-    ei
     ret
 
 ; rst $28
