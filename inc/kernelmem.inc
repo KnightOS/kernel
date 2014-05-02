@@ -1,5 +1,7 @@
 ; Describes kernel memory layout
 
+kernelVersion           .equ 0x64
+
 ; Modify these values to automatically modify memory layout
 maxThreads              .equ 32
 maxLibraries            .equ 16

@@ -98,8 +98,6 @@ rpcall .equ 0x20
 .endmacro
 ; /Macros
 
-kernelVersion       .equ 0x64
-
 ; Keypad codes
 kDown               .equ 0x01
 kLeft               .equ 0x02

@@ -4,7 +4,7 @@
 ;;  DE: Path to file (string pointer)
 ;; Outputs:
 ;;  Z: Set if file was deleted, reset if file did not exist
-; TODO: Use a proper error code
+;;  A: Preserved on success, error code on failure
 deleteFile:
     push hl
     push af
@@ -95,14 +95,14 @@ _:  ld h, a
 ;;  relevant entry on the filesystem. You are free to use IX, IY, and
 ;;  the shadow registers in this callback, but must preserve all other
 ;;  registers. Your function will be called with the following state:
-;;
-;;   - HL: Address of entry
-;;   - BC: Length of entry
-;;   - A: Type of entry
-;;   - kernelGarbage: Name of entry
-;;   - Correct page swapped into bank A
-;;   - Interrupts disabled (do not enable them)
-;;
+;;  
+;;  * HL: Address of entry
+;;  * BC: Length of entry
+;;  * A: Type of entry
+;;  * kernelGarbage: Name of entry
+;;  * Correct page swapped into bank A
+;;  * Interrupts disabled (do not enable them)
+;;  
 ;;  You must leave these registers intact.
 listDirectory:
     push af
@@ -428,15 +428,15 @@ findFATEnd:
     or 1
     ret
 
-;; createDirectoryEntry [Filesystem]
-;;  Creates a new directory entry in the FAT.
-;; Inputs:
-;;  HL: Directory name
-;;  DE: Parent ID
-;; Outputs:
-;;  Z: Set on success, reset on failure
-;;  A: New entry Flash page (on success); Error code (on failure)
-;;  HL: New entry address relative to 0x4000 (on success)
+; createDirectoryEntry [Filesystem] - Internal function
+;  Creates a new directory entry in the FAT.
+; Inputs:
+;  HL: Directory name
+;  DE: Parent ID
+; Outputs:
+;  Z: Set on success, reset on failure
+;  A: New entry Flash page (on success); Error code (on failure)
+;  HL: New entry address relative to 0x4000 (on success)
 createDirectoryEntry:
     push ix
     push af

@@ -126,7 +126,7 @@ _:  pop bc
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStr:
     push hl
     push af
@@ -150,7 +150,7 @@ _:  pop af
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrAND:
     push hl
     push af
@@ -174,7 +174,7 @@ _:  pop af
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
 ;; Notes:
-;;  The left margin is only required if your string contains newlines.
+;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrXOR:
     push hl
     push af
@@ -186,25 +186,6 @@ _:      ld a, (hl)
         jr -_
 _:  pop af
     pop hl
-    ret
-
-;; drawStrFromStream [Text]
-;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON).
-;; Inputs:
-;;  IY: Screen buffer
-;;  B: Stream ID
-;;  D, E: X, Y
-;; Outputs:
-;;  Stream is advanced to byte after 0.
-drawStrFromStream:
-    push af
-_:      call streamReadByte
-        jr nz, _
-        or a
-        jr z, _
-        call drawChar
-        jr -_
-_:  pop af
     ret
 
 ;; drawHexA [Text]

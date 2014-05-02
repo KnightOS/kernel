@@ -1,5 +1,6 @@
 ;; contextSwitch [System]
-;;  Triggers a context switch early.
+;;  Triggers a context switch early. This will transfer control from your thread to
+;;  another and eventaully return to yours with interrupts enabled.
 contextSwitch:
     di
     push af
@@ -160,8 +161,11 @@ sysInterruptDone:
 
 handleKeyboard:
     call getKey_skipCheck
+    call flushKeys_skipCheck
     cp kK
     jr z, handleOnK
+    cp kR
+    jp z, reboot
     cp kMODE
     jr z, handleOnMODE
     jr sysInterruptDone

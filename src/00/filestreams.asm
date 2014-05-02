@@ -1,4 +1,4 @@
-;; openFileRead [File Stream]
+;; openFileRead [Filestreams]
 ;;  Opens a file stream in read-only mode.
 ;; Inputs:
 ;;  DE: Path to file (string pointer)
@@ -82,16 +82,16 @@ _:  pop af
                 ld a, (hl)
                 ld (iy + 7), a
                 jr .notFinal
-dec hl
+                dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
                 ld (iy + 6), a ; Length of final block
-                dec hl \ dec hl ; Move to section ID
-                ld b, (hl)
-                ld (iy + 5), b
-                dec hl \ ld c, (hl)
+                dec hl \ dec hl \ dec hl ; Move to section ID
+                ld c, (hl)
                 ld (iy + 4), c
+                dec hl \ ld b, (hl)
+                ld (iy + 5), b
                 ; Section ID in BC
                 call populateStreamBuffer
                 xor a
@@ -135,7 +135,7 @@ _:  pop af
     or a
     ret
 
-;; openFileWrite [File Stream]
+;; openFileWrite [Filestreams]
 ;;  Opens a file stream in write mode. If the file does not exist,
 ;;  it is created.
 ;; Inputs:
@@ -350,31 +350,26 @@ _:  pop af
 ; Section ID in BC, block in IX
 populateStreamBuffer:
     push af
-        ld a, 0xFF
-        cp b
-        jr nz, _
-        cp c
-        jr nz, _
-    pop af
-    ret ; Don't bother populating new buffers
-_:      getBankA
+        getBankA
         push af
         push de
         push hl
         push bc
+            ; Get page number
             ld a, c
-            or a \ rra \ rra \ rra \ rra \ rra
-            and 0b1111
+            or a \ rra \ rra \ rra \ rra \ rra \ rra
+            and 0b11
             push bc
                 ld c, a
                 ld a, b
-                rla \ rla \ rla
-                and 0b11111000
+                rla \ rla
+                and 0b11111100
                 or c
             pop bc
             setBankA
+            ; Get address
             ld a, c
-            and 0b11111
+            and 0b111111
             add a, 0x40
             ld h, a
             ld l, 0
@@ -389,17 +384,17 @@ _:      getBankA
     pop af
     ret
 
-;; getStreamBuffer [File Stream]
+;; getStreamBuffer [Filestreams]
 ;;  Gets the address of a stream's memory buffer.
 ;; Inputs:
 ;;  D: Stream ID
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
-;;  IX: Stream buffer (on success)
+;;  HL: Stream buffer (on success)
 ;; Notes:
 ;;  For read-only streams, modifying this buffer could have unforseen consequences and it will not be copied back to the file.
-;;  For writable streams, make sure you call flush if you modify this buffer and want to make the changes persist to the file.
+;;  For writable streams, make sure you call [[flush]] if you modify this buffer and want to make the changes persist to the file.
 getStreamBuffer:
     push ix
         call getStreamEntry
@@ -412,7 +407,7 @@ getStreamBuffer:
     pop ix
     ret
 
-;; getStreamEntry [File Stream]
+;; getStreamEntry [Filestreams]
 ;;  Gets the address of a stream entry in the kernel file stream table.
 ;; Inputs:
 ;;  D: Stream ID
@@ -446,7 +441,7 @@ getStreamEntry:
     ld a, errStreamNotFound
     ret
 
-;; closeStream [File Stream]
+;; closeStream [Filestreams]
 ;;  Closes an open stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -501,7 +496,7 @@ _:  pop af
     cp a
     ret
 
-;; flush [File Stream]
+;; flush [Filestreams]
 ;;  Flushes pending writes to disk.
 ;; Inputs:
 ;;  D: Stream ID
@@ -528,57 +523,57 @@ _flush_withStream:
          push hl
          push bc
          push de
-            call getStreamBuffer
             ; Find a free block
             ld a, 4
 .pageLoop:
             setBankA
-            ld hl, 0x4000 + 4
+            ld hl, 0x4000 + 5
 .searchLoop:
-            ld c, (hl) \ inc hl
-            ld b, (hl) \ inc hl
-            ld e, (hl) \ inc hl
-            ld d, (hl) \ inc hl
-            push hl
-               ld hl, 0xFFFF
-               call cpHLDE
-               jr nz, _
-               call cpBCDE
-               jr z, .freeBlockFound
-_:          pop hl
-            ld bc, 0x8000
+            ld a, (hl)
+            bit 7, a
+            jr nz, .freeBlockFound
+            inc hl \ inc hl \ inc hl \ inc hl
+            ld bc, 0x4101 ; End of section
             call cpHLBC
             jr nz, .searchLoop
             ; Next page
+            getBankA
             inc a
             ; TODO: Stop at end of filesystem
             jr .pageLoop
 .freeBlockFound:
-            ; Convert HL into section ID
-            sla l \ sla l ; L /= 4 to get index
-            ld h, a
-            ; Section IDs are 0bFFFFFFFF FFFIIIII ; F is flash page, I is index
-            sra h \ sra h \ sra h
-             rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11100000 \ or l \ ld l, a
-            ; HL should now be section ID
-         pop de \ push de
+            dec hl
             push hl
-               ; Write buffer to disk
-               ld a, l
-               or 0x40
-               ld d, a
-               ld e, 0
-               push ix \ pop hl
-               ld bc, 0x100
-               call unlockFlash
-               call writeFlashBuffer
-               ; TODO: Write section header
-               call lockFlash
-            pop hl
+               ; Convert HL into section ID
+               sra l \ sra l ; L /= 4 to get index
+               getBankA
+               ld h, a
+               ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
+               sra h \ sra h
+               rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
+               ; HL should now be section ID
+               push hl
+                  ; Write buffer to disk
+                  ld a, l
+                  and 0b111111
+                  or 0x40
+                  call getStreamBuffer ; At this point, D is still the stream ID
+                  ld d, a
+                  ld e, 0
+                  ld bc, 0x100
+                  call unlockFlash
+                  call writeFlashBuffer
+               pop hl
+            pop de
+            ; HL is new section ID, DE is header pointer
+            ; TODO: Write the new ID to the previous section header, and the previous
+            ; section header to this new section
+            call lockFlash
          pop de
          pop bc
          pop hl
          pop ix
+         set 0, (ix + 0xD) ; Mark as flushed
 .exitEarly:
     pop af
     jp po, _
@@ -603,7 +598,7 @@ flush_withStream:
     push af
         jp _flush_withStream
 
-;; streamReadByte [File Stream]
+;; streamReadByte [Filestreams]
 ;;  Reads a single byte from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -709,17 +704,17 @@ _:      pop hl
 ; Destroys B
 selectSection:
     ld a, (ix + 4)
-    rra \ rra \ rra \ rra \ rra \ and 0b111
+    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
     ld b, a
     ld a, (ix + 5)
-    rla \ rla \ rla \ and 0b11111000
+    rla \ rla \ and 0b11111100
     or b
     setBankA
     ld a, (ix + 4)
-    and 0b11111
+    and 0b111111
     ret
 
-;; streamReadWord [File Stream]
+;; streamReadWord [Filestreams]
 ;;  Reads a 16-bit word from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -747,7 +742,7 @@ streamReadWord:
     inc sp \ inc sp
     ret
 
-;; streamReadBuffer [File Stream]
+;; streamReadBuffer [Filestreams]
 ;;  Reads a number of bytes from a file stream and advances the stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -894,7 +889,7 @@ _:          ; Handle any other buffer
     cp a
     ret
 
-;; getStreamInfo [File Stream]
+;; getStreamInfo [Filestreams]
 ;;  Gets the amount of space remaining in a file stream.
 ;; Inputs:
 ;;  D: Stream ID
@@ -943,15 +938,15 @@ _:          bit 7, (ix)
 .loop:
                 push hl
                     ld a, l
-                    rra \ rra \ rra \ rra \ rra \ and 0b111
+                    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
                     ld l, a
                     ld a, h
-                    rla \ rla \ rla \ and 0b11111000
+                    rla \ rla \ and 0b11111100
                     or l
                     setBankA
                 pop hl
                 ld a, l
-                and 0b11111
+                and 0b111111
                 rlca \ rlca \ inc a \ inc a
                 ld h, 0x40
                 ld l, a
@@ -963,7 +958,7 @@ _:          bit 7, (ix)
                     ex de, hl
                 pop de
                 ; HL is the next section ID
-                ; Check if it's 0xFFFF - if it is, we're done.
+                ; Check if it's 0xFFFE - if it is, we're done.
                 ld a, 0xFF
                 cp h
                 jr nz, .continue
@@ -1001,7 +996,7 @@ _:          bit 7, (ix)
     cp a
     ret
 
-;; streamReadToEnd [File Stream]
+;; streamReadToEnd [Filestreams]
 ;;  Reads the remainder of a file stream into memory.
 ;; Inputs:
 ;;  D: Stream ID

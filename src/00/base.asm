@@ -4,6 +4,8 @@
 #include "kernelmem.inc"
 #include "keys.inc"
 
+default_stack_size .equ 20
+
 #include "header.asm"
 #include "boot.asm"
 #include "restarts.asm"
@@ -26,10 +28,6 @@
 
 #include "math.asm"
 #include "util.asm"
-
-#ifdef TEST
-#include "testrunner.asm"
-#endif
 
 .echo "Assigned kernel memory:"
 .echo "threadTable: 0x{0:X4}" threadTable

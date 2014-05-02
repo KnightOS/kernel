@@ -2,12 +2,12 @@
     rst 0 ; Prevent runaway code from unlocking flash
 
 ;; unlockFlash [Flash]
-;;  Unlocks Flash and unlocks protected ports
+;;  Unlocks Flash and unlocks protected ports.
 ;; Notes:
 ;;  **Do not use this unless you know what you're doing.**
 ;;  
 ;;  Please call [[lockFlash]] when you finish what you're doing and don't spend too
-;;  much time with Flash unlocked. Disabled interrupts while Flash is unlocked.
+;;  much time with Flash unlocked. Disable interrupts while Flash is unlocked.
 unlockFlash:
     push af
     push bc
@@ -24,7 +24,7 @@ unlockFlash:
     ret
 
 ;; lockFlash [Flash]
-;;  Locks Flash and locks protected ports
+;;  Locks Flash and locks protected ports.
 lockFlash:
     push af
     push bc
@@ -41,7 +41,7 @@ lockFlash:
     ret
 
 ;; writeFlashByte [Flash]
-;;  Writes a single byte to Flash
+;;  Writes a single byte to Flash.
 ;; Inputs:
 ;;  HL: Destination
 ;;  A: Value
@@ -115,7 +115,7 @@ _:  ld a, b
 ;; Notes:
 ;;  Flash must be unlocked. Do not attempt to read your source data
 ;;  from Flash, you must load any data to be written into RAM. This
-;;  can only *reset* bits of Flash.
+;;  will only *reset* bits of Flash.
 writeFlashBuffer:
     push af
     ld a, i

@@ -309,7 +309,7 @@ _:  pop af
 
 ;; launchProgram [Threading]
 ;;  Loads the specified file into memory as a program and starts a
-;;  new thread for it.
+;;  new thread for it. The file must be a valid KEXC executable.
 ;; Inputs:
 ;;  DE: Path to executable file
 ;; Outputs:
@@ -328,27 +328,52 @@ launchProgram:
 
         call getStreamInfo
         ; TODO: If E > 0, then the file is too large. Error out before we ask malloc about it.
-        dec bc
-        dec bc
         call malloc
         jr nz, .error_pop2
         call getNextThreadId
         call reassignMemory
 
-        push ix
-            call streamReadByte ; Thread flags
-            push af
-                call streamReadByte ; Stack size
-                ld c, a
-                push bc
-                    call streamReadToEnd ; Read entire file into memory
-                    call closeStream
-                pop bc
-                ld b, c
-            pop af
+        call streamReadToEnd ; Read entire file into memory
+        call closeStream
+        
+        ; Check magic number
+        ld a, 'K'
+        cp (ix)
+        jr nz, .magic_error
+        ld a, 'E'
+        cp (ix + 1)
+        jr nz, .magic_error
+        ld a, 'X'
+        cp (ix + 2)
+        jr nz, .magic_error
+        ld a, 'C'
+        cp (ix + 3)
+        jr nz, .magic_error
+
+        ; TODO: Check minimum required kernel version, if present
+
+        ; Grab header info
+        ld b, KEXC_ENTRY_POINT
+        push ix \ call _getThreadHeader \ pop ix
+        jr nz, .no_entry_point
+        push hl
+            ld b, KEXC_STACK_SIZE
+            push ix \ call _getThreadHeader \ pop ix
+            ld c, l ; TODO: Error out if H is nonzero?
+            jr z, _
+            ld c, default_stack_size
+
+_:          ld b, KEXC_THREAD_FLAGS
+            push ix \ call _getThreadHeader \ pop ix
+            ld a, l
+            jr z, _
+            xor a ; Default flags
+_:          ld b, c
+            push ix \ pop hl
+            call startThread
+            jr nz, .error
         pop hl
-        call startThread
-        jr nz, .error
+        call setEntryPoint
     ld b, a
     pop ix
     pop de
@@ -360,6 +385,12 @@ _:  ld a, b
     pop bc
     cp a
     ret
+.no_entry_point:
+    ld a, errNoEntryPoint
+    jr .error
+.magic_error:
+    ld a, errNoMagic
+    jr .error
 .error_pop2:
     inc sp \ inc sp
 .error_pop1:
@@ -378,11 +409,10 @@ _:  or 1
     ret
 
 ;; exitThread [Threading]
-;;  Immediately terminates the running thread. This function will never return;
-;;  call it with `jp exitThread`.
+;;  Immediately terminates the running thread.
 ;; Notes:
-;;  This is preferred to [[killThread]], since it will go through the caller-set
-;;  exit function. This is often [[killThread]] anyway, but it may be set to a
+;;  This is preferred to [[killCurrentThread]], since it will go through the caller-set
+;;  exit function. This is often [[killCurrentThread]] anyway, but it may be set to a
 ;;  custom value by the code that intitialized the thread.
 exitThread:
     ; Not returning; we can clobber registers at will!
@@ -401,8 +431,6 @@ exitThread:
     pop af
     jp (hl)
 
-; Input:  A: Thread ID
-; Output: HL: Thread entry
 ;; getThreadEntry [Threading]
 ;;  Gets a pointer to the specified thread's entry in the thread table.
 ;; Inputs:
@@ -412,6 +440,10 @@ exitThread:
 ;; Notes:
 ;;  You must disable interrupts while manipulating the thread table to
 ;;  guarantee that it will not change while you do so.
+;;
+;;  Programs that manipulate the thread table directly should force a
+;;  specific major kernel version, as this is liable to change between
+;;  versions.
 getThreadEntry:
     push bc
         ld c, a
@@ -429,6 +461,115 @@ _:      ld a, 8
     pop bc
     or 1
     ld a, errNoSuchThread
+    ret
+
+;; getHeaderValue [Threading]
+;;  Finds a header in the specified thread, and returns its value.
+;; Inputs:
+;;  A: Thread ID
+;;  B: Header
+;; Outputs:
+;;  Z: Set if found, reset if not
+;;  A: Preserved unless error
+;;  HL: Header value
+getThreadHeader:
+    push ix
+        call getThreadEntry
+        inc hl
+        push bc
+            ld c, (hl)
+            inc hl
+            ld b, (hl)
+            ld ixh, b \ ld ixl, c
+        pop bc
+        push af
+            call _getThreadHeader
+            jr nz, _
+        pop af
+    pop ix
+    ret
+_:      cp errNoMagic
+        jr z, _
+        pop af
+    pop ix
+    or 1
+    ld a, errNoHeader
+    ret
+_:      pop af
+    pop ix
+    or 1
+    ld a, errNoMagic
+    ret
+
+; IX: Thread in memory, other inputs are the same as getHeaderValue
+_getThreadHeader:
+    ld a, 'K'
+    cp (ix)
+    jr nz, .magic_error
+    inc ix
+    ld a, 'E'
+    cp (ix)
+    jr nz, .magic_error
+    inc ix
+    ld a, 'X'
+    cp (ix)
+    jr nz, .magic_error
+    inc ix
+    ld a, 'C'
+    cp (ix)
+    jr nz, .magic_error
+    inc ix
+    ; Actually do the check
+    push ix \ pop hl
+_:  xor a
+    cp (hl)
+    jr z, .end_of_headers
+    ld a, b
+    cp (hl)
+    jr z, .header_found
+    inc hl \ inc hl \ inc hl
+    jr -_
+.end_of_headers:
+    or 1
+    ret
+.header_found:
+    push de
+        inc hl
+        ld e, (hl)
+        inc hl
+        ld d, (hl)
+        ld h, d \ ld l, e
+    pop de
+    cp a
+    ret
+.magic_error:
+    or 1
+    ld a, errNoMagic
+    ret
+
+; Intentionally not exposed to userspace
+setEntryPoint:
+    push hl
+    push de
+    push bc
+        ex de, hl
+        call getThreadEntry
+        jr nz, _
+        inc hl
+        ld c, (hl)
+        inc hl
+        ld b, (hl)
+        dec hl \ dec hl
+        or a
+        ex de, hl
+        adc hl, bc
+        ex de, hl
+        call sharedSetInitial
+        ld (ix + -2), e
+        ld (ix + -1), d
+_:  pop bc
+    pop de
+    pop hl
     ret
 
 ;; setReturnPoint [Threading]
@@ -627,8 +768,7 @@ sharedSetInitial:
 ;; suspendCurrentThread [Threading]
 ;;  Suspends the currently executing thread.
 ;; Notes:
-;;  This function will not return until a second thread resumes the
-;;  current thread.
+;;  This function will not return until a second thread resumes the current thread.
 suspendCurrentThread:
     push hl
     push af
