@@ -95,7 +95,7 @@ _:  pop af
                 ; Section ID in BC
                 call populateStreamBuffer
                 ; Populate the previous section, which is 0xFFFF for new streams
-                ld 0xFF
+                ld a, 0xFF
                 ld (iy + 0xE), a
                 ld (iy + 0xF), a
                 xor a
