@@ -94,6 +94,10 @@ _:  pop af
                 ld (iy + 5), b
                 ; Section ID in BC
                 call populateStreamBuffer
+                ; Populate the previous section, which is 0xFFFF for new streams
+                ld 0xFF
+                ld (iy + 0xE), a
+                ld (iy + 0xF), a
                 xor a
                 ld (iy + 3), a ; Stream pointer
             pop af
@@ -234,8 +238,13 @@ _:  pop af
                 ld (iy + 4), c
                 ; Section ID in BC
                 call populateStreamBuffer
+                ; Populate the previous section, which is 0xFFFF for new streams
+                ld a, 0xFF
+                ld (iy + 0xE), a
+                ld (iy + 0xF), a
+                ; Stream pointer
                 xor a
-                ld (iy + 3), a ; Stream pointer
+                ld (iy + 3), a
             pop af
             pop hl
             pop ix
