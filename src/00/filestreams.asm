@@ -161,15 +161,15 @@ openFileWrite:
         push bc
             ld iy, fileHandleTable
             ld bc, 16 ; Length of a file handle
-            ld d, 0
+            ld l, 0
 .findEntryLoop:
             ld a, (iy)
             cp 0xFF
             jr z, .entryFound
             add iy, bc
-            inc d
+            inc l
             ld a, maxFileStreams - 1
-            cp d
+            cp l
             jr nc, .findEntryLoop
             ; Too many active streams
             ; We could check (activeFileStreams) instead, but since we have to iterate through the table
@@ -309,9 +309,9 @@ _:  pop af
         pop de
 
         xor a
-        ld (ix + 7), a
-        ld (ix + 8), e
-        ld (ix + 9), d ; Set up special case file entry for new files
+        ld (iy + 7), a
+        ld (iy + 8), e
+        ld (iy + 9), d ; Set up special case file entry for new files
     pop af
     pop de
     ret
@@ -464,6 +464,13 @@ _:  pop af
     ret
 .closeWritableStream:
         call flush_withStream
+        ; Write new file entry
+        xor a
+        cp (ix + 7)
+        jr nz, .overwriteFile
+        ld l, (ix + 8)
+        ld h, (ix + 9) ; File name
+
         push hl
             ld (ix), 0xFF
             ld l, (ix + 1)
@@ -473,6 +480,7 @@ _:  pop af
             ld hl, activeFileStreams
             dec (hl)
         pop hl
+.overwriteFile: ; TODO
     pop af
     jp po, _
     ei
