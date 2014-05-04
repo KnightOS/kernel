@@ -65,7 +65,7 @@ _:  pop af
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
                 xor a
-                ld (iy + 7), a
+                ld (iy + 6), a
                 ld a, (hl)
                 or a ; cp 0
                 jr z, .final
@@ -80,7 +80,7 @@ _:  pop af
 .final:
                 set 7, (iy)
                 ld a, (hl)
-                ld (iy + 7), a
+                ld (iy + 6), a
                 jr .notFinal
                 dec hl
 .notFinal:
@@ -157,9 +157,6 @@ openFileWrite:
     ld a, i
     push af
     di
-        call findFileEntry
-        jp nz, .fileNotFound
-.fileCreated:
         push iy
         push bc
             ld iy, fileHandleTable
@@ -189,6 +186,8 @@ _:  pop af
     ld a, errTooManyStreams
     ret
 .entryFound:
+        call findFileEntry
+        call nz, .fileNotFound
             ; We can put the stream entry at (iy) and use d as the ID
             pop bc
             push de
@@ -210,7 +209,7 @@ _:  pop af
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
                 xor a
-                ld (iy + 7), a
+                ld (iy + 6), a
                 ld a, (hl)
                 or a ; cp 0
                 jr z, .final
@@ -225,7 +224,7 @@ _:  pop af
 .final:
                 set 7, (iy)
                 ld a, (hl)
-                ld (iy + 7), a
+                ld (iy + 6), a
                 jr .notFinal
                 ;dec hl
 .notFinal:
@@ -250,25 +249,32 @@ _:  pop af
             pop hl
             pop ix
             pop de
-            ; Load file entry info
-            ld (iy + 8), a
-            ld (iy + 9), l
-            ld (iy + 0xA), h
-            ld a, 1 ; Stream is flushed
-            ld (iy + 0xD), a ; Set stream write flags (TODO: Move flags around)
-            ; Working file size
-            ld a, 0xFF
-            cp (iy + 4)
-            jr nz, _
-            cp (iy + 5)
-            jr nz, _
-            ; This is a brand-new file
+            push af
+               xor a
+               cp (iy + 7)
+               jr z, _ ; Skip file entry for new files
+            pop af \ push af
+               ; Load file entry info
+               ld (iy + 7), a
+               ld (iy + 8), l
+               ld (iy + 9), h
+_:             ld a, 1 ; Stream is flushed
+               ld (iy + 0xD), a ; Set stream write flags (TODO: Move flags around)
+               ; Working file size
+               ld a, 0xFF
+               cp (iy + 4)
+               jr nz, _
+               cp (iy + 5)
+               jr nz, _
+               ; This is a brand-new file
+            pop af
             xor a
             ld (iy + 0xA), a
             ld (iy + 0xB), a
             ld (iy + 0xC), a
             jr ++_
 _:          ; This is an existing file, load the existing size from the entry
+            pop af
             setBankA
             ld bc, 6
             or a
@@ -308,7 +314,7 @@ _:  pop af
         ld (ix + 9), d ; Set up special case file entry for new files
     pop af
     pop de
-    jp .fileCreated
+    ret
 .outOfMemory:
             pop ix
             pop de
