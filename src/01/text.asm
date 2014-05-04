@@ -181,12 +181,13 @@ _:      push de
             ; Wrap
             ld a, e
             add a, 6
-            cp 64
-            jr z, ++_
             ld e, a
             ld d, b
 
-_:          ld b, 5
+_:          ld a, e
+            cp 64
+            jr nc, ++_
+            ld b, 5
             ld a, ixl
             or a
             call z, putSpriteOR
@@ -203,6 +204,10 @@ _:          ld b, 5
     pop af
     ret
 _:
+        pop af
+    jr .exit
+_:
+        ld e, 64
         pop af
     jr .exit
 
