@@ -391,6 +391,9 @@ getStreamBuffer:
 
 ;; getStreamEntry [Filestreams]
 ;;  Gets the address of a stream entry in the kernel file stream table.
+;;  Note that it is almost always better to use the kernel functions for
+;;  getting data out of this, because the internal struct layout may
+;;  change between kernel releases.
 ;; Inputs:
 ;;  D: Stream ID
 ;; Outputs:
