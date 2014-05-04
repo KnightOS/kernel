@@ -573,19 +573,17 @@ _:  pop af
       ; We have to check to see if the section we're editing is already allocated, and if
       ; so, we have to reallocate it elsewhere.
       ; Best case - current section ID is set to 0xFFFF
+      ld b, 0x7F
+      ld (kernelGarbage), bc
+      ld b, 0xFF
       ld l, (iy + 4)
       ld h, (iy + 5)
-      ld (kernelGarbage), bc
       call cpHLBC ; BC == 0xFFFF
       jr z, _ ; Next section ID is 0x7FFF, so skip this
       ; Grab the next section ID from the obsolete section
       ; TODO
-_:    push bc
-         ld bc, 0x7FFF
-         ld (kernelGarbage), bc ; Previous section + marked as in use
-      pop bc
-      ld (kernelGarbage + 2), bc
-      ld bc, 2
+_:    ld (kernelGarbage + 2), bc
+      ld bc, 4
       ld hl, kernelGarbage
       call writeFlashBuffer
    pop hl
