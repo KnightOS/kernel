@@ -18,17 +18,6 @@ newline:
     pop af
     ret
 
-;; drawChar [Text]
-;;  Draws a character to the screen buffer using OR logic (turns pixels ON).
-;; Inputs:
-;;  IY: Screen buffer
-;;  A: Character to print
-;;  D, E: X, Y
-;;  B: Left margin
-;; Outputs:
-;;  D, E: Moved to next character position
-;; Notes:
-;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapChar:
     push ix
         ld ixl, 0
@@ -36,17 +25,6 @@ wrapChar:
     pop ix
     ret
 
-;; drawCharAND [Text]
-;;  Draws a character to the screen buffer using AND logic (turns pixels OFF).
-;; Inputs:
-;;  IY: Screen buffer
-;;  A: Character to print
-;;  D, E: X, Y
-;;  B: Left margin
-;; Outputs:
-;;  D, E: Moved to next character position
-;; Notes:
-;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapCharAND:
     push ix
         ld ixl, 1
@@ -54,17 +32,6 @@ wrapCharAND:
     pop ix
     ret
 
-;; drawCharXOR [Text]
-;;  Draws a character to the screen buffer using XOR logic (inverts pixels).
-;; Inputs:
-;;  IY: Screen buffer
-;;  A: Character to print
-;;  D, E: X, Y
-;;  B: Left margin
-;; Outputs:
-;;  D, E: Moved to next character position
-;; Notes:
-;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapCharXOR:
     push ix
         ld ixl, 2
@@ -136,12 +103,12 @@ drawCharShared:
         add a, 6
         ld e, a
         ld d, b
-        jr ++++_
+        jr .exit
 _:
         cp '\r'
         jr nz, _
         ld d, b
-        jr +++_
+        jr .exit
     
 _:      push de
             ld de, 6
@@ -157,7 +124,7 @@ _:      push de
         push af
             ld a, d
             cp 95
-            jr nc, ++_
+            jr nc, +_
             ld a, ixl
             or a
             call z, putSpriteOR
@@ -168,7 +135,8 @@ _:      push de
         pop af
         add a, d
         ld d, a
-_:  pop bc
+.exit:
+    pop bc
     pop hl
     pop af
     ret
