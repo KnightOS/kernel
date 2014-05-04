@@ -175,6 +175,8 @@ reboot:
     call lcdDelay
     out (0x10), a ; Contrast
 #endif
+
+    call test
     
     ld de, bootFile
     call fileExists
@@ -186,5 +188,31 @@ reboot:
 
     jp contextSwitch_manual
 
+test:
+    ld de, testFile
+    call openFileWrite
+    ; Writing file manually because stream write functions aren't implemented yet
+    call getStreamBuffer
+    push hl \ pop ix
+    ld a, 'H'
+    ld (ix), a
+    ld a, 'e'
+    ld (ix + 1), a
+    ld a, 'y'
+    ld (ix + 2), a
+    call getStreamEntry
+    res 0, (ix + 0xD) ; Mark as not flushed
+    ld a, 3
+    ld (ix + 3), a   ; Set stream pointer to 3
+    ld (ix + 0xA), a
+    xor a
+    ld (ix + 0xB), a
+    ld (ix + 0xC), a ; Set file length to 3
+    call flush
+    call closeStream
+    ret
+
 bootFile:
     .db "/bin/init", 0
+testFile:
+    .db "/var/test", 0
