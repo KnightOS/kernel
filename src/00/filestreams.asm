@@ -140,6 +140,8 @@ _:  pop af
     or a
     ret
 
+; TODO: Error out if the parent directory does not exist
+; Right now, closeStream is the first time that's ever checked
 ;; openFileWrite [Filestreams]
 ;;  Opens a file stream in write mode. If the file does not exist,
 ;;  it is created.
@@ -186,10 +188,10 @@ _:  pop af
     ld a, errTooManyStreams
     ret
 .entryFound:
-        call findFileEntry
-        call nz, .fileNotFound
+            call findFileEntry
+            call nz, .fileNotFound
+            dec d
             ; We can put the stream entry at (iy) and use d as the ID
-            pop bc
             push de
             push ix
             push hl
@@ -285,7 +287,8 @@ _:          ; This is an existing file, load the existing size from the entry
             ld (iy + 0xB), a
             dec hl \ ld a, (hl)
             ld (iy + 0xC), a
-_:        pop iy
+        pop bc
+_:      pop iy
     pop af
     jp po, _
     ei
@@ -486,7 +489,27 @@ _:  pop af
         ld (hl), a
         push hl
             ld de, kernelGarbage + 0x100
+            call findDirectoryEntry
+            jr nz, .wtf
+            setBankA
+        pop de
+        ex de, hl
+        ld a, '/'
+        ld (hl), a
+        inc hl
+        push hl
+            ex de, hl
+            dec hl \ dec hl \ dec hl
+            dec hl \ dec hl
+            ld e, (hl) \ dec hl \ ld d, (hl) ; Parent dir
+
+            ld a, (ix + 0xC) \ ld c, (ix + 0xA) \ ld b, (ix + 0xB)
+            ld l, (ix + 4)
+            ld h, (ix + 5)
+            push hl \ pop iy ; TODO: Traverse to find the first section ID
         pop hl
+        call createFileEntry
+        jr nz, .wtf + 2
 
         ; Clear away file handle
         push hl
@@ -506,6 +529,16 @@ _:  pop af
     pop ix
     cp a
     ret
+.wtf:
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    ld a, 'W'|'T'|'F'
+    or 1
+    ret
 
 ;; flush [Filestreams]
 ;;  Flushes pending writes to disk.
@@ -518,25 +551,25 @@ _:  pop af
 ;;  This happens periodically as you write to the stream, and happens
 ;;  automatically on closeStream. Try not to use it unless you have to.
 flush:
-     push ix
-     push af
-     ld a, i
-     push af
-     di
-         call getStreamEntry
-         jr nz, _flush_fail
-         bit 6, (ix)
-         jr z, _flush_fail ; Fail if not writable
+    push ix
+    push af
+    ld a, i
+    push af
+    di
+        call getStreamEntry
+        jr nz, _flush_fail
+        bit 6, (ix)
+        jr z, _flush_fail ; Fail if not writable
 _flush_withStream:
-         bit 0, (ix + 0xD) ; Check if flushed
-         jr nz, .exitEarly
-         xor a
-         cp (ix + 3) ; Check to see if anything written to this block
-         jr z, .exitEarly
-         push ix
-         push hl
-         push bc
-         push de
+        bit 0, (ix + 0xD) ; Check if flushed
+        jr nz, .exitEarly
+        xor a
+        cp (ix + 3) ; Check to see if anything written to this block
+        jr z, .exitEarly
+        push ix
+        push hl
+        push bc
+        push de
             ; Find a free block
             ld a, 4
 .pageLoop:
@@ -547,7 +580,7 @@ _flush_withStream:
             bit 7, a
             jr nz, .freeBlockFound
             inc hl \ inc hl \ inc hl \ inc hl
-            ld bc, 0x4101 ; End of section
+            ld bc, 0x4081 ; End of section ; TODO: section IDs still broken, riot
             call cpHLBC
             jr nz, .searchLoop
             ; Next page
@@ -558,15 +591,15 @@ _flush_withStream:
 .freeBlockFound:
             dec hl
             push hl
-                 ; Convert HL into section ID
-                 sra l \ sra l ; L /= 4 to get index
-                 getBankA
-                 ld h, a
-                 ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
-                 sra h \ sra h
-                 rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
-                 ; HL should now be section ID
-                 push hl
+                ; Convert HL into section ID
+                sra l \ sra l ; L /= 4 to get index
+                getBankA
+                ld h, a
+                ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
+                sra h \ sra h
+                rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11000000 \ or l \ ld l, a
+                ; HL should now be section ID
+                push hl
                     ; Write buffer to disk
                     ld a, l
                     and 0b111111
@@ -577,24 +610,24 @@ _flush_withStream:
                     ld bc, 0x100
                     call unlockFlash
                     call writeFlashBuffer
-                 pop hl
+                pop hl
             pop de
             ; HL is new section ID, DE is header pointer
             push hl
-                 ; Find out what we need to do - there are lots of edge cases
-                 ld l, (ix + 0xE)
-                 ld h, (ix + 0xF)
-                 ld bc, 0xFFFF
-                 call cpHLBC
-                 jp z, .firstSection
+                ; Find out what we need to do - there are lots of edge cases
+                ld l, (ix + 0xE)
+                ld h, (ix + 0xF)
+                ld bc, 0xFFFF
+                call cpHLBC
+                jp z, .firstSection
             pop hl
 .done:
             call lockFlash
-         pop de
-         pop bc
-         pop hl
-         pop ix
-         set 0, (ix + 0xD) ; Mark as flushed
+        pop de
+        pop bc
+        pop hl
+        pop ix
+        set 0, (ix + 0xD) ; Mark as flushed
 .exitEarly:
     pop af
     jp po, _
@@ -621,11 +654,11 @@ _:      ld (kernelGarbage + 2), bc
         ld bc, 4
         ld hl, kernelGarbage
         call writeFlashBuffer
-     pop hl
-     ; Load current section ID into file handle
-     ld (ix + 4), l
-     ld (ix + 5), h
-     jp .done
+    pop hl
+    ; Load current section ID into file handle
+    ld (ix + 4), l
+    ld (ix + 5), h
+    jp .done
 _flush_fail:
     pop af
     jp po, _

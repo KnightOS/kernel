@@ -176,7 +176,7 @@ reboot:
     out (0x10), a ; Contrast
 #endif
 
-    ;call test
+    call test
     
     ld de, bootFile
     call fileExists
@@ -193,16 +193,15 @@ test:
     call openFileWrite
     ; Writing file manually because stream write functions aren't implemented yet
     call getStreamBuffer
-    push hl \ pop ix
-    ld a, 'H'
-    ld (ix), a
-    ld a, 'e'
-    ld (ix + 1), a
-    ld a, 'y'
-    ld (ix + 2), a
+    push de
+        push hl \ pop de
+        ld hl, testString
+        ld bc, testStringEnd - testString
+        ldir
+    pop de
     call getStreamEntry
     res 0, (ix + 0xD) ; Mark as not flushed
-    ld a, 3
+    ld a, testStringEnd - testString
     ld (ix + 3), a   ; Set stream pointer to 3
     ld (ix + 0xA), a
     xor a
@@ -216,3 +215,6 @@ bootFile:
     .db "/bin/init", 0
 testFile:
     .db "/var/test", 0
+testString:
+    .db "This file was written at\nruntime!"
+testStringEnd:
