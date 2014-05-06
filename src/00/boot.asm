@@ -190,6 +190,8 @@ reboot:
 
 test:
     ld de, testFile
+    call fileExists
+    ret z
     call openFileWrite
     ; Writing file manually because stream write functions aren't implemented yet
     call getStreamBuffer
