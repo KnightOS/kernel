@@ -250,23 +250,23 @@ _:  pop af
             pop ix
             pop de
             push af
-               xor a
-               cp (iy + 7)
-               jr z, _ ; Skip file entry for new files
+                 xor a
+                 cp (iy + 7)
+                 jr z, _ ; Skip file entry for new files
             pop af \ push af
-               ; Load file entry info
-               ld (iy + 7), a
-               ld (iy + 8), l
-               ld (iy + 9), h
-_:             ld a, 1 ; Stream is flushed
-               ld (iy + 0xD), a ; Set stream write flags (TODO: Move flags around)
-               ; Working file size
-               ld a, 0xFF
-               cp (iy + 4)
-               jr nz, _
-               cp (iy + 5)
-               jr nz, _
-               ; This is a brand-new file
+                 ; Load file entry info
+                 ld (iy + 7), a
+                 ld (iy + 8), l
+                 ld (iy + 9), h
+_:               ld a, 1 ; Stream is flushed
+                 ld (iy + 0xD), a ; Set stream write flags (TODO: Move flags around)
+                 ; Working file size
+                 ld a, 0xFF
+                 cp (iy + 4)
+                 jr nz, _
+                 cp (iy + 5)
+                 jr nz, _
+                 ; This is a brand-new file
             pop af
             xor a
             ld (iy + 0xA), a
@@ -285,7 +285,7 @@ _:          ; This is an existing file, load the existing size from the entry
             ld (iy + 0xB), a
             dec hl \ ld a, (hl)
             ld (iy + 0xC), a
-_:      pop iy
+_:        pop iy
     pop af
     jp po, _
     ei
@@ -300,12 +300,12 @@ _:  pop af
         call stringLength
         inc bc
         push ix
-           call malloc
-           ; TODO: Handle out of memory
-           push ix \ pop de
+             call malloc
+             ; TODO: Handle out of memory
+             push ix \ pop de
         pop ix
         push de
-           ldir
+             ldir
         pop de
 
         xor a
@@ -470,7 +470,25 @@ _:  pop af
         jr nz, .overwriteFile
         ld l, (ix + 8)
         ld h, (ix + 9) ; File name
+        ; Find the parent directory and extract the file name alone
+        call stringLength
+        inc bc
+        ld de, kernelGarbage + 0x100
+        push bc
+             ldir
+        pop bc
+        ld hl, kernelGarbage + 0x100
+        add hl, bc
+        ld a, '/'
+        cpdr
+        inc hl
+        xor a
+        ld (hl), a
+        push hl
+            ld de, kernelGarbage + 0x100
+        pop hl
 
+        ; Clear away file handle
         push hl
             ld (ix), 0xFF
             ld l, (ix + 1)
@@ -500,11 +518,11 @@ _:  pop af
 ;;  This happens periodically as you write to the stream, and happens
 ;;  automatically on closeStream. Try not to use it unless you have to.
 flush:
-   push ix
-   push af
-   ld a, i
-   push af
-   di
+     push ix
+     push af
+     ld a, i
+     push af
+     di
          call getStreamEntry
          jr nz, _flush_fail
          bit 6, (ix)
@@ -540,35 +558,35 @@ _flush_withStream:
 .freeBlockFound:
             dec hl
             push hl
-               ; Convert HL into section ID
-               sra l \ sra l ; L /= 4 to get index
-               getBankA
-               ld h, a
-               ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
-               sra h \ sra h
-               rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
-               ; HL should now be section ID
-               push hl
-                  ; Write buffer to disk
-                  ld a, l
-                  and 0b111111
-                  or 0x40
-                  call getStreamBuffer ; At this point, D is still the stream ID
-                  ld d, a
-                  ld e, 0
-                  ld bc, 0x100
-                  call unlockFlash
-                  call writeFlashBuffer
-               pop hl
+                 ; Convert HL into section ID
+                 sra l \ sra l ; L /= 4 to get index
+                 getBankA
+                 ld h, a
+                 ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
+                 sra h \ sra h
+                 rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
+                 ; HL should now be section ID
+                 push hl
+                    ; Write buffer to disk
+                    ld a, l
+                    and 0b111111
+                    or 0x40
+                    call getStreamBuffer ; At this point, D is still the stream ID
+                    ld d, a
+                    ld e, 0
+                    ld bc, 0x100
+                    call unlockFlash
+                    call writeFlashBuffer
+                 pop hl
             pop de
             ; HL is new section ID, DE is header pointer
             push hl
-               ; Find out what we need to do - there are lots of edge cases
-               ld l, (ix + 0xE)
-               ld h, (ix + 0xF)
-               ld bc, 0xFFFF
-               call cpHLBC
-               jp z, .firstSection
+                 ; Find out what we need to do - there are lots of edge cases
+                 ld l, (ix + 0xE)
+                 ld h, (ix + 0xF)
+                 ld bc, 0xFFFF
+                 call cpHLBC
+                 jp z, .firstSection
             pop hl
 .done:
             call lockFlash
@@ -586,28 +604,28 @@ _:  pop af
     cp a
     ret
 .firstSection:
-      ; We know that the current section is the first section of the file
-      ; We have to check to see if the section we're editing is already allocated, and if
-      ; so, we have to reallocate it elsewhere.
-      ; Best case - current section ID is set to 0xFFFF
-      ld b, 0x7F
-      ld (kernelGarbage), bc
-      ld b, 0xFF
-      ld l, (iy + 4)
-      ld h, (iy + 5)
-      call cpHLBC ; BC == 0xFFFF
-      jr z, _ ; Next section ID is 0x7FFF, so skip this
-      ; Grab the next section ID from the obsolete section
-      ; TODO
-_:    ld (kernelGarbage + 2), bc
-      ld bc, 4
-      ld hl, kernelGarbage
-      call writeFlashBuffer
-   pop hl
-   ; Load current section ID into file handle
-   ld (ix + 4), l
-   ld (ix + 5), h
-   jp .done
+        ; We know that the current section is the first section of the file
+        ; We have to check to see if the section we're editing is already allocated, and if
+        ; so, we have to reallocate it elsewhere.
+        ; Best case - current section ID is set to 0xFFFF
+        ld b, 0x7F
+        ld (kernelGarbage), bc
+        ld b, 0xFF
+        ld l, (iy + 4)
+        ld h, (iy + 5)
+        call cpHLBC ; BC == 0xFFFF
+        jr z, _ ; Next section ID is 0x7FFF, so skip this
+        ; Grab the next section ID from the obsolete section
+        ; TODO
+_:      ld (kernelGarbage + 2), bc
+        ld bc, 4
+        ld hl, kernelGarbage
+        call writeFlashBuffer
+     pop hl
+     ; Load current section ID into file handle
+     ld (ix + 4), l
+     ld (ix + 5), h
+     jp .done
 _flush_fail:
     pop af
     jp po, _
@@ -654,10 +672,10 @@ _:          cp (ix + 6)
             jr nz, _
             ; End of stream!
         pop hl
-   pop ix
-   or 1
-   ld a, errEndOfStream
-   ret
+     pop ix
+     or 1
+     ld a, errEndOfStream
+     ret
 _:          add l
             ld l, a
             jr nc, _
@@ -669,7 +687,7 @@ _:          ld a, (ix + 3)
             jr nc, _
             ; We need to get the next block (or end of stream)
             call getNextBuffer
-_:      pop hl
+_:          pop hl
     pop ix
     cp a
     ret
@@ -753,7 +771,7 @@ streamReadWord:
 ; The problem here is that reading two bytes requires you to do some
 ; additional bounds checks that would make us basically put the same
 ; code in twice (i.e. what happens when the word straddles a block
-; boundary?  Although the only time this would happen is when the pointer
+; boundary?    Although the only time this would happen is when the pointer
 ; is on the last byte of the block.)
     push af
         call streamReadByte
@@ -869,7 +887,7 @@ _:                  ; Space left in block in A
                 ; Too long, truncate a little
                 ld c, d
                 ld b, 0
-_:          pop de
+_:              pop de
 .doRead:
             ; Update HL with stream pointer
             ld l, (ix + 1)
@@ -882,7 +900,7 @@ _:          ; Do read
             ; Subtract BC from itself
         pop hl ; Was BC
         or a \ sbc hl, bc
-_:      push hl ; Push *new* length to stack so we can remember it while we cycle to the next buffer
+_:          push hl ; Push *new* length to stack so we can remember it while we cycle to the next buffer
             ; Update stream pointer
             ld a, (ix + 3)
             add c
