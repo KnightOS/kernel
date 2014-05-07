@@ -341,20 +341,9 @@ populateStreamBuffer:
         push hl
         push bc
             ; Get page number
-            ld a, c
-            or a \ rra \ rra \ rra \ rra \ rra \ rra
-            and 0b11
-            push bc
-                ld c, a
-                ld a, b
-                rla \ rla
-                and 0b11111100
-                or c
-            pop bc
+            ld a, b
             setBankA
-            ; Get address
             ld a, c
-            and 0b111111
             add a, 0x40
             ld h, a
             ld l, 0
@@ -595,14 +584,9 @@ _flush_withStream:
                 sra l \ sra l ; L /= 4 to get index
                 getBankA
                 ld h, a
-                ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
-                sra h \ sra h
-                rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b11000000 \ or l \ ld l, a
-                ; HL should now be section ID
                 push hl
                     ; Write buffer to disk
                     ld a, l
-                    and 0b111111
                     or 0x40
                     call getStreamBuffer ; At this point, D is still the stream ID
                     ld d, a
@@ -780,15 +764,9 @@ _:      pop hl
 ; Given stream entry at IX, grabs the section ID, swaps in the page, and sets A to the block index.
 ; Destroys B
 selectSection:
-    ld a, (ix + 4)
-    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
-    ld b, a
     ld a, (ix + 5)
-    rla \ rla \ and 0b11111100
-    or b
     setBankA
     ld a, (ix + 4)
-    and 0b111111
     ret
 
 ;; streamReadWord [Filestreams]
@@ -1013,17 +991,9 @@ _:          bit 7, (ix)
                 ; HL is section ID
                 dec b ; Reset B to zero
 .loop:
-                push hl
-                    ld a, l
-                    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
-                    ld l, a
-                    ld a, h
-                    rla \ rla \ and 0b11111100
-                    or l
-                    setBankA
-                pop hl
+                ld a, h
+                setBankA
                 ld a, l
-                and 0b111111
                 rlca \ rlca \ inc a \ inc a
                 ld h, 0x40
                 ld l, a
