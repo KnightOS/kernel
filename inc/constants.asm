@@ -7,5 +7,6 @@
         INT_TIMER2      .equ 4
         INT_LINK        .equ 8
 
+    PORT_RAM_PAGING     .equ 5
 ; System constants
     DEFAULT_STACK_SIZE  .equ 20

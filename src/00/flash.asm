@@ -327,7 +327,7 @@ copySectorToSwap:
 #ifdef CPU15
         push af
             ld a, 1
-            out (5), a
+            out (PORT_RAM_PAGING), a
         
             ld de, flashFunctions + 0x4000 ; By rearranging memory, we can make the routine perform better
             ld bc, .end - .ram
@@ -344,7 +344,7 @@ copySectorToSwap:
         ld sp, hl
         call flashFunctions + 0x4000
         xor a
-        out (5), a ; Restore correct memory mapping
+        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
         ld hl, 0
         add hl, sp
         ld bc, 0x4000
@@ -497,7 +497,7 @@ copyFlashPage:
         ld hl, .ram
 #ifdef CPU15
             ld a, 1
-            out (5), a
+            out (PORT_RAM_PAGING), a
             ; This routine can perform better on some models if we rearrange memory 
             ld de, flashFunctions + 0x4000
             ld bc, .ram_end - .ram
@@ -515,7 +515,7 @@ copyFlashPage:
         ld sp, hl
         call flashFunctions + 0x4000
         xor a
-        out (5), a ; Restore correct memory mapping
+        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
         ld hl, 0
         add hl, sp
         ld bc, 0x4000
