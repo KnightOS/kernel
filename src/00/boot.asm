@@ -37,9 +37,7 @@ _:  di
 
     ld sp, userMemory ; end of kernel garbage
 
-#ifndef TEST
     call suspendDevice
-#endif
 ;; reboot [System]
 ;;  Restarts the device.
 reboot:
@@ -176,7 +174,7 @@ reboot:
     out (0x10), a ; Contrast
 #endif
 
-    ;call test
+    ;call test ; TODO: Why doesn't this work anymore? Grrr regressions
     
     ld de, bootFile
     call fileExists
