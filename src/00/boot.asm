@@ -109,9 +109,9 @@ reboot:
 #endif
 
     ; Set interrupt mode
-    ld a, 0b000001011
-    out (3), a
-    ; Set timer frequency
+    ld a, INT_ON | INT_TIMER1 | INT_LINK
+    out (PORT_INT_MASK), a
+    ; Set timer frequency (TODO)
 
     ; Clear RAM
     ld hl, 0x8000

@@ -3,8 +3,7 @@
 #include "defines.inc"
 #include "kernelmem.inc"
 #include "keys.inc"
-
-default_stack_size .equ 20
+#include "constants.asm"
 
 #include "header.asm"
 #include "boot.asm"

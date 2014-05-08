@@ -361,7 +361,7 @@ launchProgram:
             push ix \ call _getThreadHeader \ pop ix
             ld c, l ; TODO: Error out if H is nonzero?
             jr z, _
-            ld c, default_stack_size
+            ld c, DEFAULT_STACK_SIZE
 
 _:          ld b, KEXC_THREAD_FLAGS
             push ix \ call _getThreadHeader \ pop ix
