@@ -89,26 +89,26 @@ kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATF
 	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom
 	mktiupgrade -p -k build/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
-$(OUTDIR)$(PLATFORM)/00.bin: $(OUTDIR)$(PLATFORM)/privileged.bin src/00/*.asm
+$(OUTDIR)$(PLATFORM)/00.bin: $(OUTDIR)$(PLATFORM)/privileged.bin src/00/*.asm inc/constants.asm
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols $(BINDIR)00.sym --listing $(BINDIR)00.list src/00/base.asm $(BINDIR)00.bin
 	$(ASPREFIX)build/CreateJumpTable.exe --symbols 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)00.inc
 
-$(OUTDIR)$(PLATFORM)/01.bin: $(OUTDIR)$(PLATFORM)/00.bin src/01/*.asm
+$(OUTDIR)$(PLATFORM)/01.bin: $(OUTDIR)$(PLATFORM)/00.bin src/01/*.asm inc/constants.asm
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols $(BINDIR)01.sym --listing $(BINDIR)01.list src/01/base.asm $(BINDIR)01.bin
 	$(ASPREFIX)build/CreateJumpTable.exe --symbols 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)01.inc
 
-$(OUTDIR)$(PLATFORM)/02.bin: $(OUTDIR)$(PLATFORM)/00.bin src/02/*.asm
+$(OUTDIR)$(PLATFORM)/02.bin: $(OUTDIR)$(PLATFORM)/00.bin src/02/*.asm inc/constants.asm
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/02/" --symbols $(BINDIR)02.sym --listing $(BINDIR)02.list src/02/base.asm $(BINDIR)02.bin
 	$(ASPREFIX)build/CreateJumpTable.exe --symbols 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)02.inc
 
-$(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm
+$(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm inc/constants.asm
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm $(BINDIR)privileged.bin
 
-$(OUTDIR)$(PLATFORM)/boot.bin: src/boot/*.asm
+$(OUTDIR)$(PLATFORM)/boot.bin: src/boot/*.asm inc/constants.asm
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm $(BINDIR)boot.bin
 
