@@ -176,7 +176,7 @@ reboot:
     out (0x10), a ; Contrast
 #endif
 
-    call test
+    ;call test
     
     ld de, bootFile
     call fileExists

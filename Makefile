@@ -18,6 +18,7 @@ OUTDIR=bin/
 #	BOOT: The address of the boot page
 #	LENGTH: The length of the final ROM file
 TI73: PLATFORM := TI73
+TI73: DEVICE := TI-73
 TI73: PRIVILEGED := 70000
 TI73: KEY := 02
 TI73: UPGRADEEXT := 73u
@@ -26,6 +27,7 @@ TI73: LENGTH := 80000
 TI73: kernel
 
 TI83p: PLATFORM := TI83p
+TI83p: DEVICE := TI-83+
 TI83p: PRIVILEGED := 70000
 TI83p: KEY := 04
 TI83p: UPGRADEEXT := 8xu
@@ -34,6 +36,7 @@ TI83p: LENGTH := 80000
 TI83p: kernel
 
 TI83pSE: PLATFORM := TI83pSE
+TI83pSE: DEVICE := TI-83+SE
 TI83pSE: PRIVILEGED := 1F0000
 TI83pSE: KEY := 04
 TI83pSE: UPGRADEEXT := 8xu
@@ -42,6 +45,7 @@ TI83pSE: LENGTH := 200000
 TI83pSE: kernel
 
 TI84p: PLATFORM := TI84p
+TI84p: DEVICE := TI-84+
 TI84p: PRIVILEGED := F0000
 TI84p: KEY := 0A
 TI84p: UPGRADEEXT := 8xu
@@ -50,6 +54,7 @@ TI84p: LENGTH := 100000
 TI84p: kernel
 
 TI84pSE: PLATFORM := TI84pSE
+TI84pSE: DEVICE := TI-84+SE
 TI84pSE: PRIVILEGED := 1F0000
 TI84pSE: KEY := 0A
 TI84pSE: UPGRADEEXT := 8xu
@@ -58,6 +63,7 @@ TI84pSE: LENGTH := 200000
 TI84pSE: kernel
 
 TI84pCSE: PLATFORM := TI84pCSE
+TI84pCSE: DEVICE := TI-84+CSE
 TI84pCSE: PRIVILEGED := 3F0000
 TI84pCSE: KEY := 0F
 TI84pCSE: UPGRADEEXT := 8cu
@@ -81,8 +87,7 @@ kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATF
 	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom
 	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom
 	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom
-	$(ASPREFIX)build/CreateUpgrade.exe $(PLATFORM) $(BINDIR)kernel.rom build/$(KEY).key \
-		$(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
+	mktiupgrade -p -k build/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
 $(OUTDIR)$(PLATFORM)/00.bin: $(OUTDIR)$(PLATFORM)/privileged.bin src/00/*.asm
 	@mkdir -p $(BINDIR)
