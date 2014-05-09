@@ -11,7 +11,7 @@
         define_mask(CALC_STATUS_BATTERY, 0)
         ; 83+ SE/84+ only
         define_mask(CALC_STATUS_LCDBUSY, 1)
-        ; TI-73 and 83+ BE only
+        ; 73/83+ BE only
         define_mask(CALC_STATUS_ISTI73, 1)
         define_mask(CALC_STATUS_FLASHUNLOCKED, 2)
         define_mask(CALC_STATUS_HASUSB, 5)
@@ -71,7 +71,6 @@
         define_mask(LCD_CMD_8BITS, 6)
         define_mask(LCD_CMD_BUSY, 7)
         ; write
-        ; !!! add these values to your writes instead of shifting with them !!!
         LCD_CMD_SETOUTPUTMODE               .equ 0
         LCD_CMD_SETDISPLAY                  .equ 2
         LCD_CMD_AUTOINCDEC_SETX             .equ 4
@@ -91,7 +90,7 @@
     PORT_FLASHRWCONTROL .equ 0x14
         define_mask(FLASHRWCONTROL_ENABLEWRITE, 0)
     
-    ; 83+ BE only
+    ; 73/83+ BE only
     PORT_FLASHEXCLUSION .equ 0x16
     
     ; 83+ SE/84+ only
