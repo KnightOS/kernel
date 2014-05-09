@@ -16,7 +16,7 @@ panic:
         call setLegacyLcdMode
     #else
         ; Reset the screen to a usable state
-        ld a, 1 + LCD_CMD_AUTOINDEC_SETX
+        ld a, 1 + LCD_CMD_AUTOINCDEC_SETX
         call lcdDelay
         out (PORT_LCD_CMD), a
         ld a, 1 + LCD_CMD_SETOUTPUTMODE
@@ -44,9 +44,11 @@ _:  call clearBuffer
     ld de, 0
     ld b, 0
     ld hl, errorMessage
-    pcall(drawStr)
+    rst 0x20
+    .dw drawStr
     push af
-        pcall(drawHexA)
+        rst 0x20
+        .dw drawHexA
     pop af
     ld c, 0
     bit 7, a
@@ -64,12 +66,14 @@ _:  ld e, (hl)
     ld d, (hl)
     ex de, hl
     ld de, 0x0006
-    pcall(drawStr)
+    rst 0x20
+    .dw drawStr
     ld a, c
     cp 1
     jr z, attemptRecovery
     ld hl, continueMessage
-    pcall(drawStr)
+    rst 0x20
+    .dw drawStr
     ; We could just directly output to the screen and maybe be a
     ; little safer, but we need to clear the screen as well and
     ; this saves enough space to make it worth doing.
@@ -82,7 +86,8 @@ _:  call getKey_skipCheck
     jp boot
 attemptRecovery:
     ld hl, recoveryMessage
-    pcall(drawStr)
+    rst 0x20
+    .dw drawStr
     call fastCopy_skipCheck
 _:  call getKey_skipCheck
     cp kPlus

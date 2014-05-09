@@ -34,6 +34,8 @@
         
     PORT_RAM_PAGING     .equ 5
     
+    PORT_BANKA          .equ 6
+    
     PORT_BANKB          .equ 7
         ; 83+ BE only
         define_mask(BANKB_ISRAM_CPU6, 6)

@@ -139,7 +139,7 @@ pcall:
         push af
             ; Stack state : calling addr, original AF, interrupt state
             ; we can't use getBankA because it behaves differently on the 84+CSE, and we don't want that
-            in a, (6)
+            in a, (PORT_BANKA)
             push af
                 ; Stack state : calling addr, original AF, interrupt state, page
                 push hl
@@ -159,10 +159,10 @@ pcall:
     ; Stack state : original HL, original AF, interrupt state, page, return point, original HL #### HL contains calling addr
 #ifdef FLASH4MB
     xor a
-    out (0x0E), a
+    out (PORT_MEMA_HIGH), a
 #endif
     ld a, (hl)
-    out (0x06), a
+    out (PORT_BANKA), a
     inc hl
     ld a, (hl)
     inc hl
@@ -197,10 +197,10 @@ pcall:
     ; Stack state : ret address, original AF, interrupt state, page
 #ifdef FLASH4MB
                 xor a
-                out (0x0E), A
+                out (PORT_MEMA_HIGH), A
 #endif
             pop af
-            out (0x06), a
+            out (PORT_BANKA), a
         pop af
         jp po, _
         ei
