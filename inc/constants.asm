@@ -98,6 +98,11 @@
         ; there are also 2 and 3, but they should not be used
     
     ; 83+ SE/84+ only
+    PORT_FLASHRAMSIZE       .equ 0x21
+        define_mask(FLASHRAMSIZE_FLASHCHIP, 0)
+        define_mask(FLASHRAMSIZE_RAMCHIP, 4)
+    
+    ; 83+ SE/84+ only
     PORT_FLASHEXEC_LOWLIMIT .equ 0x22
     
     ; 83+ SE/84+ only
