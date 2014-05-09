@@ -287,8 +287,8 @@ _:          ; This is an existing file, load the existing size from the entry
             ld (iy + FILE_WORKING_SIZE + 1), a
             dec hl \ ld a, (hl)
             ld (iy + FILE_WORKING_SIZE + 2), a
-        pop bc
-_:      pop iy
+_:      pop bc
+        pop iy
     pop af
     jp po, _
     ei

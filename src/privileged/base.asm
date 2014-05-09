@@ -9,12 +9,12 @@ unlockFlash:
     ld a, i
 _:  push af
     di
-    ld a, 1 + FLASHRWCONTROL_ENABLEWRITE
+    ld a, FLASHRWCONTROL_ENABLEWRITE
     nop
     nop
     im 1
     di
-    out (PORT_FLASHRWCONTROL),a
+    out (PORT_FLASHRWCONTROL), a
     pop af
     ret po
     ei
@@ -31,7 +31,7 @@ _:  push af
     nop
     im 1
     di
-    out (PORT_FLASHRWCONTROL),a
+    out (PORT_FLASHRWCONTROL), a
     pop af
     ret po
     ei

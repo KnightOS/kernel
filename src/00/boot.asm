@@ -174,7 +174,7 @@ reboot:
     out (PORT_LCD_CMD), a ; Contrast
 #endif
 
-    ;call test ; TODO: Why doesn't this work anymore? Grrr regressions
+    call test
     
     ld de, bootFile
     call fileExists
@@ -207,9 +207,7 @@ test:
     xor a
     ld (ix + 0xB), a
     ld (ix + 0xC), a ; Set file length to 3
-    call flush
-    call closeStream
-    ret
+    jp closeStream
 
 bootFile:
     .db "/bin/init", 0
