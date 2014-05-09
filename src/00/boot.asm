@@ -76,7 +76,7 @@ reboot:
     call lockFlash
 
     ; Set CPU speed to 15 MHz
-    ld a, CPUSPEED_15MHZ
+    ld a, BIT_CPUSPEED_15MHZ
     out (PORT_CPUSPEED), a
 
 #else ; TI-73, TI-83+
