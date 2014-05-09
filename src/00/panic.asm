@@ -10,27 +10,27 @@ panic:
     #ifdef COLOR
         ; Set GPIO config
         ld a, 0xE0
-        out (0x39), a
+        out (PORT_GPIO_CONFIG), a
         call colorLcdOn
         call clearColorLcd
         call setLegacyLcdMode
     #else
         ; Reset the screen to a usable state
-        ld a, 0x05
+        ld a, 1 + LCD_CMD_AUTOINDEC_SETX
         call lcdDelay
-        out (0x10), a
-        ld a, 0x01
+        out (PORT_LCD_CMD), a
+        ld a, 1 + LCD_CMD_SETOUTPUTMODE
         call lcdDelay
-        out (0x10), a
-        ld a, 3
+        out (PORT_LCD_CMD), a
+        ld a, 1 + LCD_CMD_SETDISPLAY
         call lcdDelay
-        out (0x10), a
-        ld a, 0x17
+        out (PORT_LCD_CMD), a
+        ld a, 7 + LCD_CMD_POWERSUPPLY_SETLEVEL
         call lcdDelay
-        out (0x10), a
-        ld a, 0xB
+        out (PORT_LCD_CMD), a
+        ld a, 3 + LCD_CMD_POWERSUPPLY_SETENHANCEMENT
         call lcdDelay
-        out (0x10), a
+        out (PORT_LCD_CMD), a
     #endif
     pop af
 
@@ -44,11 +44,9 @@ _:  call clearBuffer
     ld de, 0
     ld b, 0
     ld hl, errorMessage
-    rst 0x20
-    .dw drawStr
+    pcall(drawStr)
     push af
-        rst 0x20
-        .dw drawHexA
+        pcall(drawHexA)
     pop af
     ld c, 0
     bit 7, a
@@ -66,14 +64,12 @@ _:  ld e, (hl)
     ld d, (hl)
     ex de, hl
     ld de, 0x0006
-    rst 0x20
-    .dw drawStr
+    pcall(drawStr)
     ld a, c
     cp 1
     jr z, attemptRecovery
     ld hl, continueMessage
-    rst 0x20
-    .dw drawStr
+    pcall(drawStr)
     ; We could just directly output to the screen and maybe be a
     ; little safer, but we need to clear the screen as well and
     ; this saves enough space to make it worth doing.
@@ -86,8 +82,7 @@ _:  call getKey_skipCheck
     jp boot
 attemptRecovery:
     ld hl, recoveryMessage
-    rst 0x20
-    .dw drawStr
+    pcall(drawStr)
     call fastCopy_skipCheck
 _:  call getKey_skipCheck
     cp kPlus
