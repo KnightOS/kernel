@@ -35,6 +35,66 @@
         
     PORT_RAM_PAGING     .equ 5
     
+    PORT_BANKB          .equ 7
+        ; 83+ BE only
+        define_mask(BANKB_ISRAM_CPU6, 6)
+        ; 83+ SE/84+ only
+        define_mask(BANKB_ISRAM_CPU15, 7)
+    
+    PORT_MEMA_HIGH      .equ 0x0E
+    
+    PORT_MEMB_HIGH      .equ 0x0F
+    
+    PORT_LCD_CMD        .equ 0x10
+        ; non-color calcs only
+        ; read
+        define_mask(LCD_CMD_AUTOINC, 0)
+        define_mask(LCD_CMD_AUTOINC_AFFECTSCOL, 1)
+        define_mask(LCD_CMD_RESETSTATE, 4)
+        define_mask(LCD_CMD_DISPLAYING, 5)
+        define_mask(LCD_CMD_8BITS, 6)
+        define_mask(LCD_CMD_BUSY, 7)
+        ; write
+        ; !!! add these values to your writes instead of shifting with them !!!
+        LCD_CMD_SETOUTPUTMODE .equ 0
+        LCD_CMD_SETDISPLAY .equ 2
+        LCD_CMD_AUTOINCDEC_SETX .equ 4
+        LCD_CMD_AUTOINCDEC_SETY .equ 6
+        LCD_CMD_POWERSUPPLY_SETENHANCEMENT .equ 8
+        LCD_CMD_MIRRORSCREEN .equ 0x0C
+        LCD_CMD_POWERSUPPLY_SETLEVEL .equ 0x10
+        LCD_CMD_CANCELTESTMODE .equ 0x18
+        LCD_CMD_ENTERTESTMODE .equ 0x1C
+        LCD_CMD_SETCOLUMN   .equ 0x20
+        LCD_CMD_SETZSHIFT   .equ 0x40
+        LCD_CMD_SETROW      .equ 0x80
+        LCD_CMD_SETCONTRAST .equ 0xC0
+    
+    ; 83+ BE only
+    PORT_FLASHEXCLUSION .equ 0x16
+    
+    ; 83+ SE/84+ only
+    PORT_CPUSPEED       .equ 0x20
+        define_mask(CPUSPEED_6MHZ, 0)
+        define_mask(CPUSPEED_15MHZ, 1)
+        ; there are also 2 and 3, but they should not be used
+    
+    ; 83+ SE/84+ only
+    PORT_FLASHEXEC_LOWLIMIT .equ 0x22
+    
+    ; 83+ SE/84+ only
+    PORT_FLASHEXEC_UPLIMIT  .equ 0x23
+    
+    ; 83+ SE/84+ only
+    PORT_RAMEXEC_LOWLIMIT .equ 0x25
+        
+    ; 83+ SE/84+ only
+    PORT_RAMEXEC_UPLIMIT .equ 0x26
+    
+    ; 83+ SE/84+ only
+    PORT_GPIO_CONFIG     .equ 0x39
+    
+    ; USB is 84+ only
     PORT_USB_INT        .equ 0x55
         define_mask(USB_INT_BUS, 0)
         define_mask(USB_INT_UNKNOWN1, 1)
