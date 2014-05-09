@@ -343,7 +343,6 @@ populateStreamBuffer:
             ld a, b
             setBankA
             ld a, c
-            and 0b00111111
             add a, 0x40
             ld h, a
             ld l, 0
@@ -584,12 +583,14 @@ _flush_withStream:
             push hl
                 ; Convert HL into section ID
                 sra l \ sra l ; L /= 4 to get index
+                ld a, l
+                and 0b00111111
+                ld l, a
                 getBankA
                 ld h, a
                 push hl
                     ; Write buffer to disk
                     ld a, l
-                    and 0b00111111
                     add a, 0x40
                     call getStreamBuffer ; At this point, D is still the stream ID
                     ld d, a
