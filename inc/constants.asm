@@ -5,7 +5,8 @@
 .endmacro
 
 ; Port numbers and outputs
-    ; bit masks
+    PORT_KEYPAD         .equ 1
+
     PORT_INT_MASK       .equ 3
         define_mask(INT_ON, 0)
         define_mask(INT_TIMER1, 1)
@@ -13,7 +14,6 @@
         define_mask(INT_LINK, 3)
     
     ; read
-    ; bit values
     PORT_INT_TRIG       .equ 4
         define_mask(INT_TRIG_ON, 0)
         define_mask(INT_TRIG_TIMER1, 1)
@@ -25,7 +25,6 @@
         define_mask(INT_TRIG_CRYS2, 6)
         define_mask(INT_TRIG_CRYS3, 7)
     ; write
-    ; bit masks
     PORT_MEM_TIMER      .equ 4
         define_mask(MEM_TIMER_MODE1, 0)
         define_mask(MEM_TIMER_SPEED, 1)

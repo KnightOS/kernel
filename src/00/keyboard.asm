@@ -27,12 +27,12 @@ flushkeys_skipCheck:
     ; Done in a loop; runs far too fast on actual hardware
         ld b, 0x80
 _:      xor a
-        out (1), a
+        out (PORT_KEYPAD), a
         nop \ nop
         #ifdef COLOR
         nop \ nop
         #endif
-        in a, (1)
+        in a, (PORT_KEYPAD)
         inc a
         jr nz, -_
         djnz -_
@@ -69,14 +69,14 @@ getKey_skipCheck:
     ld c, a
 
     ld a, 0xFF
-    out (1), a
+    out (PORT_KEYPAD), a
     ld a, c
-    out (1), a
+    out (PORT_KEYPAD), a
     nop \ nop \ nop \ nop
     #ifdef COLOR
     nop \ nop \ nop \ nop
     #endif
-    in a, (1)
+    in a, (PORT_KEYPAD)
 
     ld de,0
     cp 254 \ jr z, .incslide + 7
