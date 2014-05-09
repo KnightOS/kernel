@@ -56,19 +56,19 @@
         define_mask(LCD_CMD_BUSY, 7)
         ; write
         ; !!! add these values to your writes instead of shifting with them !!!
-        LCD_CMD_SETOUTPUTMODE .equ 0
-        LCD_CMD_SETDISPLAY .equ 2
-        LCD_CMD_AUTOINCDEC_SETX .equ 4
-        LCD_CMD_AUTOINCDEC_SETY .equ 6
-        LCD_CMD_POWERSUPPLY_SETENHANCEMENT .equ 8
-        LCD_CMD_MIRRORSCREEN .equ 0x0C
-        LCD_CMD_POWERSUPPLY_SETLEVEL .equ 0x10
-        LCD_CMD_CANCELTESTMODE .equ 0x18
-        LCD_CMD_ENTERTESTMODE .equ 0x1C
-        LCD_CMD_SETCOLUMN   .equ 0x20
-        LCD_CMD_SETZSHIFT   .equ 0x40
-        LCD_CMD_SETROW      .equ 0x80
-        LCD_CMD_SETCONTRAST .equ 0xC0
+        LCD_CMD_SETOUTPUTMODE               .equ 0
+        LCD_CMD_SETDISPLAY                  .equ 2
+        LCD_CMD_AUTOINCDEC_SETX             .equ 4
+        LCD_CMD_AUTOINCDEC_SETY             .equ 6
+        LCD_CMD_POWERSUPPLY_SETENHANCEMENT  .equ 8
+        LCD_CMD_MIRRORSCREEN                .equ 0x0C
+        LCD_CMD_POWERSUPPLY_SETLEVEL        .equ 0x10
+        LCD_CMD_CANCELTESTMODE              .equ 0x18
+        LCD_CMD_ENTERTESTMODE               .equ 0x1C
+        LCD_CMD_SETCOLUMN                   .equ 0x20
+        LCD_CMD_SETZSHIFT                   .equ 0x40
+        LCD_CMD_SETROW                      .equ 0x80
+        LCD_CMD_SETCONTRAST                 .equ 0xC0
     
     PORT_LCD_DATA       .equ 0x11
     
@@ -94,7 +94,18 @@
     PORT_RAMEXEC_UPLIMIT .equ 0x26
     
     ; 83+ SE/84+ only
-    PORT_GPIO_CONFIG     .equ 0x39
+    PORT_LCD_DELAY      .equ 0x2A
+        define_mask(LCD_DELAY_FLASH, 0)
+        define_mask(LCD_DELAY_RAM, 1)
+        define_mask(LCD_DELAY_AMOUNT, 2)
+    
+    ; 84+ only
+    PORT_GPIO_CONFIG    .equ 0x39
+    
+    ; 84+ only
+    PORT_GPIO_RW        .equ 0x3A
+        ; color only
+        define_mask(GPIO_RW_BACKLIGHT, 5)
     
     ; USB is 84+ only
     PORT_USB_INT        .equ 0x55
@@ -138,6 +149,52 @@
     PORT_USB_RDPIPE2    .equ 0x85
     
     PORT_USB_MISC_EVENTS .equ 0x86
+    
+; LCD registers
+; TI-84+ CSE only
+    
+    LCDREG_DRIVER_OUTPUTCONTROL1    .equ 1
+    LCDREG_LCDDRIVING_CONTROL       .equ 2
+    LCDREG_ENTRYMODE                .equ 3
+    LCDREG_UNKNOWN6                 .equ 6
+    LCDREG_DISPCONTROL1             .equ 7
+    LCDREG_DISPCONTROL2             .equ 8
+    LCDREG_DISPCONTROL3             .equ 9
+    LCDREG_DISPCONTROL4             .equ 0x0A
+    LCDREG_RGBDISP_INTERFACECONTROL .equ 0x0C
+    LCDREG_FRAMEMAKER_POSITION      .equ 0x0D
+    LCDREG_POWERCONTROL1            .equ 0x10
+    LCDREG_POWERCONTROL2            .equ 0x11
+    LCDREG_POWERCONTROL3            .equ 0x12
+    LCDREG_POWERCONTROL4            .equ 0x13
+    LCDREG_CURSOR_ROW               .equ 0x20
+    LCDREG_CURSOR_COLUMN            .equ 0x21
+    LCDREG_GRAM                     .equ 0x22
+    LCDREG_POWERCONTROL7            .equ 0x29
+    LCDREG_FRAMERATE                .equ 0x2B
+    LCDREG_GAMMA1                   .equ 0x30
+    LCDREG_GAMMA2                   .equ 0x31
+    LCDREG_GAMMA3                   .equ 0x32
+    LCDREG_GAMMA4                   .equ 0x35
+    LCDREG_GAMMA5                   .equ 0x36
+    LCDREG_GAMMA6                   .equ 0x37
+    LCDREG_GAMMA7                   .equ 0x38
+    LCDREG_GAMMA8                   .equ 0x39
+    LCDREG_GAMMA9                   .equ 0x3C
+    LCDREG_GAMMA10                  .equ 0x3D
+    LCDREG_WINDOW_HORIZ_START       .equ 0x50
+    LCDREG_WINDOW_HORIZ_END         .equ 0x51
+    LCDREG_WINDOW_VERT_START        .equ 0x52
+    LCDREG_WINDOW_VERT_END          .equ 0x53
+    LCDREG_GATESCANCONTROL          .equ 0x60
+    LCDREG_BASEIMAGEDISPLAYCONTROL  .equ 0x61
+    LCDREG_VERTSCROLLCONTROL        .equ 0x6A
+    LCDREG_PARTIALIMG1_DISPPOS      .equ 0x80
+    LCDREG_PANELINTERFACECONTROL1   .equ 0x90
+    LCDREG_PANELINTERFACECONTROL2   .equ 0x92
+    ; if you were wondering, this is normal
+    LCDREG_PANELINTERFACECONTROL4   .equ 0x95
+    LCDREG_PANELINTERFACECONTROL5   .equ 0x97
     
 ; System constants
     DEFAULT_STACK_SIZE  .equ 20
