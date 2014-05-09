@@ -6,7 +6,18 @@
 
 ; Port numbers and outputs
     PORT_KEYPAD         .equ 1
-
+    
+    PORT_CALC_STATUS    .equ 2
+        define_mask(CALC_STATUS_BATTERY, 0)
+        ; 83+ SE/84+ only
+        define_mask(CALC_STATUS_LCDBUSY, 1)
+        ; TI-73 and 83+ BE only
+        define_mask(CALC_STATUS_ISTI73, 1)
+        define_mask(CALC_STATUS_FLASHUNLOCKED, 2)
+        define_mask(CALC_STATUS_HASUSB, 5)
+        define_mask(CALC_STATUS_LINKASSIST_AVAILABLE, 6)
+        define_mask(CALC_STATUS_IS83PBE, 7)
+    
     PORT_INT_MASK       .equ 3
         define_mask(INT_ON, 0)
         define_mask(INT_TIMER1, 1)
@@ -35,9 +46,13 @@
     PORT_RAM_PAGING     .equ 5
     
     PORT_BANKA          .equ 6
+        ; 73/83+ BE only
+        define_mask(BANKA_ISRAM_CPU6, 6)
+        ; 83+ SE/84+ only
+        define_mask(BANKA_ISRAM_CPU15, 7)
     
     PORT_BANKB          .equ 7
-        ; 83+ BE only
+        ; 73/83+ BE only
         define_mask(BANKB_ISRAM_CPU6, 6)
         ; 83+ SE/84+ only
         define_mask(BANKB_ISRAM_CPU15, 7)
