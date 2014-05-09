@@ -166,11 +166,10 @@ _:  xor (hl)
     bit 5, a
     jr z, -_
     ; Error, abort
-    ld (hl), 0xF0
+    ld a, 0xF0
+    ld (0), a
     ret
-_:
-    ld (hl), 0xF0
-    inc hl
+_:  inc hl
     ld a, b
     or a
     jr nz, .loop

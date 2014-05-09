@@ -340,10 +340,10 @@ populateStreamBuffer:
         push de
         push hl
         push bc
-            ; Get page number
             ld a, b
             setBankA
             ld a, c
+            and 0b00111111
             add a, 0x40
             ld h, a
             ld l, 0
@@ -589,7 +589,8 @@ _flush_withStream:
                 push hl
                     ; Write buffer to disk
                     ld a, l
-                    or 0x40
+                    and 0b00111111
+                    add a, 0x40
                     call getStreamBuffer ; At this point, D is still the stream ID
                     ld d, a
                     ld e, 0
