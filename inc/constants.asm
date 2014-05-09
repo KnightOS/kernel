@@ -70,6 +70,8 @@
         LCD_CMD_SETROW      .equ 0x80
         LCD_CMD_SETCONTRAST .equ 0xC0
     
+    PORT_LCD_DATA       .equ 0x11
+    
     ; 83+ BE only
     PORT_FLASHEXCLUSION .equ 0x16
     
