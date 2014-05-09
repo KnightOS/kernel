@@ -88,6 +88,9 @@
     
     PORT_LCD_DATA       .equ 0x11
     
+    PORT_FLASHRWCONTROL .equ 0x14
+        define_mask(FLASHRWCONTROL_ENABLEWRITE, 0)
+    
     ; 83+ BE only
     PORT_FLASHEXCLUSION .equ 0x16
     
