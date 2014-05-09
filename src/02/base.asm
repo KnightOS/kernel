@@ -2,6 +2,7 @@
 #include "defines.inc"
 #include "keys.inc"
 #include "kernelmem.inc"
+#include "constants.asm"
 
 #include "00.sym"
 

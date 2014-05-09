@@ -123,6 +123,27 @@
         ; color only
         define_mask(GPIO_RW_BACKLIGHT, 5)
     
+    ; Clocks are 84+ only
+    PORT_CLOCKCONTROL   .equ 0x40
+        define_mask(CLOCKCONTROL_ENABLE, 0)
+        define_mask(CLOCKCONTROL_COMMAND, 1)
+    
+    PORT_CLOCKREG1_IN   .equ 0x41
+    
+    PORT_CLOCKREG2_IN   .equ 0x42
+    
+    PORT_CLOCKREG3_IN   .equ 0x43
+    
+    PORT_CLOCKREG4_IN   .equ 0x44
+    
+    PORT_CLOCKREG1_OUT  .equ 0x45
+    
+    PORT_CLOCKREG2_OUT  .equ 0x46
+    
+    PORT_CLOCKREG3_OUT  .equ 0x47
+    
+    PORT_CLOCKREG4_OUT  .equ 0x48
+    
     ; USB is 84+ only
     PORT_USB_INT        .equ 0x55
         define_mask(USB_INT_BUS, 0)

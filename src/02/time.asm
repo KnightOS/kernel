@@ -14,17 +14,17 @@ setClock:
 #else
     push af
         ld a, h
-        out (0x42), a
+        out (PORT_CLOCKREG2_IN), a
         ld a, l
-        out (0x41), a
+        out (PORT_CLOCKREG1_IN), a
         ld a, d
-        out (0x44), a
+        out (PORT_CLOCKREG4_IN), a
         ld a, e
-        out (0x43), a
-        ld a, 1
-        out (0x40), a
-        ld a, 3
-        out (0x40), a
+        out (PORT_CLOCKREG3_IN), a
+        ld a, CLOCKCONTROL_ENABLE
+        out (PORT_CLOCKCONTROL), a
+        ld a, CLOCKCONTROL_ENABLE | CLOCKCONTROL_COMMAND
+        out (PORT_CLOCKCONTROL), a
     pop af
     cp a
     ret
@@ -44,13 +44,13 @@ getTimeInTicks:
     ret
 #else
     push af
-        in a, (0x46)
+        in a, (PORT_CLOCKREG2_OUT)
         ld h, a
-        in a, (0x45)
+        in a, (PORT_CLOCKREG1_OUT)
         ld l, a
-        in a, (0x48)
+        in a, (PORT_CLOCKREG4_OUT)
         ld d, a
-        in a, (0x47)
+        in a, (PORT_CLOCKREG3_OUT)
         ld e, a
     pop af
     cp a
