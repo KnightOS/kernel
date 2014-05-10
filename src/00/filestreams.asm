@@ -455,7 +455,7 @@ _:  pop af
     ret
 .closeWritableStream:
         call flush_withStream
-        ; Write new file entry
+        
         xor a
         cp (ix + FILE_ENTRY_PAGE)
         jr nz, .overwriteFile

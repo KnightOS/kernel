@@ -169,7 +169,8 @@ _:  xor (hl)
     ld a, 0xF0
     ld (0), a
     ret
-_:  inc hl
+_:  ld (hl), 0xF0
+    inc hl
     ld a, b
     or a
     jr nz, .loop
