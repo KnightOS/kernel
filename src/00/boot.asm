@@ -207,7 +207,9 @@ test:
     xor a
     ld (ix + 0xB), a
     ld (ix + 0xC), a ; Set file length to 3
-    jp closeStream
+    call flush
+    call closeStream
+    ret
 
 bootFile:
     .db "/bin/init", 0

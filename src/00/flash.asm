@@ -33,7 +33,7 @@ lockFlash:
             setBankA(privledgedPage)
             ld b, 0x00
             ld c, 0x14
-            call 0x4017
+            call 0x4004
         pop af
         setBankA
     pop bc
@@ -77,7 +77,7 @@ writeFlashByte:
     pop af
     jp po, _
     ei
-_:    pop af
+_:  pop af
     pop bc
     ret
 
@@ -85,12 +85,12 @@ _:    pop af
 .ram:
     and (hl) ; Ensure that no bits are set
     ld b, a
-        ld a, 0xAA
-        ld (0x0AAA), a    ; Unlock
-        ld a, 0x55
-        ld (0x0555), a    ; Unlock
-        ld a, 0xA0
-        ld (0x0AAA), a    ; Write command
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
+    ld a, 0x55
+    ld (0x0555), a    ; Unlock
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
     ld (hl), b        ; Data
     
     ; Wait for chip
@@ -169,13 +169,13 @@ _:  xor (hl)
     ld a, 0xF0
     ld (0), a
     ret
-_:  ld (hl), 0xF0
-    inc hl
-    ld a, b
-    or a
+_:  inc hl
+    ld a, 0xF0
+    ld (de), a
+    xor a
+    cp c
     jr nz, .loop
-    ld a, c
-    or a
+    cp b
     jr nz, .loop
     ret
 .ram_end:

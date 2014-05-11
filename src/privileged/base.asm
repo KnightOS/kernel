@@ -1,9 +1,13 @@
 #include "constants.asm"
+#include "00.sym"
 .org 0x4000
 
     rst 0 ; Crash before runaway code breaks things
 
-unlockFlash:
+jp _unlockFlash
+jp _lockFlash
+
+_unlockFlash:
     ld a,i
     jp pe, _
     ld a, i
@@ -20,7 +24,7 @@ _:  push af
     ei
     ret
     
-lockFlash:
+_lockFlash:
     ld a,i
     jp pe, _
     ld a, i
