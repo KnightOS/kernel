@@ -133,113 +133,80 @@ pcall:
     push af
         ; Stack state : calling addr, original AF
         ld a, i
-        jp po, .pcall_noInt
+        ; safety first
         ld a, i
-        jp po, .pcall_noInt
         di
-        push hl
-            ; Stack state : calling addr, original AF, original HL
-            ld hl, .returnPoint
-        pop af
-        ; Stack state : calling addr, original AF #### AF contains original HL
-        ex (sp), hl
-        ; Stack state : calling addr, .returnPoint #### AF contains original HL, HL contains original AF
         push af
-            ; Stack state : calling addr, .returnPoint, original HL
-            ex (sp), hl
-            ; Stack state : calling addr, .returnPoint, original AF
-            ; also, no registers are stashed - excepting AF, but that's part of the plan
-            ; and since we can destroy AF, we do that instead of inc sp \ inc sp
-        pop af
-    pop af
-    ; SP is on calling addr
-    ex (sp), hl
-    ; Stack state : original HL, .returnPoint, original AF
-#ifdef FLASH4MB
-    xor a
-    out (0x0E), a
-    ld a, (hl)
-    out (0x06), a
-#else
-    ld a, (hl)
-    setBankA
-#endif
-    inc hl
-    ld a, (hl)
-    inc hl
-    ex (sp), hl
-    ; Stack state : calling addr + 2 (ret addr), .returnPoint, original AF
-    dec sp \ dec sp
-        dec sp \ dec sp
-            ; SP is on original AF
-            push hl
-                ; Stack state : ret addr, .returnPoint, original AF, original HL
-                inc a
-                ld l, a
-                xor a
-                ld h, 0x7F
-                sub l
-                sub l \ jr nc, $ + 3 \ dec h
-                sub l \ jr nc, $ + 3 \ dec h
-                ld l, a
-            pop af
-            ; Stack state : ret addr, .returnPoint, original AF #### AF contains original HL
-            ex (sp), hl
-            ; Stack state : ret addr, .returnPoint, pcall addr #### AF contains original HL, HL contains original AF
+            ; Stack state : calling addr, original AF, interrupt state
+            ; we can't use getBankA because it behaves differently on the 84+CSE, and we don't want that
+            in a, (PORT_BANKA)
             push af
-            ; Stack state : ret addr, .returnPoint, pcall addr, original HL #### HL contains original AF
-                ex (sp), hl
-                ; Stack state : ret addr, .returnPoint, pcall addr, original AF
+                ; Stack state : calling addr, original AF, interrupt state, page
+                push hl
+                    ; Stack state : calling addr, original AF, interrupt state, page, original HL
+                    ld hl, .returnPoint
+                    ex (sp), hl
+                    push hl
+                        ; Stack state : calling addr, original AF, interrupt state, page, return point, original HL
+                    pop af
+                pop af
             pop af
-            ; Stack state : ret addr, .returnPoint, pcall addr
-            ret
-.returnPoint:
-    ei
-    ret
-    
-.pcall_noInt:
-        ; Stack state : calling addr, original AF
+        pop af
     pop af
-    ; SP is on calling addr
+    ; SP points on calling addr and tadaaa ! AF holds its original value
+    ; too bad that we don't care about it at the moment
     ex (sp), hl
-    ; Stack state : original HL, original AF
+    ; Stack state : original HL, original AF, interrupt state, page, return point, original HL #### HL contains calling addr
 #ifdef FLASH4MB
     xor a
-    out (0x0E), A
-    ld a, (hl)
-    out (0x06), a
-#else
-    ld a, (hl)
-    setBankA
+    out (PORT_MEMA_HIGH), a
 #endif
+    ld a, (hl)
+    out (PORT_BANKA), a
     inc hl
     ld a, (hl)
     inc hl
     ex (sp), hl
-    ; Stack state : calling addr + 2 (ret addr), original AF
+    inc a
+    ld l, a
+    ; Stack state : calling addr + 2 (ret addr), original AF, interrupt state, page, return point, original HL
+    ; SP still points on ret addr
+    dec sp \ dec sp
+        ; Loads AF with its original value
+        pop af \ dec sp \ dec sp
         dec sp \ dec sp
-        ; SP is on original AF
-        push hl
-            ; Stack state : ret addr, original AF, original HL
-            inc a
-            ld l, a
-            xor a
-            ld h, 0x7F
-            sub l
-            sub l \ jr nc, $ + 3 \ dec h
-            sub l \ jr nc, $ + 3 \ dec h
-            ld l, a
+            dec sp \ dec sp
+                dec sp \ dec sp
+                    dec sp \ dec sp
+                    ; SP is on original HL
+                        push af
+                            ; Stack state : ret addr, original AF, interrupt state, page, return point, original HL, original AF
+                            ; HL = 0x8000 - (l + 1) * 3
+                            xor a
+                            ld h, 0x7f
+                            sub l
+                            sub l \ jr nc, $ + 3 \ dec h
+                            sub l \ jr nc, $ + 3 \ dec h
+                            ld l, a
+                        pop af
+                        ; Stack state : ret addr, original AF, interrupt state, page, return point, original HL
+                        ex (sp), hl
+                        ; Stack state : ret addr, original AF, interrupt state, page, return point, pcall addr
+                        ret
+.returnPoint:
+    ; Stack state : ret address, original AF, interrupt state, page
+#ifdef FLASH4MB
+                xor a
+                out (PORT_MEMA_HIGH), A
+#endif
+            pop af
+            out (PORT_BANKA), a
         pop af
-        ; Stack state : ret addr, original AF #### AF contains original HL
-        ex (sp), hl
-        ; Stack state : ret addr, pcall addr #### AF contains original HL, HL contains original AF
-        push af
-            ; Stack state : ret addr, pcall addr, original HL #### HL contains original AF
-            ex (sp), hl
-            ; Stack state : ret addr, pcall addr, original AF
-        pop af
-        ; Stack state : ret addr, pcall addr
-        ret ; jump to the actual pcall
+        jp po, _
+        ei
+_:
+    pop af
+    ret
 
 ; rst $28
 bcall:

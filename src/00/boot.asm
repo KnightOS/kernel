@@ -8,13 +8,13 @@ shutdown:
     ; TODO: Crash detection
 _:  di
 
-    ld a, 6
-    out (4), a ; Memory mode 0
+    ld a, 3 << MEM_TIMER_SPEED
+    out (PORT_MEM_TIMER), a ; Memory mode 0
 
 #ifdef FLASH4MB
     xor a
-    out (0x0E), a
-    out (0x0F), a
+    out (PORT_MEMA_HIGH), a
+    out (PORT_MEMB_HIGH), a
 #endif
 
 #ifdef CPU15
@@ -23,23 +23,21 @@ _:  di
     ; Bank 1: Flash Page *
     ; Bank 2: RAM Page 01
     ; Bank 3: RAM Page 00 ; In this order for consistency with TI-83+ and TI-73 mapping
-    ld a, 0x81
-    out (7), a
+    ld a, 1 | BANKB_ISRAM_CPU15
+    out (PORT_BANKB), a
 #else
     ; Set memory mapping
     ; Bank 0: Flash Page 00
     ; Bank 1: Flash Page *
     ; Bank 2: RAM Page 01
     ; Bank 3: RAM Page 00
-    ld a, 0x41
-    out (7), a
+    ld a, 1 | BANKB_ISRAM_CPU6
+    out (PORT_BANKB), a
 #endif
 
     ld sp, userMemory ; end of kernel garbage
 
-#ifndef TEST
     call suspendDevice
-#endif
 ;; reboot [System]
 ;;  Restarts the device.
 reboot:
@@ -49,18 +47,18 @@ reboot:
 
 #ifdef FLASH4MB
     xor a
-    out (0x0E), a
-    out (0x0F), a
+    out (PORT_MEMA_HIGH), a
+    out (PORT_MEMB_HIGH), a
 #endif
     ; Re-map memory
-    ld a, 6
-    out (4), a
+    ld a, 3 << MEM_TIMER_SPEED
+    out (PORT_MEM_TIMER), a
 #ifdef CPU15
-    ld a, 0x81
-    out (7), a
+    ld a, 1 | BANKB_ISRAM_CPU15
+    out (PORT_BANKB), a
 #else
-    ld a, 0x41
-    out (7), a
+    ld a, 1 | BANKB_ISRAM_CPU6
+    out (PORT_BANKB), a
 #endif
 
     ; Manipulate protection states
@@ -68,18 +66,18 @@ reboot:
     call unlockFlash
         ; Remove RAM Execution Protection
         xor a
-        out (0x25), a ; RAM Lower Limit ; out (25), 0
+        out (PORT_RAMEXEC_LOWLIMIT), a ; RAM Lower Limit ; out (25), 0
         dec a
-        out (0x26), a ; RAM Upper Limit ; out (26), $FF
+        out (PORT_RAMEXEC_UPLIMIT), a ; RAM Upper Limit ; out (26), $FF
 
         ; Remove Flash Execution Protection
-        out (0x23), a ; Flash Upper Limit ; out (23), $FF
-        out (0x22), a ; Flash Lower Limit ; out (22), $FF
+        out (PORT_FLASHEXEC_LOWLIMIT), a ; Flash Lower Limit ; out (22), $FF
+        out (PORT_FLASHEXEC_UPLIMIT), a ; Flash Upper Limit ; out (23), $FF
     call lockFlash
 
     ; Set CPU speed to 15 MHz
-    ld a, 1
-    out (0x20), a
+    ld a, BIT_CPUSPEED_15MHZ
+    out (PORT_CPUSPEED), a
 
 #else ; TI-73, TI-83+
     #ifndef TI73 ; RAM does not have protection on the TI-73
@@ -87,31 +85,31 @@ reboot:
     ; Remove RAM/Flash protection
     call unlockFlash
         xor a
-        out (5), a
-        out (0x16), a
+        out (PORT_RAM_PAGING), a
+        out (PORT_FLASHEXCLUSION), a
 
         ld a, 0b000000001
-        out (5), a
+        out (PORT_RAM_PAGING), a
         xor a
-        out (0x16), a
+        out (PORT_FLASHEXCLUSION), a
 
         ld a, 0b000000010
-        out (5), a
+        out (PORT_RAM_PAGING), a
         xor a
-        out (0x16), a
+        out (PORT_FLASHEXCLUSION), a
 
         ld a, 0b000000111
-        out (5), a
+        out (PORT_RAM_PAGING), a
         xor a
-        out (0x16), a
+        out (PORT_FLASHEXCLUSION), a
     call lockFlash
     #endif
 #endif
 
     ; Set interrupt mode
-    ld a, 0b000001011
-    out (3), a
-    ; Set timer frequency
+    ld a, INT_ON | INT_TIMER1 | INT_LINK
+    out (PORT_INT_MASK), a
+    ; Set timer frequency (TODO)
 
     ; Clear RAM
     ld hl, 0x8000
@@ -135,46 +133,48 @@ reboot:
 #ifdef COLOR
     ; Set GPIO config
     ld a, 0xE0
-    out (0x39), a
+    out (PORT_GPIO_CONFIG), a
     ld a, 1
     ld (color_mode), a
 #else
     ; Initialize LCD
-    ld a, 0x05
+    ld a, 1 + LCD_CMD_AUTOINCDEC_SETX
     call lcdDelay
-    out (0x10), a ; X-Increment Mode
+    out (PORT_LCD_CMD), a ; X-Increment Mode
 
-    ld a, 0x01
+    ld a, 1 + LCD_CMD_SETOUTPUTMODE
     call lcdDelay
-    out (0x10), a ; 8-bit mode
+    out (PORT_LCD_CMD), a ; 8-bit mode
 
-    ld a, 3
+    ld a, 1 + LCD_CMD_SETDISPLAY
     call lcdDelay
-    out (0x10), a ; Enable screen
+    out (PORT_LCD_CMD), a ; Enable screen
 
-    ld a, 0x17 ; versus 0x13? TIOS uses 0x17, and that's the only value that works (the datasheet says go with 0x13)
+    ld a, 7 + LCD_CMD_POWERSUPPLY_SETLEVEL ; versus +3? TIOS uses +7, and that's the only value that works (the datasheet says go with +3)
     call lcdDelay
-    out (0x10), a ; Op-amp control (OPA1) set to max (with DB1 set for some reason)
+    out (PORT_LCD_CMD), a ; Op-amp control (OPA1) set to max (with DB1 set for some reason)
 
-    ld a, 0xB ; B
+    ld a, 3 + LCD_CMD_POWERSUPPLY_SETENHANCEMENT ; B
     call lcdDelay
-    out (0x10), a ; Op-amp control (OPA2) set to max
+    out (PORT_LCD_CMD), a ; Op-amp control (OPA2) set to max
 
     ; Different amounts of contrast look better on different models
     #ifdef USB
-        ld a, 0xEF
+        ld a, 0x2F + LCD_CMD_SETCONTRAST
     #else
         #ifdef TI73
-            ld a, 0xFB
+            ld a, 0x3B + LCD_CMD_SETCONTRAST
         #else
-            ld a, 0xF4
+            ld a, 0x34 + LCD_CMD_SETCONTRAST
         #endif
     #endif
 
     ld (currentContrast), a
     call lcdDelay
-    out (0x10), a ; Contrast
+    out (PORT_LCD_CMD), a ; Contrast
 #endif
+
+    call test
     
     ld de, bootFile
     call fileExists
@@ -186,5 +186,35 @@ reboot:
 
     jp contextSwitch_manual
 
+test:
+    ld de, testFile
+    call fileExists
+    ret z
+    call openFileWrite
+    ; Writing file manually because stream write functions aren't implemented yet
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, testString
+        ld bc, testStringEnd - testString
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + 0xD) ; Mark as not flushed
+    ld a, testStringEnd - testString
+    ld (ix + 3), a   ; Set stream pointer to 3
+    ld (ix + 0xA), a
+    xor a
+    ld (ix + 0xB), a
+    ld (ix + 0xC), a ; Set file length to 3
+    call flush
+    call closeStream
+    ret
+
 bootFile:
     .db "/bin/init", 0
+testFile:
+    .db "/var/test", 0
+testString:
+    .db "This file was written at\nruntime!"
+testStringEnd:

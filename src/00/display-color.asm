@@ -44,8 +44,8 @@ colorSupported:
 ;; Comments:
 ;;  Destroys C
 writeLcdRegister:
-    out (0x10), a \ out (0x10), a
-    ld c, 0x11
+    out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
+    ld c, PORT_LCD_DATA
     out (c), h
     out (c), l
     ret
@@ -62,25 +62,25 @@ writeLcdRegister:
 setLcdWindow:
     push af \ push hl
         push bc
-            ld a, 0x52
+            ld a, LCDREG_WINDOW_VERT_START
             call writeLcdRegister
             inc a
-            out (0x10), a
-            out (0x10), a
+            out (PORT_LCD_CMD), a
+            out (PORT_LCD_CMD), a
             out (c), d
             out (c), e
         pop bc
-        ld a, 0x50
+        ld a, LCDREG_WINDOW_HORIZ_START
         ld h, 0
         ld l, c
-        ld c, 0x11
-        out (0x10), a
-        out (0x10), a
+        ld c, PORT_LCD_DATA
+        out (PORT_LCD_CMD), a
+        out (PORT_LCD_CMD), a
         out (c), h
         out (c), b
         inc a
-        out (0x10), a
-        out (0x10), a
+        out (PORT_LCD_CMD), a
+        out (PORT_LCD_CMD), a
         out (c), h
         out (c), l
     pop hl \ pop af
@@ -92,9 +92,9 @@ fullScreenWindow:
     push hl
     push bc
     push af
-        lcdout(0x50, 0)
-        lcdout(0x51, 239)
-        lcdout(0x53, 319)
+        lcdout(LCDREG_WINDOW_HORIZ_START, 0)
+        lcdout(LCDREG_WINDOW_HORIZ_END, 239)
+        lcdout(LCDREG_WINDOW_VERT_END, 319)
     pop af
     pop bc
     pop hl
@@ -109,8 +109,8 @@ fullScreenWindow:
 ;; Comments:
 ;;  Destroys C
 readLcdRegister:
-    out (0x10), a \ out (0x10), a
-    ld c, 0x11
+    out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
+    ld c, PORT_LCD_DATA
     in h, (c)
     in l, (c)
     ret
@@ -132,80 +132,80 @@ colorLcdWait:
 ;;  Initializes and turns on the color LCD in color mode.
 colorLcdOn:
     ; TODO: Optimize this, it could be a lot faster
-    ld a, 0x0D
-    out (0x2A), a ; LCD delay
-    lcdout(0x07, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
-    lcdout(0x06, 0x0000)
-    ;lcdout(0x10, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
-    lcdout(0x11, 0x0007) ; Pwr.Ctrl.2: Configure voltages
-    lcdout(0x12, 0x008C) ; Pwr.Ctrl.3: More voltages
-    lcdout(0x13, 0x1800) ; Pwr.Ctrl.4: Take a wild guess
-    lcdout(0x29, 0x0030) ; Pwr.Ctrl.7: I'm not an LCD engineer, don't ask me.
+    ld a, BIT_LCD_DELAY_FLASH | (3 << BIT_LCD_DELAY_AMOUNT)
+    out (PORT_LCD_DELAY), a ; LCD delay
+    lcdout(LCDREG_DISPCONTROL1, 0x0000) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    lcdout(LCDREG_UNKNOWN6, 0x0000)
+    ;lcdout(LCDREG_POWERCONTROL1, 0x07F1) ; Reset Pwr.Ctrl.1: Start RC oscillator, set voltages
+    lcdout(LCDREG_POWERCONTROL2, 0x0007) ; Pwr.Ctrl.2: Configure voltages
+    lcdout(LCDREG_POWERCONTROL3, 0x008C) ; Pwr.Ctrl.3: More voltages
+    lcdout(LCDREG_POWERCONTROL4, 0x1800) ; Pwr.Ctrl.4: Take a wild guess
+    lcdout(LCDREG_POWERCONTROL7, 0x0030) ; Pwr.Ctrl.7: I'm not an LCD engineer, don't ask me.
     call colorLcdWait
-    lcdout(0x10, 0x0190) ; Init Pwr.Ctrl.1: Exit standby, fiddle with voltages, enable
-    lcdout(0x11, 0x0227) ; Pwr.Ctrl.2: Configure voltages
-    lcdout(0x06, 0x0001)
-    call colorLcdWait
-    call colorLcdWait
-    lcdout(0x01, 0x0000) ; Reset Out.Ctrl.1: Ensure scan directions are not reversed
-    lcdout(0x02, 0x0200) ; LCD Driving Control: Sets inversion mode=line inversion and disables it
-    lcdout(0x03, 0x10b8) ; Init. Entry Mode: Cursor moves up/down, down, left, disable
-    lcdout(0x08, 0x0202) ; Set front & back porches: 2 blank lines top & bottom
-    lcdout(0x09, 0x0000) ; Reset Disp.Ctrl.3: Resets scanning stuff and off-screen voltage
-    lcdout(0x0A, 0x0000) ; Disp.Ctrl.4: No FMARK
-    lcdout(0x0C, 0x0000) ; RGB Disp.: Off
-    lcdout(0x0D, 0x0000) ; FMARK position: Off
-    lcdout(0x60, 0x2700) ; Driver Output Ctrl. 2
-    lcdout(0x61, 0x0001) ; Base Image Display Ctrl: Use color inversion, no vertical scroll, reset voltage in non-display level
-    lcdout(0x6A, 0x0000) ; Reset Vertical Scroll Ctrl.
-    lcdout(0x90, 0x0010)
-    lcdout(0x92, 0x0600)
-    lcdout(0x95, 0x0200)
-    lcdout(0x97, 0x0c00)
-    lcdout(0x30, 0x0000) ; Gamma Control 1
-    lcdout(0x31, 0x0305) ; Gamma Control 2
-    lcdout(0x32, 0x0002) ; Gamma Control 3
-    lcdout(0x35, 0x0301) ; Gamma Control 4
-    lcdout(0x36, 0x0004) ; Gamma Control 5
-    lcdout(0x37, 0x0507) ; Gamma Control 6
-    lcdout(0x38, 0x0204) ; Gamma Control 7
-    lcdout(0x39, 0x0707) ; Gamma Control 8
-    lcdout(0x3C, 0x0103) ; Gamma Control 9
-    lcdout(0x3D, 0x0004) ; Gamma Control 10
-    lcdout(0x50, 0x0000) ; Horiz.Win.Start: 0
-    lcdout(0x51, 0x00EF) ; Horiz.Win.End: 239 = 240-1
-    lcdout(0x52, 0x0000) ; Vert.Win.Start: 0
-    lcdout(0x53, 0x013F) ; Vert.Win.End: 319 = 320-1
-    lcdout(0x2B, 0x000B) ; Set frame rate to 70
-    lcdout(0x10, 0x1190) ; Init Pwr.Ctrl.1: Exit standby, fiddle with voltages, enable
-    lcdout(0x07, 0x0001) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    lcdout(LCDREG_POWERCONTROL1, 0x0190) ; Init Pwr.Ctrl.1: Exit standby, fiddle with voltages, enable
+    lcdout(LCDREG_POWERCONTROL2, 0x0227) ; Pwr.Ctrl.2: Configure voltages
+    lcdout(LCDREG_UNKNOWN6, 0x0001)
     call colorLcdWait
     call colorLcdWait
-    lcdout(0x07, 0x0023) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    lcdout(LCDREG_DRIVER_OUTPUTCONTROL1, 0x0000) ; Reset Out.Ctrl.1: Ensure scan directions are not reversed
+    lcdout(LCDREG_LCDDRIVING_CONTROL, 0x0200) ; LCD Driving Control: Sets inversion mode=line inversion and disables it
+    lcdout(LCDREG_ENTRYMODE, 0x10b8) ; Init. Entry Mode: Cursor moves up/down, down, left, disable
+    lcdout(LCDREG_DISPCONTROL2, 0x0202) ; Set front & back porches: 2 blank lines top & bottom
+    lcdout(LCDREG_DISPCONTROL3, 0x0000) ; Reset Disp.Ctrl.3: Resets scanning stuff and off-screen voltage
+    lcdout(LCDREG_DISPCONTROL4, 0x0000) ; Disp.Ctrl.4: No FMARK
+    lcdout(LCDREG_RGBDISP_INTERFACECONTROL, 0x0000) ; RGB Disp.: Off
+    lcdout(LCDREG_FRAMEMAKER_POSITION, 0x0000) ; FMARK position: Off
+    lcdout(LCDREG_GATESCANCONTROL, 0x2700) ; Driver Output Ctrl. 2
+    lcdout(LCDREG_BASEIMAGEDISPLAYCONTROL, 0x0001) ; Base Image Display Ctrl: Use color inversion, no vertical scroll, reset voltage in non-display level
+    lcdout(LCDREG_VERTSCROLLCONTROL, 0x0000) ; Reset Vertical Scroll Ctrl.
+    lcdout(LCDREG_PANELINTERFACECONTROL1, 0x0010)
+    lcdout(LCDREG_PANELINTERFACECONTROL2, 0x0600)
+    lcdout(LCDREG_PANELINTERFACECONTROL4, 0x0200)
+    lcdout(LCDREG_PANELINTERFACECONTROL5, 0x0c00)
+    lcdout(LCDREG_GAMMA1, 0x0000) ; Gamma Control 1
+    lcdout(LCDREG_GAMMA2, 0x0305) ; Gamma Control 2
+    lcdout(LCDREG_GAMMA3, 0x0002) ; Gamma Control 3
+    lcdout(LCDREG_GAMMA4, 0x0301) ; Gamma Control 4
+    lcdout(LCDREG_GAMMA5, 0x0004) ; Gamma Control 5
+    lcdout(LCDREG_GAMMA6, 0x0507) ; Gamma Control 6
+    lcdout(LCDREG_GAMMA7, 0x0204) ; Gamma Control 7
+    lcdout(LCDREG_GAMMA8, 0x0707) ; Gamma Control 8
+    lcdout(LCDREG_GAMMA9, 0x0103) ; Gamma Control 9
+    lcdout(LCDREG_GAMMA10, 0x0004) ; Gamma Control 10
+    lcdout(LCDREG_WINDOW_HORIZ_START, 0x0000) ; Horiz.Win.Start: 0
+    lcdout(LCDREG_WINDOW_HORIZ_END, 0x00EF) ; Horiz.Win.End: 239 = 240-1
+    lcdout(LCDREG_WINDOW_VERT_START, 0x0000) ; Vert.Win.Start: 0
+    lcdout(LCDREG_WINDOW_VERT_END, 0x013F) ; Vert.Win.End: 319 = 320-1
+    lcdout(LCDREG_FRAMERATE, 0x000B) ; Set frame rate to 70
+    lcdout(LCDREG_POWERCONTROL1, 0x1190) ; Init Pwr.Ctrl.1: Exit standby, fiddle with voltages, enable
+    lcdout(LCDREG_DISPCONTROL1, 0x0001) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
     call colorLcdWait
     call colorLcdWait
-    lcdout(0x07, 0x0133) ; Disp.Ctrl.1: LCD scan & light on, ready to enter standby
+    lcdout(LCDREG_DISPCONTROL1, 0x0023) ; Reset Disp.Ctrl.1: LCD scanning, command processing OFF
+    call colorLcdWait
+    call colorLcdWait
+    lcdout(LCDREG_DISPCONTROL1, 0x0133) ; Disp.Ctrl.1: LCD scan & light on, ready to enter standby
     ; Turn on backlight
-    in a, (0x3A)
-    set 5, a
-    out (0x3A), a
+    in a, (PORT_GPIO_RW)
+    set BIT_GPIO_RW_BACKLIGHT, a
+    out (PORT_GPIO_RW), a
     xor a
     ; TODO: Remember and restore backlight brightness
-    lcdout(0x03, 0x10B8) ; Entry mode the way we want it
+    lcdout(LCDREG_ENTRYMODE, 0x10B8) ; Entry mode the way we want it
     ret
 
 ;; colorLcdOff [Color]
 ;;  Turns off the color LCD and backlight.
 colorLcdOff:
-    lcdout(0x07, 0x00)
+    lcdout(LCDREG_DISPCONTROL1, 0x00)
     call colorLcdWait
-    lcdout(0x10, 0x07F0)
+    lcdout(LCDREG_POWERCONTROL1, 0x07F0)
     call colorLcdWait
-    lcdout(0x10, 0x07F1)
+    lcdout(LCDREG_POWERCONTROL1, 0x07F1)
     ; Turn off backlight
-    in a, (0x3A)
-    res 5, a
-    out (0x3A), a
+    in a, (PORT_GPIO_RW)
+    res BIT_GPIO_RW_BACKLIGHT, a
+    out (PORT_GPIO_RW), a
     ret
 
 fastCopy: ; Draws a 96x64 monochrome buffer on a color screen
@@ -215,28 +215,28 @@ fastCopy_skipCheck:
     push hl \ push bc \ push de \ push af
         push iy \ pop hl
         ; Draws a 96x64 monochrome LCD buffer (legacy buffer) to the color LCD
-        ld bc, 64 << 8 | 0x11 ; 64 rows in b, and the data port in c
+        ld bc, 64 << 8 | PORT_LCD_DATA ; 64 rows in b, and the data port in c
         ld de, ((240 - 128) / 2) << 8 | 0 ; Top of the current window in d, 0xFF in e
 .loop:
         ; Set cursor column to 0
-        ld a, 0x21
-        out (0x10), a \ out (0x10), a
+        ld a, LCDREG_CURSOR_COLUMN
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
         dec a ; ld a, 32
         out (c), a \ out (c), a
         ; Set window top and cursor row to d
         ;ld a, 0x20 ; (aka 32)
-        out (0x10), a \ out (0x10), a
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
         out (c), e \ out (c), d ; Cursor row
-        ld a, 0x50
-        out (0x10), a \ out (0x10), a
+        ld a, LCDREG_WINDOW_HORIZ_START
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
         out (c), e \ out (c), d ; Window top
         ; Window bottom to d + 1
         inc d \ inc a
-        out (0x10), a \ out (0x10), a
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
         out (c), e \ out (c), d
         ; Select data register
-        ld a, 0x22
-        out (0x10), a \ out (0x10), a
+        ld a, LCDREG_GRAM
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
         ; Draw row
         push de
         push bc
@@ -326,7 +326,7 @@ clearColorLcd:
     push de
         push iy \ pop de
         ; Set window
-        ld a, 0x50
+        ld a, LCDREG_WINDOW_HORIZ_START
         ld hl, 0
         call writeLcdRegister
         inc a \ ld hl, 239
@@ -336,15 +336,15 @@ clearColorLcd:
         inc a \ ld hl, 319
         call writeLcdRegister
         ; Set cursor
-        ld a, 0x20
+        ld a, LCDREG_CURSOR_ROW
         ld hl, 0
         call writeLcdRegister
         inc a
         call writeLcdRegister
         inc a
         ; Select GRAM
-        out (0x10), a \ out (0x10), a
-        ld c, 0x11
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
+        ld c, PORT_LCD_DATA
         ld h, 240
 .outerLoop:
         ld b, 40
@@ -434,7 +434,7 @@ setLegacyLcdMode_boot:
     push bc
     push hl
         ; Set up partial images
-        ld a, 0x80
+        ld a, LCDREG_PARTIALIMG1_DISPPOS
         ld hl, 0
         call writeLcdRegister
         inc a
@@ -453,21 +453,21 @@ setLegacyLcdMode_boot:
         ld hl, 159 ; 95
         call writeLcdRegister
         ; Set BASEE = 0, both partial images = 1
-        ld a, 0x07
-        out (0x10), a \ out (0x10), a
-        ld c, 0x11
-        in a, (0x11) \ in l, (c)
+        ld a, LCDREG_DISPCONTROL1
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
+        ld c, PORT_LCD_DATA
+        in a, (PORT_LCD_DATA) \ in l, (c)
         or  0b00110000 ; Partial images
         and 0b11111110 ; BASEE
-        out (0x11), a
+        out (PORT_LCD_DATA), a
         out (c), l
         ; Set interlacing on
-        lcdout(0x01, 0b0000010000000000)
+        lcdout(LCDREG_DRIVER_OUTPUTCONTROL1, 0b0000010000000000)
         ; Set window rows
-        lcdout(0x52, (160 - 96) / 2)
-        lcdout(0x53, 159 - (160 - 96) / 2)
+        lcdout(LCDREG_WINDOW_VERT_START, (160 - 96) / 2)
+        lcdout(LCDREG_WINDOW_VERT_END, 159 - (160 - 96) / 2)
         ; Set entry mode (down-then-right)
-        lcdout(0x03, 0b0001000000110000)
+        lcdout(LCDREG_ENTRYMODE, 0b0001000000110000)
     pop hl
     pop bc
     pop af
@@ -500,23 +500,23 @@ _:  ld a, 1
         inc h
 _:      set 3, (hl)
         ; Set BASEE = 0, both partial images = 1
-        ld a, 0x07
-        out (0x10), a \ out (0x10), a
-        ld c, 0x11
-        in a, (0x11) \ in l, (c)
+        ld a, LCDREG_DISPCONTROL1
+        out (PORT_LCD_CMD), a \ out (PORT_LCD_CMD), a
+        ld c, PORT_LCD_DATA
+        in a, (PORT_LCD_DATA) \ in l, (c)
         and 0b11001111 ; Partial images
         or  0b00000001 ; BASEE
-        out (0x11), a
+        out (PORT_LCD_DATA), a
         out (c), l
         ; Set interlacing off
-        lcdout(0x01, 0b0000000000000000)
+        lcdout(LCDREG_DRIVER_OUTPUTCONTROL1, 0b0000000000000000)
         ; Set window
-        lcdout(0x50, 0)
-        lcdout(0x51, 239)
-        lcdout(0x52, 0)
-        lcdout(0x52, 319)
+        lcdout(LCDREG_WINDOW_HORIZ_START, 0)
+        lcdout(LCDREG_WINDOW_HORIZ_END, 239)
+        lcdout(LCDREG_WINDOW_VERT_START, 0)
+        lcdout(LCDREG_WINDOW_VERT_END, 319)
         ; Set entry mode
-        lcdout(0x03, 0x10B8)
+        lcdout(LCDREG_ENTRYMODE, 0x10B8)
     pop af
     jp po, _
     ei
@@ -585,12 +585,12 @@ clipColorRectangle:
                     ld ix, -14
                     add ix, sp
                     push ix
-                        ld a, 0x50
+                        ld a, LCDREG_WINDOW_HORIZ_START
                         ld b, 4
-                        ld c, 0x11
+                        ld c, PORT_LCD_DATA
 .registerSave:
-                        out (0x10), a
-                        out (0x10), a
+                        out (PORT_LCD_CMD), a
+                        out (PORT_LCD_CMD), a
                         in d, (c)
                         in e, (c)
                         ld (ix + 0), e
@@ -605,7 +605,7 @@ clipColorRectangle:
                 ; Horizontal start
                 push hl
                     call .clipX
-                    ld a, 0x52
+                    ld a, LCDREG_WINDOW_VERT_START
                     ; I can't use the kernel's writeLcdRegister or readLcdRegister here because they destroy C
                     call .writeLcdReg
                     ; Horizontal end
@@ -613,7 +613,7 @@ clipColorRectangle:
             pop de
             add hl, de
             call .clipX
-            ld a, 0x53
+            ld a, LCDREG_WINDOW_VERT_END
             call .writeLcdReg
             ; Vertical start
             ld l, b
@@ -628,7 +628,7 @@ clipColorRectangle:
 _:
             push hl
                 call .clipY
-                ld a, 0x50
+                ld a, LCDREG_WINDOW_HORIZ_START
                 call .writeLcdReg
                 ; Vertical end
                 ld e, c
@@ -636,39 +636,39 @@ _:
             pop hl
             add hl, de
             call .clipY
-            ld a, 0x51
+            ld a, LCDREG_WINDOW_HORIZ_END
             call .writeLcdReg
             ; Actually draw the rect
-            ld a, 0x52
+            ld a, LCDREG_WINDOW_VERT_START
             call .readLcdReg
             ld c, l
             ld b, h
-            ld a, 0x21
+            ld a, LCDREG_CURSOR_COLUMN
             call .writeLcdReg
-            ld    a, 0x53
+            ld    a, LCDREG_WINDOW_VERT_END
             call .readLcdReg
             or a
             sbc hl, bc
             inc hl
             ld e, l
             ld d, h
-            ld a, 0x50
+            ld a, LCDREG_WINDOW_HORIZ_START
             call .readLcdReg
             ld c, l
             ld b, h
-            ld a, 0x20
+            ld a, LCDREG_CURSOR_ROW
             call .writeLcdReg
-            ld a, 0x51
+            ld a, LCDREG_WINDOW_HORIZ_END
             call .readLcdReg
             or a
             sbc hl, bc
             ld a, l
             call DEMulA
-            ld a, 0x22
-            out (0x10), a
-            out (0x10), a
+            ld a, LCDREG_GRAM
+            out (PORT_LCD_CMD), a
+            out (PORT_LCD_CMD), a
             push iy \ pop de
-            ld c, 0x11
+            ld c, PORT_LCD_DATA
 .drawLoop:
             out (c), d
             out (c), e
@@ -677,12 +677,12 @@ _:
             or l
             jr nz, .drawLoop
             ; Restore previous clipping window
-            ld a, 0x50
+            ld a, LCDREG_WINDOW_HORIZ_START
             ld b, 4
-            ld c, 0x11
+            ld c, PORT_LCD_DATA
 .registerRcl:
-            out (0x10), a
-            out (0x10), a
+            out (PORT_LCD_CMD), a
+            out (PORT_LCD_CMD), a
             ld e, (ix + 0)
             ld d, (ix + 1)
             out (c), d
@@ -716,20 +716,20 @@ _:
     ret
 
 .readLcdReg:
-    out (0x10), a
-    out (0x10), a
-    in a, (0x11)
+    out (PORT_LCD_CMD), a
+    out (PORT_LCD_CMD), a
+    in a, (PORT_LCD_DATA)
     ld h, a
-    in a, (0x11)
+    in a, (PORT_LCD_DATA)
     ld l, a
     ret
 .writeLcdReg:
-    out (0x10), a
-    out (0x10), a
+    out (PORT_LCD_CMD), a
+    out (PORT_LCD_CMD), a
     ld a, h
-    out (0x11), a
+    out (PORT_LCD_DATA), a
     ld a, l
-    out (0x11), a
+    out (PORT_LCD_DATA), a
     ret
 #endif
 

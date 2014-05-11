@@ -33,7 +33,7 @@ lockFlash:
             setBankA(privledgedPage)
             ld b, 0x00
             ld c, 0x14
-            call 0x4017
+            call 0x4004
         pop af
         setBankA
     pop bc
@@ -77,7 +77,7 @@ writeFlashByte:
     pop af
     jp po, _
     ei
-_:    pop af
+_:  pop af
     pop bc
     ret
 
@@ -85,12 +85,12 @@ _:    pop af
 .ram:
     and (hl) ; Ensure that no bits are set
     ld b, a
-        ld a, 0xAA
-        ld (0x0AAA), a    ; Unlock
-        ld a, 0x55
-        ld (0x0555), a    ; Unlock
-        ld a, 0xA0
-        ld (0x0AAA), a    ; Write command
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
+    ld a, 0x55
+    ld (0x0555), a    ; Unlock
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
     ld (hl), b        ; Data
     
     ; Wait for chip
@@ -166,16 +166,16 @@ _:  xor (hl)
     bit 5, a
     jr z, -_
     ; Error, abort
-    ld (hl), 0xF0
+    ld a, 0xF0
+    ld (0), a
     ret
-_:
-    ld (hl), 0xF0
-    inc hl
-    ld a, b
-    or a
+_:  inc hl
+    ld a, 0xF0
+    ld (de), a
+    xor a
+    cp c
     jr nz, .loop
-    ld a, c
-    or a
+    cp b
     jr nz, .loop
     ret
 .ram_end:
@@ -327,7 +327,7 @@ copySectorToSwap:
 #ifdef CPU15
         push af
             ld a, 1
-            out (5), a
+            out (PORT_RAM_PAGING), a
         
             ld de, flashFunctions + 0x4000 ; By rearranging memory, we can make the routine perform better
             ld bc, .end - .ram
@@ -344,7 +344,7 @@ copySectorToSwap:
         ld sp, hl
         call flashFunctions + 0x4000
         xor a
-        out (5), a ; Restore correct memory mapping
+        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
         ld hl, 0
         add hl, sp
         ld bc, 0x4000
@@ -497,7 +497,7 @@ copyFlashPage:
         ld hl, .ram
 #ifdef CPU15
             ld a, 1
-            out (5), a
+            out (PORT_RAM_PAGING), a
             ; This routine can perform better on some models if we rearrange memory 
             ld de, flashFunctions + 0x4000
             ld bc, .ram_end - .ram
@@ -515,7 +515,7 @@ copyFlashPage:
         ld sp, hl
         call flashFunctions + 0x4000
         xor a
-        out (5), a ; Restore correct memory mapping
+        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
         ld hl, 0
         add hl, sp
         ld bc, 0x4000

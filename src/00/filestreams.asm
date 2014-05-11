@@ -20,7 +20,7 @@ openFileRead:
         push iy
         push bc
             ld iy, fileHandleTable
-            ld bc, 16 ; Length of a file handle
+            ld bc, FILE_HANDLE_SIZE
             ld d, 0
 .findEntryLoop:
             ld a, (iy)
@@ -54,18 +54,18 @@ _:  pop af
             push af
                 call getCurrentThreadId
                 and 0b111111
-                ld (iy), a ; Flags & owner
+                ld (iy + FILE_FLAGS), a ; Flags & owner
                 ; Create a buffer
-                ld bc, 256
+                ld bc, KFS_BLOCK_SIZE
                 call malloc
                 jp nz, .outOfMemory
                 push ix \ pop bc
-                ld (iy + 1), c ; Buffer
-                ld (iy + 2), b
+                ld (iy + FILE_BUFFER), c ; Buffer
+                ld (iy + FILE_BUFFER + 1), b
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
                 xor a
-                ld (iy + 7), a
+                ld (iy + FILE_FINAL_LENGTH), a
                 ld a, (hl)
                 or a ; cp 0
                 jr z, .final
@@ -80,35 +80,40 @@ _:  pop af
 .final:
                 set 7, (iy)
                 ld a, (hl)
-                ld (iy + 7), a
+                ld (iy + FILE_FINAL_LENGTH), a
                 jr .notFinal
                 dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
-                ld (iy + 6), a ; Length of final block
+                ld (iy + FILE_FINAL_LENGTH), a ; Length of final block
                 dec hl \ dec hl \ dec hl ; Move to section ID
                 ld c, (hl)
-                ld (iy + 4), c
+                ld (iy + FILE_SECTION_ID), c
                 dec hl \ ld b, (hl)
-                ld (iy + 5), b
+                ld (iy + FILE_SECTION_ID + 1), b
                 ; Section ID in BC
                 call populateStreamBuffer
+                ; Populate the previous section, which is 0xFFFF for new streams
+                ld a, 0xFF
+                ld (iy + FILE_PREV_SECTION), a
+                ld (iy + FILE_PREV_SECTION + 1), a
                 xor a
-                ld (iy + 3), a ; Stream pointer
+                ld (iy + FILE_STREAM), a ; Stream pointer
             pop af
             pop hl
             pop ix
             pop de
             ; Load file entry info
-            ld (iy + 8), a
-            ld (iy + 9), l
-            ld (iy + 10), h
+            ld (iy + FILE_ENTRY_PAGE), a
+            ld (iy + FILE_ENTRY_PTR), l
+            ld (iy + FILE_ENTRY_PTR + 1), h
             ; And the working file size
+            ; This doesn't matter for ro streams
             xor a
-            ld (iy + 11), a ; This doesn't matter for ro streams
-            ld (iy + 12), a
-            ld (iy + 13), a
+            ld (iy + FILE_WORKING_SIZE), a
+            ld (iy + FILE_WORKING_SIZE + 1), a
+            ld (iy + FILE_WORKING_SIZE + 2), a
         pop iy
         pop af
     jp po, _
@@ -135,6 +140,8 @@ _:  pop af
     or a
     ret
 
+; TODO: Error out if the parent directory does not exist
+; Right now, closeStream is the first time that's ever checked
 ;; openFileWrite [Filestreams]
 ;;  Opens a file stream in write mode. If the file does not exist,
 ;;  it is created.
@@ -152,22 +159,19 @@ openFileWrite:
     ld a, i
     push af
     di
-        call findFileEntry
-        jp nz, .fileNotFound
-.fileCreated:
         push iy
         push bc
             ld iy, fileHandleTable
-            ld bc, 16 ; Length of a file handle
-            ld d, 0
+            ld bc, FILE_HANDLE_SIZE ; Length of a file handle
+            ld l, 0
 .findEntryLoop:
-            ld a, (iy)
+            ld a, (iy + FILE_FLAGS)
             cp 0xFF
             jr z, .entryFound
             add iy, bc
-            inc d
+            inc l
             ld a, maxFileStreams - 1
-            cp d
+            cp l
             jr nc, .findEntryLoop
             ; Too many active streams
             ; We could check (activeFileStreams) instead, but since we have to iterate through the table
@@ -184,8 +188,10 @@ _:  pop af
     ld a, errTooManyStreams
     ret
 .entryFound:
+            call findFileEntry
+            call nz, .fileNotFound
+            dec d
             ; We can put the stream entry at (iy) and use d as the ID
-            pop bc
             push de
             push ix
             push hl
@@ -195,17 +201,17 @@ _:  pop af
                 or 0b01000000 ; Set writable
                 ld (iy), a ; Flags & owner
                 ; Create a buffer
-                ld bc, 256
+                ld bc, KFS_BLOCK_SIZE
                 ld a, 1
                 call calloc
                 jp nz, .outOfMemory
                 push ix \ pop bc
-                ld (iy + 1), c ; Buffer
-                ld (iy + 2), b
+                ld (iy + FILE_BUFFER), c ; Buffer
+                ld (iy + FILE_BUFFER + 1), b
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
                 xor a
-                ld (iy + 7), a
+                ld (iy + FILE_FINAL_LENGTH), a
                 ld a, (hl)
                 or a ; cp 0
                 jr z, .final
@@ -220,56 +226,69 @@ _:  pop af
 .final:
                 set 7, (iy)
                 ld a, (hl)
-                ld (iy + 7), a
+                ld (iy + FILE_FINAL_LENGTH), a
                 jr .notFinal
                 ;dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
-                ld (iy + 6), a ; Length of final block
+                ld (iy + FILE_FINAL_LENGTH), a ; Length of final block
                 dec hl \ dec hl ; Move to section ID
                 ld b, (hl)
-                ld (iy + 5), b
+                ld (iy + FILE_SECTION_ID), b
                 dec hl \ ld c, (hl)
-                ld (iy + 4), c
+                ld (iy + FILE_SECTION_ID + 1), c
                 ; Section ID in BC
                 call populateStreamBuffer
+                ; Populate the previous section, which is 0xFFFF for new streams
+                ld a, 0xFF
+                ld (iy + FILE_PREV_SECTION), a
+                ld (iy + FILE_PREV_SECTION + 1), a
+                ; Stream pointer
                 xor a
-                ld (iy + 3), a ; Stream pointer
+                ld (iy + FILE_STREAM), a
             pop af
             pop hl
             pop ix
             pop de
-            ; Load file entry info
-            ld (iy + 8), a
-            ld (iy + 9), l
-            ld (iy + 10), h
-            ld a, 1 ; Stream is flushed
-            ld (iy + 14), a ; Set stream write flags (TODO: Move flags around)
-            ; Working file size
-            ld a, 0xFF
-            cp (iy + 4)
-            jr nz, _
-            cp (iy + 5)
-            jr nz, _
-            ; This is a brand-new file
+            push af
+                 xor a
+                 cp (iy + FILE_ENTRY_PAGE)
+                 jr z, _ ; Skip file entry for new files
+            pop af \ push af
+                 ; Load file entry info
+                 ld (iy + FILE_ENTRY_PAGE), a
+                 ld (iy + FILE_ENTRY_PTR), l
+                 ld (iy + FILE_ENTRY_PTR + 1), h
+_:               ld a, 1 ; Stream is flushed
+                 ld (iy + FILE_WRITE_FLAGS), a ; Set stream write flags (TODO: Move flags around)
+                 ; Working file size
+                 ld a, 0xFF
+                 cp (iy + FILE_WORKING_SIZE)
+                 jr nz, _
+                 cp (iy + FILE_WORKING_SIZE + 1)
+                 jr nz, _
+                 ; This is a brand-new file
+            pop af
             xor a
-            ld (iy + 11), a
-            ld (iy + 12), a
-            ld (iy + 13), a
+            ld (iy + FILE_WORKING_SIZE), a
+            ld (iy + FILE_WORKING_SIZE + 1), a
+            ld (iy + FILE_WORKING_SIZE + 2), a
             jr ++_
 _:          ; This is an existing file, load the existing size from the entry
+            pop af
             setBankA
             ld bc, 6
             or a
             sbc hl, bc
             ld a, (hl)
-            ld (iy + 11), a
+            ld (iy + FILE_WORKING_SIZE), a
             dec hl \ ld a, (hl)
-            ld (iy + 12), a
+            ld (iy + FILE_WORKING_SIZE + 1), a
             dec hl \ ld a, (hl)
-            ld (iy + 13), a
-_:      pop iy
+            ld (iy + FILE_WORKING_SIZE + 2), a
+_:      pop bc
+        pop iy
     pop af
     jp po, _
     ei
@@ -279,59 +298,25 @@ _:  pop af
     ret
 .fileNotFound:
     push de
-    push iy
     push af
-        ld h, d \ ld l, e
+        ex de, hl
         call stringLength
         inc bc
-        ld de, kernelGarbage + 0x100
-        push bc
-            ldir
-        pop bc
-        ld hl, kernelGarbage + 0x100
-        add hl, bc
-        ld a, '/'
-        cpdr
-        inc hl
-        xor a
-        ld (hl), a
-        push hl
-            ld de, kernelGarbage + 0x100
-            call findDirectoryEntry
-            jr nz, .unableToCreateFile_pop1
+        push ix
+             call malloc
+             ; TODO: Handle out of memory
+             push ix \ pop de
+        pop ix
+        push de
+             ldir
         pop de
-        ex de, hl
-        ld a, '/'
-        ld (hl), a
-        inc hl
-        push hl
-            ex de, hl
-            dec hl \ dec hl \ dec hl
-            dec hl \ dec hl
-            ld e, (hl) \ dec hl \ ld d, (hl) ; Parent directory
-            ld a, 0xFF \ ld bc, 0xFFFF ; File length
-            ld iy, 0xFFFF ; Section ID
-        pop hl
-        call createFileEntry
-        jr nz, .unableToCreateFile
+
+        xor a
+        ld (iy + FILE_ENTRY_PAGE), a
+        ld (iy + FILE_ENTRY_PTR), e
+        ld (iy + FILE_ENTRY_PTR + 1), d ; Set up special case file entry for new files
     pop af
-    pop iy
     pop de
-    jp .fileCreated
-.unableToCreateFile:
-            ld b, a
-            pop ix
-            pop de
-        pop iy
-.unableToCreateFile_pop1:
-        pop af
-    jp po, _
-    ei
-_:  pop af
-    ld a, b
-    pop bc
-    pop hl
-    or a
     ret
 .outOfMemory:
             pop ix
@@ -355,25 +340,13 @@ populateStreamBuffer:
         push de
         push hl
         push bc
-            ; Get page number
-            ld a, c
-            or a \ rra \ rra \ rra \ rra \ rra \ rra
-            and 0b11
-            push bc
-                ld c, a
-                ld a, b
-                rla \ rla
-                and 0b11111100
-                or c
-            pop bc
+            ld a, b
             setBankA
-            ; Get address
             ld a, c
-            and 0b111111
             add a, 0x40
             ld h, a
             ld l, 0
-            ld bc, 256
+            ld bc, KFS_BLOCK_SIZE
             push ix \ pop de
             ldir
         pop bc
@@ -399,8 +372,8 @@ getStreamBuffer:
     push ix
         call getStreamEntry
         jr nz, .fail
-        ld l, (ix + 1)
-        ld h, (ix + 2)
+        ld l, (ix + FILE_BUFFER)
+        ld h, (ix + FILE_BUFFER + 1)
     pop ix
     ret
 .fail:
@@ -409,6 +382,9 @@ getStreamBuffer:
 
 ;; getStreamEntry [Filestreams]
 ;;  Gets the address of a stream entry in the kernel file stream table.
+;;  Note that it is almost always better to use the kernel functions for
+;;  getting data out of this, because the internal struct layout may
+;;  change between kernel releases.
 ;; Inputs:
 ;;  D: Stream ID
 ;; Outputs:
@@ -459,9 +435,9 @@ closeStream:
         bit 6, (ix)
         jr nz, .closeWritableStream
         push hl
-            ld (ix), 0xFF
-            ld l, (ix + 1)
-            ld h, (ix + 2)
+            ld (ix + FILE_FLAGS), 0xFF
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
             push hl \ pop ix
             call free
             ld hl, activeFileStreams
@@ -479,21 +455,79 @@ _:  pop af
     ret
 .closeWritableStream:
         call flush_withStream
+        
+        xor a
+        cp (ix + FILE_ENTRY_PAGE)
+        jr nz, .overwriteFile
+        ld l, (ix + FILE_ENTRY_PTR)
+        ld h, (ix + FILE_ENTRY_PTR + 1) ; File name
+        ; Find the parent directory and extract the file name alone
+        call stringLength
+        inc bc
+        ld de, kernelGarbage + 0x100
+        push bc
+             ldir
+        pop bc
+        ld hl, kernelGarbage + 0x100
+        add hl, bc
+        ld a, '/'
+        cpdr
+        inc hl
+        xor a
+        ld (hl), a
+        push hl
+            ld de, kernelGarbage + 0x100
+            call findDirectoryEntry
+            jr nz, .wtf
+            setBankA
+        pop de
+        ex de, hl
+        ld a, '/'
+        ld (hl), a
+        inc hl
+        push hl
+            ex de, hl
+            dec hl \ dec hl \ dec hl
+            dec hl \ dec hl
+            ld e, (hl) \ dec hl \ ld d, (hl) ; Parent dir
+
+            ld a, (ix + FILE_WORKING_SIZE + 2)
+            ld c, (ix + FILE_WORKING_SIZE)
+            ld b, (ix + FILE_WORKING_SIZE + 1)
+            ld l, (ix + FILE_SECTION_ID)
+            ld h, (ix + FILE_SECTION_ID + 1)
+            push hl \ pop iy ; TODO: Traverse to find the first section ID
+        pop hl
+        call createFileEntry
+        jr nz, .wtf + 2
+
+        ; Clear away file handle
         push hl
             ld (ix), 0xFF
-            ld l, (ix + 1)
-            ld h, (ix + 2)
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
             push hl \ pop ix
             call free
             ld hl, activeFileStreams
             dec (hl)
         pop hl
+.overwriteFile: ; TODO
     pop af
     jp po, _
     ei
 _:  pop af
     pop ix
     cp a
+    ret
+.wtf:
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop ix
+    ld a, 'W'|'T'|'F'
+    or 1
     ret
 
 ;; flush [Filestreams]
@@ -507,22 +541,25 @@ _:  pop af
 ;;  This happens periodically as you write to the stream, and happens
 ;;  automatically on closeStream. Try not to use it unless you have to.
 flush:
-   push ix
-   push af
-   ld a, i
-   push af
-   di
-         call getStreamEntry
-         jr nz, _flush_fail
-         bit 6, (ix)
-         jr z, _flush_fail ; Fail if not writable
+    push ix
+    push af
+    ld a, i
+    push af
+    di
+        call getStreamEntry
+        jr nz, _flush_fail
+        bit 6, (ix + FILE_FLAGS)
+        jr z, _flush_fail ; Fail if not writable
 _flush_withStream:
-         bit 0, (ix + 0xD) ; Check if flushed
-         jr nz, .exitEarly
-         push ix
-         push hl
-         push bc
-         push de
+        bit 0, (ix + FILE_WRITE_FLAGS) ; Check if flushed
+        jr nz, .exitEarly
+        xor a
+        cp (ix + FILE_STREAM) ; Check to see if anything written to this block
+        jr z, .exitEarly
+        push ix
+        push hl
+        push bc
+        push de
             ; Find a free block
             ld a, 4
 .pageLoop:
@@ -544,36 +581,41 @@ _flush_withStream:
 .freeBlockFound:
             dec hl
             push hl
-               ; Convert HL into section ID
-               sra l \ sra l ; L /= 4 to get index
-               getBankA
-               ld h, a
-               ; Section IDs are 0bFFFFFFFF FFIIIIII ; F is flash page, I is index
-               sra h \ sra h
-               rlca \ rlca \ rlca \ rlca \ rlca \ rlca \ and 0b1100000 \ or l \ ld l, a
-               ; HL should now be section ID
-               push hl
-                  ; Write buffer to disk
-                  ld a, l
-                  and 0b111111
-                  or 0x40
-                  call getStreamBuffer ; At this point, D is still the stream ID
-                  ld d, a
-                  ld e, 0
-                  ld bc, 0x100
-                  call unlockFlash
-                  call writeFlashBuffer
-               pop hl
+                ; Convert HL into section ID
+                sra l \ sra l ; L /= 4 to get index
+                ld a, l
+                and 0b00111111
+                ld l, a
+                getBankA
+                ld h, a
+                push hl
+                    ; Write buffer to disk
+                    ld a, l
+                    add a, 0x40
+                    call getStreamBuffer ; At this point, D is still the stream ID
+                    ld d, a
+                    ld e, 0
+                    ld bc, KFS_BLOCK_SIZE
+                    call unlockFlash
+                    call writeFlashBuffer
+                pop hl
             pop de
             ; HL is new section ID, DE is header pointer
-            ; TODO: Write the new ID to the previous section header, and the previous
-            ; section header to this new section
+            push hl
+                ; Find out what we need to do - there are lots of edge cases
+                ld l, (ix + FILE_PREV_SECTION)
+                ld h, (ix + FILE_PREV_SECTION + 1)
+                ld bc, 0xFFFF
+                call cpHLBC
+                jp z, .firstSection
+            pop hl
+.done:
             call lockFlash
-         pop de
-         pop bc
-         pop hl
-         pop ix
-         set 0, (ix + 0xD) ; Mark as flushed
+        pop de
+        pop bc
+        pop hl
+        pop ix
+        set 0, (ix + FILE_WRITE_FLAGS) ; Mark as flushed
 .exitEarly:
     pop af
     jp po, _
@@ -582,6 +624,29 @@ _:  pop af
     pop ix
     cp a
     ret
+.firstSection:
+        ; We know that the current section is the first section of the file
+        ; We have to check to see if the section we're editing is already allocated, and if
+        ; so, we have to reallocate it elsewhere.
+        ; Best case - current section ID is set to 0xFFFF
+        ld b, 0x7F
+        ld (kernelGarbage), bc
+        ld b, 0xFF
+        ld l, (iy + FILE_SECTION_ID)
+        ld h, (iy + FILE_SECTION_ID + 1)
+        call cpHLBC ; BC == 0xFFFF
+        jr z, _ ; Next section ID is 0x7FFF, so skip this
+        ; Grab the next section ID from the obsolete section
+        ; TODO
+_:      ld (kernelGarbage + 2), bc
+        ld bc, 4
+        ld hl, kernelGarbage
+        call writeFlashBuffer
+    pop hl
+    ; Load current section ID into file handle
+    ld (ix + FILE_SECTION_ID), l
+    ld (ix + FILE_SECTION_ID + 1), h
+    jp .done
 _flush_fail:
     pop af
     jp po, _
@@ -610,40 +675,40 @@ streamReadByte:
         call getStreamEntry
         jr nz, .fail
         push hl
-            ld l, (ix + 1)
-            ld h, (ix + 2)
-            ld a, (ix + 3)
-            bit 7, (ix)
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
+            ld a, (ix + FILE_STREAM)
+            bit 7, (ix + FILE_FLAGS)
             jr z, ++_
             ; check for end of stream
-            bit 5, (ix) ; Set on EOF
+            bit 5, (ix + FILE_FLAGS) ; Set on EOF
             jr z, _
         pop hl
     pop ix
     or 1
     ld a, errEndOfStream
     ret
-_:          cp (ix + 6)
+_:          cp (ix + FILE_FINAL_LENGTH)
             jr c, _
             jr nz, _
             ; End of stream!
         pop hl
-   pop ix
-   or 1
-   ld a, errEndOfStream
-   ret
+     pop ix
+     or 1
+     ld a, errEndOfStream
+     ret
 _:          add l
             ld l, a
             jr nc, _
             inc h
-_:          ld a, (ix + 3)
+_:          ld a, (ix + FILE_STREAM)
             add a, 1 ; inc doesn't affect flags
-            ld (ix + 3), a
+            ld (ix + FILE_STREAM), a
             ld a, (hl)
             jr nc, _
             ; We need to get the next block (or end of stream)
             call getNextBuffer
-_:      pop hl
+_:          pop hl
     pop ix
     cp a
     ret
@@ -653,10 +718,10 @@ _:      pop hl
 
 getNextBuffer:
     push af
-        bit 7, (ix)
+        bit 7, (ix + FILE_FLAGS)
         jr z, _
         ; Set EOF
-        set 5, (ix)
+        set 5, (ix + FILE_FLAGS)
     pop af
     ret
 _:      push bc
@@ -672,14 +737,14 @@ _:      push bc
             inc hl
             ld b, (hl)
             push ix
-                ld l, (ix + 1)
-                ld h, (ix + 2)
+                ld l, (ix + FILE_BUFFER)
+                ld h, (ix + FILE_BUFFER + 1)
                 push hl \ pop ix
                 call populateStreamBuffer
             pop ix
             ; Update the entry in the stream table
-            ld (ix + 4), c
-            ld (ix + 5), b
+            ld (ix + FILE_SECTION_ID), c
+            ld (ix + FILE_SECTION_ID + 1), b
             ; Check if this is the last block
             call selectSection
             or a \ rlca \ rlca \ inc a \ inc a
@@ -691,7 +756,7 @@ _:      push bc
             inc hl \ cp (hl)
             jr nz, _
             ; Set last section stuff
-            set 7, (ix)
+            set 7, (ix + FILE_FLAGS)
 _:      pop af
         jp po, _
         ei
@@ -703,15 +768,9 @@ _:      pop hl
 ; Given stream entry at IX, grabs the section ID, swaps in the page, and sets A to the block index.
 ; Destroys B
 selectSection:
-    ld a, (ix + 4)
-    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
-    ld b, a
-    ld a, (ix + 5)
-    rla \ rla \ and 0b11111100
-    or b
+    ld a, (ix + FILE_SECTION_ID + 1)
     setBankA
-    ld a, (ix + 4)
-    and 0b111111
+    ld a, (ix + FILE_SECTION_ID)
     ret
 
 ;; streamReadWord [Filestreams]
@@ -727,7 +786,7 @@ streamReadWord:
 ; The problem here is that reading two bytes requires you to do some
 ; additional bounds checks that would make us basically put the same
 ; code in twice (i.e. what happens when the word straddles a block
-; boundary?  Although the only time this would happen is when the pointer
+; boundary?    Although the only time this would happen is when the pointer
 ; is on the last byte of the block.)
     push af
         call streamReadByte
@@ -762,9 +821,9 @@ streamReadBuffer:
     ret
 .streamFound:
         pop de \ push de ; the value of IX before getStreamEntry was called
-        ld l, (ix + 1)
-        ld h, (ix + 2)
-        ld a, (ix + 3)
+        ld l, (ix + FILE_BUFFER)
+        ld h, (ix + FILE_BUFFER + 1)
+        ld a, (ix + FILE_STREAM)
         add l, a \ ld l, a \ jr nc, $+3 \ inc h
 .readLoop:
         ; Registers:
@@ -780,16 +839,16 @@ streamReadBuffer:
         cp b
         jp z, .done
 
-_:      bit 5, (ix) ; Check for EOF
+_:      bit 5, (ix + FILE_FLAGS) ; Check for EOF
         jr nz, .endOfStream
         push bc
             ; Check if we have enough space left in file stream
-            bit 7, (ix) ; Final block?
+            bit 7, (ix + FILE_FLAGS) ; Final block?
             jr z, _
             ; Final block.
-            cp (ix + 6) ; A is still zero
+            cp (ix + FILE_FINAL_LENGTH) ; A is still zero
             jr z, .readOkay
-            ld a, (ix + 6)
+            ld a, (ix + FILE_FINAL_LENGTH)
             cp c
             jr nc, .readOkay
             jr .endOfStream - 1
@@ -797,9 +856,9 @@ _:          xor a
             cp c
             jr nz, .readOkay ; 0 < n < 0x100
             ; We need to read 0x100 bytes this round
-            bit 7, (ix)
+            bit 7, (ix + FILE_FLAGS)
             jr z, .readOkay ; Not the final block, go for it
-            cp (ix + 6)
+            cp (ix + FILE_FINAL_LENGTH)
             jr z, .readOkay
             ; Not enough space
         pop bc
@@ -811,15 +870,15 @@ _:          xor a
             ld a, c
             or a ; cp 0
             jr nz, _
-            ld bc, 0x100
+            ld bc, KFS_BLOCK_SIZE
             ; BC is the amount they want us to read, assuming we're at the start of the block
             ; But we may not be at the start of the block - handle that here
             ; If (amount left in block) is less than BC, set BC to (amount left in block)
             ; See if we can manage a full block
-            cp (ix + 3)
+            cp (ix + FILE_STREAM)
             jr z, .doRead
             ; We can't, so truncate
-            sub (ix + 3)
+            sub (ix + FILE_STREAM)
             ld c, a
             ld b, 0
             jr .doRead
@@ -828,11 +887,11 @@ _:          ; Check for partial blocks (BC != 0x100)
                 push af
                     ; Load the amount we *can* read into B
                     xor a
-                    bit 7, (ix)
+                    bit 7, (ix + FILE_FLAGS)
                     jr z, _
-                    ld a, (ix + 6)
+                    ld a, (ix + FILE_FINAL_LENGTH)
 _:                  ; Space left in block in A
-                    sub (ix + 3)
+                    sub (ix + FILE_STREAM)
                     ld d, a
                 pop af
                 cp d
@@ -843,12 +902,12 @@ _:                  ; Space left in block in A
                 ; Too long, truncate a little
                 ld c, d
                 ld b, 0
-_:          pop de
+_:              pop de
 .doRead:
             ; Update HL with stream pointer
-            ld l, (ix + 1)
-            ld h, (ix + 2)
-            ld a, (ix + 3)
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
+            ld a, (ix + FILE_STREAM)
             add l, a \ ld l, a
             jr nc, _ \ inc h
 _:          ; Do read
@@ -856,27 +915,27 @@ _:          ; Do read
             ; Subtract BC from itself
         pop hl ; Was BC
         or a \ sbc hl, bc
-_:      push hl ; Push *new* length to stack so we can remember it while we cycle to the next buffer
+_:          push hl ; Push *new* length to stack so we can remember it while we cycle to the next buffer
             ; Update stream pointer
-            ld a, (ix + 3)
+            ld a, (ix + FILE_STREAM)
             add c
-            ld (ix + 3), a
+            ld (ix + FILE_STREAM), a
 
-            bit 7, (ix)
+            bit 7, (ix + FILE_FLAGS)
             jr z, _
             ; Handle "last buffer"
-            cp (ix + 6)
+            cp (ix + FILE_FINAL_LENGTH)
             jr nz, .loopAround
-            set 5, (ix)
+            set 5, (ix + FILE_FLAGS)
             jr .loopAround
 _:          ; Handle any other buffer
             xor a
-            cp (ix + 3)
+            cp (ix + FILE_STREAM)
             jr nz, .loopAround
-            ld (ix + 3), a
+            ld (ix + FILE_STREAM), a
             call getNextBuffer
-            ld l, (ix + 1)
-            ld h, (ix + 2)
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
 .loopAround:
             ; Back to the main loop
         pop bc
@@ -904,7 +963,7 @@ getStreamInfo:
     pop ix
     ret
 .streamFound:
-        bit 5, (ix)
+        bit 5, (ix + FILE_FLAGS)
         jr z, _
     pop ix
     ld e, 0
@@ -915,38 +974,30 @@ _:      push af \ push af \ push de
             ld e, 0
             ld b, 0
             ; Get size of current block
-            bit 7, (ix)
+            bit 7, (ix + FILE_FLAGS)
             jr nz, _
             ld a, 0 ; 0x100 bytes
             jr ++_
-_:          ld a, (ix + 6)
+_:          ld a, (ix + FILE_FINAL_LENGTH)
 _:          ; Subtract amount already read from this block
-            sub (ix + 3)
+            sub (ix + FILE_STREAM)
             ; And A is now the length left in this block
             ld c, a
             or a ; cp 0
             jr nz, _ \ inc b
-_:          bit 7, (ix)
+_:          bit 7, (ix + FILE_FLAGS)
             jr nz, .done ; Leave eary for final block
             ; Loop through remaining blocks
             ld a, i
             push af \ di
-                ld l, (ix + 4)
-                ld h, (ix + 5)
+                ld l, (ix + FILE_SECTION_ID)
+                ld h, (ix + FILE_SECTION_ID + 1)
                 ; HL is section ID
                 dec b ; Reset B to zero
 .loop:
-                push hl
-                    ld a, l
-                    rra \ rra \ rra \ rra \ rra \ rra \ and 0b11
-                    ld l, a
-                    ld a, h
-                    rla \ rla \ and 0b11111100
-                    or l
-                    setBankA
-                pop hl
+                ld a, h
+                setBankA
                 ld a, l
-                and 0b111111
                 rlca \ rlca \ inc a \ inc a
                 ld h, 0x40
                 ld l, a
@@ -965,7 +1016,7 @@ _:          bit 7, (ix)
                 cp l
                 jr nz, .continue
                 ; All done, add the final block length and exit
-                ld a, (ix + 6)
+                ld a, (ix + FILE_FINAL_LENGTH)
                 add c
                 ld c, a
                 jr nc, .done_ei

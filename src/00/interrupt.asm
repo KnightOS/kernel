@@ -37,31 +37,31 @@ sysInterrupt:
 interruptResume:
 #endif
 
-    in a, (0x04)
-    bit 0, a
+    in a, (PORT_INT_TRIG)
+    bit BIT_INT_TRIG_ON, a
     jr nz, intHandleON
-    bit 1, a
+    bit BIT_INT_TRIG_TIMER1, a
     jr nz, intHandleTimer1
-    bit 2, a
+    bit BIT_INT_TRIG_TIMER2, a
     jr nz, intHandleTimer2
-    bit 4, a
+    bit BIT_INT_TRIG_LINK, a
     jr nz, intHandleLink
     jr contextSwitch
 intHandleON:
-    in a, (0x03)
-    res 0, a
-    out (0x03), a
-    set 0, a
-    out (0x03), a
+    in a, (PORT_INT_MASK)
+    res BIT_INT_ON, a
+    out (PORT_INT_MASK), a
+    set BIT_INT_ON, a
+    out (PORT_INT_MASK), a
 
     ; Check for special keycodes
     jp handleKeyboard
 intHandleTimer1:
-    in a, (0x03)
-    res 1, a
-    out (0x03), a
-    set 1, a
-    out (0x03), a
+    in a, (PORT_INT_MASK)
+    res BIT_INT_TIMER1, a
+    out (PORT_INT_MASK), a
+    set BIT_INT_TIMER1, a
+    out (PORT_INT_MASK), a
     ; Timer 1 interrupt
 doContextSwitch:
     ld a, (currentThreadIndex)
@@ -128,20 +128,20 @@ noActiveThreads:
     set 7, a
     jp panic
 intHandleTimer2:
-    in a, (0x03)
-    res 2, a
-    out (0x03), a
-    set 2, a
-    out (0x03), a
+    in a, (PORT_INT_MASK)
+    res BIT_INT_TIMER2, a
+    out (PORT_INT_MASK), a
+    set BIT_INT_TIMER2, a
+    out (PORT_INT_MASK), a
     ; Timer 2 interrupt
     jr sysInterruptDone
 
 intHandleLink:
-    in a, (0x03)
-    res 4, a
-    out (0x03), a
-    set 4, a
-    out (0x03), a
+    in a, (PORT_INT_MASK)
+    res BIT_INT_LINK, a
+    out (PORT_INT_MASK), a
+    set BIT_INT_LINK, a
+    out (PORT_INT_MASK), a
     ; Link interrupt
 sysInterruptDone:
     pop hl
@@ -185,11 +185,11 @@ handleOnK:
 #ifdef USB
 usbInterrupt:
     in a, (0x55) ; USB Interrupt status
-    bit 0, a
+    bit BIT_USB_INT_BUS, a
     jr z, usbUnknownEvent
-    bit 2, a
+    bit BIT_USB_INT_LINE, a
     jr z, usbLineEvent
-    bit 4, a
+    bit BIT_USB_INT_PROTOCOL, a
     jr z, usbProtocolEvent
     jp interruptResume
 
@@ -197,16 +197,16 @@ usbUnknownEvent:
     jp interruptResume
 
 usbLineEvent:
-    in a, (0x56) ; USB Line Events
+    in a, (PORT_USB_LINE) ; USB Line Events
     xor 0xFF
-    out (0x57), a ; Acknowledge interrupt and disable further interrupts
+    out (PORT_USB_LINE_MASK), a ; Acknowledge interrupt and disable further interrupts
     jp interruptResume
 
 usbProtocolEvent:
-    in a, (0x82)
-    in a, (0x83)
-    in a, (0x84)
-    in a, (0x85)
-    in a, (0x86) ; Merely reading from these will acknowledge the interrupt
+    in a, (PORT_USB_WRPIPE1)
+    in a, (PORT_USB_WRPIPE2)
+    in a, (PORT_USB_RDPIPE1)
+    in a, (PORT_USB_RDPIPE2)
+    in a, (PORT_USB_MISC_EVENTS) ; Merely reading from these will acknowledge the interrupt
     jp interruptResume
 #endif

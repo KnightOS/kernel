@@ -15,20 +15,20 @@ _:
     push bc
     call colorLcdOff
  #else
-    ld a, 2
-    out (0x10), a ; Disable LCD
+    ld a, LCD_CMD_SETDISPLAY
+    out (PORT_LCD_CMD), a ; Disable LCD
  #endif
     di ; And interrupts, for now
     im 1 ; interrupt mode 1, for cleanliness
-    in a, (3)
+    in a, (PORT_INT_MASK)
     push af
-        ld a, 1
-        out (3), a ; ON
+        ld a, INT_ON
+        out (PORT_INT_MASK), a ; ON
         ei ; Enable interrupting when ON is pressed
         halt ; and halt
         di
     pop af
-    out (3), a
+    out (PORT_INT_MASK), a
  #ifdef COLOR
     call colorLcdOn
     pop bc
@@ -38,8 +38,8 @@ _:
     pop bc
     pop hl
  #else
-    ld a, 3
-    out (0x10), a ; Enable the screen
+    ld a, 1 + LCD_CMD_SETDISPLAY
+    out (PORT_LCD_CMD), a ; Enable the screen
  #endif
     pop af
     ret po
@@ -126,7 +126,7 @@ _:  sub '0' ; To number
 
 lcdDelay:
     push af
-_:    in a,(0x10)
+_:    in a, (PORT_LCD_CMD)
     rla
     jr c,-_
     pop af
@@ -169,17 +169,17 @@ getBatteryLevel:
     push af
         ld bc, 0x0000
         ; Reset battery threshold
-        in a, (4)
-        or 0b11000000
-        out (4), a
+        in a, (PORT_INT_TRIG)
+        or 0b11 << BIT_MEM_TIMER_BATTERY
+        out (PORT_MEM_TIMER), a
 _:      push bc
             rrc c \ rrc c
-            in a, (4)
+            in a, (PORT_INT_TRIG)
             and 0b00111111
             or c
-            out (4), a
-            in a, (2)
-            bit 0, a
+            out (PORT_MEM_TIMER), a
+            in a, (PORT_CALC_STATUS)
+            bit BIT_CALC_STATUS_BATTERY, a
             jr z, ++_
         pop bc
         inc c
@@ -196,8 +196,8 @@ _:  pop bc
 #endif
 #else
     push af
-        in a, (2)
-        and 0x1
+        in a, (PORT_CALC_STATUS)
+        and CALC_STATUS_BATTERY
         add a, a
         add a, a
         ld b, a
@@ -305,38 +305,38 @@ _:
 #ifdef COLOR
 color_pageBankA:
    push af
-      bit 7, a
+      bit BIT_BANKA_ISRAM_CPU15, a
       jr z, .zero
       ld a, 1
-      out (0x0E), a
+      out (PORT_MEMA_HIGH), a
    pop af \ push af
-      res 7, a
-      out (6), a
+      res BIT_BANKA_ISRAM_CPU15, a
+      out (PORT_BANKA), a
    pop af
    ret
 .zero:
       xor a
-      out (0x0E), a
+      out (PORT_MEMA_HIGH), a
    pop af
-   out (6), a
+   out (PORT_BANKA), a
    ret
 
 color_pageBankB:
    push af
-      bit 7, a
+      bit BIT_BANKB_ISRAM_CPU15, a
       jr z, .zero
       ld a, 1
-      out (0x0F), a
+      out (PORT_MEMB_HIGH), a
    pop af \ push af
-      res 7, a
-      out (7), a
+      res BIT_BANKB_ISRAM_CPU15, a
+      out (PORT_BANKB), a
    pop af
    ret
 .zero:
       xor a
-      out (0x0F), a
+      out (PORT_MEMB_HIGH), a
    pop af
-   out (7), a
+   out (PORT_BANKB), a
    ret
 #endif
 

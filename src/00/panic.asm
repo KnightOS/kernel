@@ -10,27 +10,27 @@ panic:
     #ifdef COLOR
         ; Set GPIO config
         ld a, 0xE0
-        out (0x39), a
+        out (PORT_GPIO_CONFIG), a
         call colorLcdOn
         call clearColorLcd
         call setLegacyLcdMode
     #else
         ; Reset the screen to a usable state
-        ld a, 0x05
+        ld a, 1 + LCD_CMD_AUTOINCDEC_SETX
         call lcdDelay
-        out (0x10), a
-        ld a, 0x01
+        out (PORT_LCD_CMD), a
+        ld a, 1 + LCD_CMD_SETOUTPUTMODE
         call lcdDelay
-        out (0x10), a
-        ld a, 3
+        out (PORT_LCD_CMD), a
+        ld a, 1 + LCD_CMD_SETDISPLAY
         call lcdDelay
-        out (0x10), a
-        ld a, 0x17
+        out (PORT_LCD_CMD), a
+        ld a, 7 + LCD_CMD_POWERSUPPLY_SETLEVEL
         call lcdDelay
-        out (0x10), a
-        ld a, 0xB
+        out (PORT_LCD_CMD), a
+        ld a, 3 + LCD_CMD_POWERSUPPLY_SETENHANCEMENT
         call lcdDelay
-        out (0x10), a
+        out (PORT_LCD_CMD), a
     #endif
     pop af
 

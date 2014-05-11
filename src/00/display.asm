@@ -42,18 +42,18 @@ fastCopy_skipCheck:
                 di                    ;DI is only required if an interrupt will alter the lcd.
                 push iy \ pop hl
     
-                ld c, 0x10
-                ld a, 0x80
+                ld c, PORT_LCD_CMD
+                ld a, LCD_CMD_SETROW
 .setRow:
                 in f, (c)
                 jp m, .setRow
-                out (0x10), a
+                out (PORT_LCD_CMD), a
                 ld de, 12
-                ld a, 0x20
+                ld a, LCD_CMD_SETCOLUMN
 .col:
                 in f, (c)
                 jp m, .col
-                out (0x10),a
+                out (PORT_LCD_CMD),a
                 push af
                     ld b,64
 .row:
@@ -61,7 +61,7 @@ fastCopy_skipCheck:
 .rowWait:
                     in f, (c)
                     jp m, .rowWait
-                    out (0x11), a
+                    out (PORT_LCD_DATA), a
                     add hl, de
                     djnz .row
                 pop af
@@ -70,7 +70,7 @@ fastCopy_skipCheck:
                 dec h
                 inc hl
                 inc a
-                cp 0x2C
+                cp 0x0C + LCD_CMD_SETCOLUMN
                 jp nz, .col
             pop af
         jp po, _
