@@ -361,6 +361,7 @@ _:          ; And write that length down
 _:      ; Write to flash
         inc hl
         call unlockFlash
+        rst 0x30
         call writeFlashBuffer
         call lockFlash
 
