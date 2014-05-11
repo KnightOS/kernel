@@ -35,7 +35,7 @@ _:  di
     out (PORT_BANKB), a
 #endif
 
-    ld sp, userMemory ; end of kernel garbage
+    ld sp, kernelGarbage + kernelGarbageSize
 
     call suspendDevice
 ;; reboot [System]
@@ -43,7 +43,7 @@ _:  di
 reboot:
     di
 
-    ld sp, userMemory ; end of kernel garbage
+    ld sp, kernelGarbage + kernelGarbageSize
 
 #ifdef FLASH4MB
     xor a

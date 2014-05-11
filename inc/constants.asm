@@ -8,6 +8,7 @@
     PORT_KEYPAD         .equ 1
     
     PORT_CALC_STATUS    .equ 2
+    PORT_INT_ACK        .equ 2
         define_mask(CALC_STATUS_BATTERY, 0)
         ; 83+ SE/84+ only
         define_mask(CALC_STATUS_LCDBUSY, 1)

@@ -54,5 +54,11 @@ color_mode              .equ clip_mask + 1              ; 1 byte
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize
 
+#ifdef DEBUG
+debugBuffer             .equ kernelGarbage + kernelGarbageSize
+userMemory              .equ debugBuffer + 0x300
+userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF
+#else
 userMemory              .equ kernelGarbage + kernelGarbageSize
 userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF
+#endif

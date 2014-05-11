@@ -168,6 +168,10 @@ handleKeyboard:
     jp z, reboot
     cp kMODE
     jr z, handleOnMODE
+#ifdef DEBUG
+    cp kPRGM
+    jr z, handleOnPRGM
+#endif
     jr sysInterruptDone
 
 handleOnMODE:
@@ -181,6 +185,10 @@ handleOnK:
     ld a, (hwLockLCD)
     call killThread
     jp contextSwitch_manual
+
+handleOnPRGM:
+    rst 0x30
+    jp sysInterruptDone
 
 #ifdef USB
 usbInterrupt:
