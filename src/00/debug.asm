@@ -11,14 +11,16 @@ debugger:
         add ix, sp
         ld a, i
         push af
-            di
+        di
+        getBankA
+        push af
 debugger_main:
             ld iy, debugBuffer
             call clearBuffer
 
             ; Flash status
-            in a, (0x14)
-            or a
+            in a, (2)
+            bit 2, a
             ld a, ' '
             jr z, _
             ld a, 'F'
@@ -63,6 +65,8 @@ _:          pop hl
             call flushKeys_skipCheck
             call waitKey_skipCheck
 debug_exit:
+        pop af
+        setBankA
         pop af
         jp po, _
         ei
