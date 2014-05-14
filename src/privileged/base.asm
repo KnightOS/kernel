@@ -18,7 +18,7 @@ _:  push af
     nop
     im 1
     di
-    out (0x14), a
+    out (PORT_FLASHRWCONTROL), a
     pop af
     ret po
     ei
