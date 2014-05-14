@@ -117,6 +117,10 @@ _:  ld a, b
 ;;  from Flash, you must load any data to be written into RAM. This
 ;;  will only *reset* bits of Flash.
 writeFlashBuffer:
+#ifdef COLOR
+    ; TODO: Fix this crap
+    ret
+#endif
     push af
     ld a, i
     push af
