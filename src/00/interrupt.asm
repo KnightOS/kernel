@@ -186,9 +186,11 @@ handleOnK:
     call killThread
     jp contextSwitch_manual
 
+#ifdef DEBUG
 handleOnPRGM:
     rst 0x30
     jp sysInterruptDone
+#endif
 
 #ifdef USB
 usbInterrupt:

@@ -22,9 +22,11 @@ _:
     im 1 ; interrupt mode 1, for cleanliness
     in a, (PORT_INT_MASK)
     push af
+        xor a
+        out (PORT_INT_MASK), a ; Ack and disable all interrupts
         ld a, INT_ON
-        out (PORT_INT_MASK), a ; ON
-        ei ; Enable interrupting when ON is pressed
+        out (PORT_INT_MASK), a ; Enable ON interrupt
+        ei
         halt ; and halt
         di
     pop af
