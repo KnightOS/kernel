@@ -402,14 +402,14 @@ cpHLDE_sort:
         call cpHLDE
         jr -_
 
-;; waitMilliseconds [Miscellaneous ]
+;; sleep [Miscellaneous ]
 ;;  Delays a number of milliseconds.
 ;; Inputs:
 ;;  HL: delay in milliseconds
 ;; Notes:
 ;;  117 or 121 T-states are added when called in 6 MHz mode to the delayed time,
 ;;  depending on the interrupt state upon calling.
-waitMilliseconds:
+sleep:
     push af                 ; +11
         ld a, i             ; +20
         di                  ; +24
