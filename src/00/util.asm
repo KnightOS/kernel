@@ -399,3 +399,58 @@ cpHLDE_sort:
         call indirect16HLDE
         call cpHLDE
         jr -_
+
+;; waitMilliseconds [Miscellaneous ]
+;;  Delays a number of milliseconds.
+;; Inputs:
+;;  HL: delay in milliseconds
+;; Notes:
+;;  117 or 121 T-states are added when called in 6 MHz mode to the delayed time,
+;;  depending on the interrupt state upon calling.
+waitMilliseconds:
+    push af                 ; +11
+        ld a, i             ; +20
+        di                  ; +24
+        push af             ; +35
+            push bc \ push hl ; +57
+#ifdef CPU15
+_:
+                ; at 15 MHz, 1 ms = 15000 T-states
+                in a, (PORT_CPUSPEED) ; +68
+                or a        ; +72
+                jr z, .pause_CPU6 ; +79/84
+                
+                ld b, 0     ; 7
+                djnz $      ; 13 * 255 + 8 = 3323 -> 3331
+                djnz $      ; 6654
+                djnz $      ; 9977
+                djnz $      ; 13300
+                ld b, 129   ; 13304
+                djnz $      ; 13 * 128 + 8 = 1672 -> 14976
+                dec hl      ; 14982
+                ld a, h     ; 14986
+                or l        ; 14990
+                jr nz, -_   ; 14997/15002
+                
+                jr ++_      ; +91/96
+.pause_CPU6:
+#endif
+_:
+                ; at 6 MHz, 1 ms = 6000 T-states
+                ld b, 0     ; 7
+                djnz $      ; 3331
+                ld b, 203   ; 3338
+                djnz $      ; 13 * 202 + 8 = 2634 -> 5972
+                dec hl      ; 5978
+                ld a, h     ; 5982
+                or l        ; 5986
+                jr nz, -_   ; 5993/5998
+_:
+            pop hl \ pop bc ; ++20
+        pop af              ; ++30
+        jp po, +_           ; ++40
+        ei                  ; ++44
+_:
+    pop af                  ; ++50/54
+    ret                     ; ++60/64
+    
