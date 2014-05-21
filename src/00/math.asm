@@ -83,7 +83,7 @@ sDEMulA:
 ;; div32By16 [Maths]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
-;;  As described above, and:
+;;  ACIX: ACIX / DE
 ;;  HL: Remainder
 ;;  B: 0
 div32By16:
@@ -153,7 +153,7 @@ _:  push hl \ pop ix
 ;; divHLByC [Maths]
 ;;  Performs `HL = HL / C`
 ;; Outputs:
-;;  As described above, and:
+;;  HL: HL / C
 ;;  A: Remainder
 divHLbyC:
    xor a
@@ -170,7 +170,7 @@ _: add hl, hl
 ;; divACByDE [Miscellaneous]
 ;;  Performs `AC = AC / DE`
 ;; Outputs:
-;;  As described above, and:
+;;  AC: AC / DE
 ;;  HL: Remainder
 divACbyDE:
    ld hl, 0
@@ -290,9 +290,9 @@ divACbyDE:
 
 ;; sdivACbyDE [Maths]
 ;;  Performs `AC = AC / DE`. The operation is signed.
-;; Outputs:
-;;  As described above, and
-;;  HL: remainder
+;; Output:
+;;  AC: AC / DE
+;;  HL: Remainder
 ;; Notes:
 ;;  B is destroyed
 sDivACbyDE:
