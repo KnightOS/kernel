@@ -390,8 +390,8 @@ _:  pop de
 ;; Inputs:
 ;;  HL: Pointer to integer
 ;;  DE: Pointer to integer
-;; Outputs:
-;;  Same as z80 CP instruction.
+;; Output:
+;;  Flags: Same as z80 CP instruction.
 ;; Notes:
 ;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
 ;;  It allows sorting a list of 16-bit numbers.

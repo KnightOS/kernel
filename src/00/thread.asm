@@ -315,6 +315,10 @@ _:  pop af
 ;; Outputs:
 ;;  A: Thread ID (on success), error code (on failure)
 ;;  Z: Set if successful, reset otherwise
+;; Notes:
+;;  Call this with interrupts disabled if you wish to manipulate the thread
+;;  before it starts (for example, to set the initial value of the registers).
+;;  See [[startThread]] for details.
 launchProgram:
     push bc
     ld a, i
