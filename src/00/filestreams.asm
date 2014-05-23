@@ -235,11 +235,11 @@ _:  pop af
                 inc hl
                 ld a, (hl)
                 ld (iy + FILE_FINAL_LENGTH), a ; Length of final block
-                dec hl \ dec hl ; Move to section ID
-                ld b, (hl)
-                ld (iy + FILE_SECTION_ID), b
-                dec hl \ ld c, (hl)
-                ld (iy + FILE_SECTION_ID + 1), c
+                dec hl \ dec hl \ dec hl ; Move to section ID
+                ld c, (hl)
+                ld (iy + FILE_SECTION_ID), c
+                dec hl \ ld b, (hl)
+                ld (iy + FILE_SECTION_ID + 1), b
                 ; Section ID in BC
                 call populateStreamBuffer
                 ; Populate the previous section, which is 0xFFFF for new streams
@@ -482,11 +482,10 @@ _:  pop af
         call flush_withStream
         
         xor a
+        ld l, (ix + FILE_ENTRY_PTR)
+        ld h, (ix + FILE_ENTRY_PTR + 1)
         cp (ix + FILE_ENTRY_PAGE)
         jp nz, .overwriteFile
-        ld l, (ix + FILE_ENTRY_PTR)
-        ld h, (ix + FILE_ENTRY_PTR + 1) ; File name
-.resumeWrite:
         ; Find the parent directory and extract the file name alone
         call stringLength
         inc bc
@@ -524,6 +523,7 @@ _:  pop af
             ld h, (ix + FILE_SECTION_ID + 1)
             push hl \ pop iy ; TODO: Traverse to find the first section ID
         pop hl
+.resumeWrite:
         call createFileEntry
         jr nz, .wtf + 2
 
@@ -537,7 +537,6 @@ _:  pop af
             ld hl, activeFileStreams
             dec (hl)
         pop hl
-.overwriteFile: ; TODO
     pop af
     jp po, _
     ei
@@ -545,6 +544,44 @@ _:  pop af
     pop ix
     cp a
     ret
+.overwriteFile:
+        ld a, (ix + FILE_ENTRY_PAGE)
+        setBankA
+        ld a, fsModifiedFile
+        call unlockFlash
+        call writeFlashByte ; Mark old entry as modified
+        call lockFlash
+        ; Load appropriate values for createFileEntry
+        dec hl \ dec hl \ dec hl
+        ld e, (hl)
+        dec hl
+        ld d, (hl) ; Parent ID
+        push de
+            ; Grab file name, too
+            ld bc, -7
+            add hl, bc
+
+            ld bc, 0
+            ld de, kernelGarbage + 0x100
+_:          ld a, (hl)
+            ld (de), a
+            dec hl
+            inc de
+            inc bc
+            or a
+            jr nz, -_
+
+            ld l, (ix + FILE_SECTION_ID)
+            ld h, (ix + FILE_SECTION_ID + 1)
+            push hl \ pop iy
+
+            ex de, hl
+
+            ld a, (ix + FILE_WORKING_SIZE + 2)
+            ld c, (ix + FILE_WORKING_SIZE)
+            ld b, (ix + FILE_WORKING_SIZE + 1)
+        pop de
+        jp .resumeWrite
 .wtf:
     pop hl
     pop af
@@ -658,19 +695,22 @@ _:  pop af
         ld b, 0x7F
         ld (kernelGarbage), bc
         ld b, 0xFF
-        ld l, (iy + FILE_SECTION_ID)
-        ld h, (iy + FILE_SECTION_ID + 1)
+        ld l, (ix + FILE_SECTION_ID)
+        ld h, (ix + FILE_SECTION_ID + 1)
         call cpHLBC ; BC == 0xFFFF
         jr z, _ ; Current section ID is 0xFFFF, so skip this
         ; Grab the next section ID from the obsolete section
-        jr _
-        ; TODO: This doesn't work because openFileWrite doesn't set things up properly
         getBankA
         push af
             ld a, h
             setBankA
-            srl l \ srl l ; L to header index
+            ld a, l
+            rlca \ rlca \ inc a \ inc a
+            ld l, a
             ld h, 0x40
+            ld c, (hl)
+            inc hl
+            ld b, (hl)
         pop af
         setBankA
 _:      ld (kernelGarbage + 2), bc

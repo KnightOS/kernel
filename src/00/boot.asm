@@ -200,16 +200,15 @@ test:
         ldir
     pop de
     call getStreamEntry
-    res 0, (ix + 0xD) ; Mark as not flushed
+    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
     ld a, testStringEnd - testString
-    ld (ix + 3), a   ; Set stream pointer to 3
-    ld (ix + 0xA), a
+    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
+    ld (ix + FILE_WORKING_SIZE), a
     xor a
-    ld (ix + 0xB), a
-    ld (ix + 0xC), a ; Set file length to 3
+    ld (ix + FILE_WORKING_SIZE + 1), a
+    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
     call flush
     call closeStream
-    ret
 test2:
     ld de, testFile
     call openFileWrite
@@ -222,13 +221,13 @@ test2:
         ldir
     pop de
     call getStreamEntry
-    res 0, (ix + 0xD) ; Mark as not flushed
+    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
     ld a, testString2End - testString2
-    ld (ix + 3), a   ; Set stream pointer to 3
-    ld (ix + 0xA), a
+    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
+    ld (ix + FILE_WORKING_SIZE), a
     xor a
-    ld (ix + 0xB), a
-    ld (ix + 0xC), a ; Set file length to 3
+    ld (ix + FILE_WORKING_SIZE + 1), a
+    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
     call flush
     call closeStream
     ret
