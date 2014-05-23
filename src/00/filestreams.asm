@@ -189,7 +189,9 @@ _:  pop af
     ret
 .entryFound:
             call findFileEntry
-            call nz, .fileNotFound
+            jp nz, .fileNotFound
+            ; The rest of this code path *only* covers existing files that are being overwritten
+            ; The case of brand-new files is handled in .fileNotFound
             dec d
             ; We can put the stream entry at (iy) and use d as the ID
             push de
@@ -224,7 +226,7 @@ _:  pop af
                 jr nz, .notFinal - 1 ; (-1 adds the inc hl)
                 dec hl
 .final:
-                set 7, (iy)
+                set 7, (iy + FILE_FLAGS)
                 ld a, (hl)
                 ld (iy + FILE_FINAL_LENGTH), a
                 jr .notFinal
@@ -252,30 +254,12 @@ _:  pop af
             pop ix
             pop de
             push af
-                 xor a
-                 cp (iy + FILE_ENTRY_PAGE)
-                 jr z, _ ; Skip file entry for new files
-            pop af \ push af
                  ; Load file entry info
                  ld (iy + FILE_ENTRY_PAGE), a
                  ld (iy + FILE_ENTRY_PTR), l
                  ld (iy + FILE_ENTRY_PTR + 1), h
-_:               ld a, 1 ; Stream is flushed
+                 ld a, 1 ; Stream is flushed
                  ld (iy + FILE_WRITE_FLAGS), a ; Set stream write flags (TODO: Move flags around)
-                 ; Working file size
-                 ld a, 0xFF
-                 cp (iy + FILE_WORKING_SIZE)
-                 jr nz, _
-                 cp (iy + FILE_WORKING_SIZE + 1)
-                 jr nz, _
-                 ; This is a brand-new file
-            pop af
-            xor a
-            ld (iy + FILE_WORKING_SIZE), a
-            ld (iy + FILE_WORKING_SIZE + 1), a
-            ld (iy + FILE_WORKING_SIZE + 2), a
-            jr ++_
-_:          ; This is an existing file, load the existing size from the entry
             pop af
             setBankA
             ld bc, 6
@@ -287,6 +271,7 @@ _:          ; This is an existing file, load the existing size from the entry
             ld (iy + FILE_WORKING_SIZE + 1), a
             dec hl \ ld a, (hl)
             ld (iy + FILE_WORKING_SIZE + 2), a
+.done:
 _:      pop bc
         pop iy
     pop af
@@ -299,6 +284,7 @@ _:  pop af
 .fileNotFound:
     push de
     push af
+        ; Set up some important parts of the file entry first
         ex de, hl
         call stringLength
         inc bc
@@ -311,13 +297,52 @@ _:  pop af
              ldir
         pop de
 
+        ; FILE_ENTRY_PAGE and FILE_ENTRY_PTR are not important when working with brand-new files
+        ; We use them instead to save the file name to memory so we can use it later.
+        ; FILE_ENTRY_PAGE set to zero indicates this special case.
         xor a
         ld (iy + FILE_ENTRY_PAGE), a
         ld (iy + FILE_ENTRY_PTR), e
-        ld (iy + FILE_ENTRY_PTR + 1), d ; Set up special case file entry for new files
+        ld (iy + FILE_ENTRY_PTR + 1), d
     pop af
+    ; Now we just have to populate the rest of this file handle
+    push ix
+        call getCurrentThreadId
+        and 0b111111
+        or 0b01000000 ; Set writable
+        ld (iy + FILE_FLAGS), a ; Flags & owner
+        ; Create a buffer
+        ld bc, KFS_BLOCK_SIZE
+        ld a, 1
+        call calloc
+        jp nz, .outOfMemory
+        push ix \ pop bc
+        ld (iy + FILE_BUFFER), c ; Buffer
+        ld (iy + FILE_BUFFER + 1), b
+
+        xor a
+        ld (iy + FILE_FINAL_LENGTH), a
+        set 7, (iy + FILE_FLAGS) ; Set "final block"
+
+        ld a, 0xFF
+        ld (iy + FILE_SECTION_ID), a
+        ld (iy + FILE_SECTION_ID + 1), a
+        ld (iy + FILE_PREV_SECTION), a
+        ld (iy + FILE_PREV_SECTION + 1), a
+
+        xor a
+        ld (iy + FILE_STREAM), a
+
+        ld (iy + FILE_WORKING_SIZE), a
+        ld (iy + FILE_WORKING_SIZE + 1), a
+        ld (iy + FILE_WORKING_SIZE + 2), a
+
+        inc a ; Stream is flushed
+        ld (iy + FILE_WRITE_FLAGS), a ; TODO: Move flags around
+    pop ix
     pop de
-    ret
+    dec d
+    jp .done
 .outOfMemory:
             pop ix
             pop de
@@ -458,9 +483,10 @@ _:  pop af
         
         xor a
         cp (ix + FILE_ENTRY_PAGE)
-        jr nz, .overwriteFile
+        jp nz, .overwriteFile
         ld l, (ix + FILE_ENTRY_PTR)
         ld h, (ix + FILE_ENTRY_PTR + 1) ; File name
+.resumeWrite:
         ; Find the parent directory and extract the file name alone
         call stringLength
         inc bc
@@ -549,7 +575,7 @@ flush:
         call getStreamEntry
         jr nz, _flush_fail
         bit 6, (ix + FILE_FLAGS)
-        jr z, _flush_fail ; Fail if not writable
+        jp z, _flush_fail ; Fail if not writable
 _flush_withStream:
         bit 0, (ix + FILE_WRITE_FLAGS) ; Check if flushed
         jr nz, .exitEarly
@@ -635,9 +661,18 @@ _:  pop af
         ld l, (iy + FILE_SECTION_ID)
         ld h, (iy + FILE_SECTION_ID + 1)
         call cpHLBC ; BC == 0xFFFF
-        jr z, _ ; Next section ID is 0x7FFF, so skip this
+        jr z, _ ; Current section ID is 0xFFFF, so skip this
         ; Grab the next section ID from the obsolete section
-        ; TODO
+        jr _
+        ; TODO: This doesn't work because openFileWrite doesn't set things up properly
+        getBankA
+        push af
+            ld a, h
+            setBankA
+            srl l \ srl l ; L to header index
+            ld h, 0x40
+        pop af
+        setBankA
 _:      ld (kernelGarbage + 2), bc
         ld bc, 4
         ld hl, kernelGarbage

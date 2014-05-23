@@ -210,6 +210,28 @@ test:
     call flush
     call closeStream
     ret
+test2:
+    ld de, testFile
+    call openFileWrite
+    ; Writing file manually because stream write functions aren't implemented yet
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, testString2
+        ld bc, testString2End - testString2
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + 0xD) ; Mark as not flushed
+    ld a, testString2End - testString2
+    ld (ix + 3), a   ; Set stream pointer to 3
+    ld (ix + 0xA), a
+    xor a
+    ld (ix + 0xB), a
+    ld (ix + 0xC), a ; Set file length to 3
+    call flush
+    call closeStream
+    ret
 
 bootFile:
     .db "/bin/init", 0
@@ -218,3 +240,6 @@ testFile:
 testString:
     .db "This file was written at\nruntime!"
 testStringEnd:
+testString2:
+    .db "This file was modified at\nruntime!"
+testString2End:
