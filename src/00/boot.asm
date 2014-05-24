@@ -230,6 +230,27 @@ test2:
     ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
     call flush
     call closeStream
+test3:
+    ld de, testFile
+    call openFileWrite
+    ; Writing file manually because stream write functions aren't implemented yet
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, testString3
+        ld bc, testString3End - testString3
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
+    ld a, testString3End - testString3
+    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
+    ld (ix + FILE_WORKING_SIZE), a
+    xor a
+    ld (ix + FILE_WORKING_SIZE + 1), a
+    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
+    call flush
+    call closeStream
     ret
 
 bootFile:
@@ -242,3 +263,6 @@ testStringEnd:
 testString2:
     .db "This file was modified at\nruntime!"
 testString2End:
+testString3:
+    .db "This file was created and\nmodified twice at runtime!"
+testString3End:
