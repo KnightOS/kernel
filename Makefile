@@ -1,4 +1,9 @@
 # Makefile for KnightSoft kernel
+AS=sass
+ASFLAGS=--encoding "Windows-1252"
+.DEFAULT_GOAL=TI84pSE
+PLATFORM:=TI84pSE
+OUTDIR=bin/
 ifeq ($(OS),Windows_NT)
 ASPREFIX=
 EMPREFIX=
@@ -6,11 +11,6 @@ else
 ASPREFIX=mono 
 EMPREFIX=wine 
 endif
-AS=$(ASPREFIX)build/sass.exe
-ASFLAGS=--encoding "Windows-1252"
-.DEFAULT_GOAL=TI84pSE
-PLATFORM:=TI84pSE
-OUTDIR=bin/
 
 # Platforms:
 # Variables (all in hex):
@@ -83,10 +83,10 @@ kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATF
 		$(BINDIR)00.bin:0 $(BINDIR)01.bin:4000 \
 		$(BINDIR)02.bin:8000 $(BINDIR)boot.bin:$(BOOT) \
 		$(BINDIR)privileged.bin:$(PRIVILEGED)
+	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom $(BINDIR)00.inc
+	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom $(BINDIR)01.inc
+	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom $(BINDIR)02.inc
 	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)kernel.inc
-	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom
-	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom
-	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom
 	mktiupgrade -p -k build/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
 $(OUTDIR)$(PLATFORM)/00.bin: src/00/*.asm inc/constants.asm src/00/jumptable.config
