@@ -435,6 +435,24 @@ exitThread:
     pop af
     jp (hl)
 
+;; getEntryPoint [Threading]
+;;  Retrieves the entry point for the specified thread.
+;; Inputs:
+;;  A: Thread ID
+;; Outputs:
+;;  HL: Entry point
+getEntryPoint:
+    call getThreadEntry
+    ret nz
+    push de
+        inc hl
+        ld e, (hl)
+        inc hl
+        ld d, (hl)
+        ex de, hl
+    pop de
+    ret
+
 ;; getThreadEntry [Threading]
 ;;  Gets a pointer to the specified thread's entry in the thread table.
 ;; Inputs:

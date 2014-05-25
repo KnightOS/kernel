@@ -196,73 +196,31 @@ test:
     push de
         push hl \ pop de
         ld hl, testString
-        ld bc, testStringEnd - testString
+        ld bc, 0x100
         ldir
     pop de
     call getStreamEntry
     res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
-    ld a, testStringEnd - testString
-    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
-    ld (ix + FILE_WORKING_SIZE), a
     xor a
-    ld (ix + FILE_WORKING_SIZE + 1), a
-    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
-    call flush
-    call closeStream
-test2:
-    ld de, testFile
-    call openFileWrite
-    ; Writing file manually because stream write functions aren't implemented yet
-    call getStreamBuffer
-    push de
-        push hl \ pop de
-        ld hl, testString2
-        ld bc, testString2End - testString2
-        ldir
-    pop de
-    call getStreamEntry
-    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
-    ld a, testString2End - testString2
-    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
+    ld (ix + FILE_STREAM), a ; Set stream pointer to start of next block
+    ld bc, testStringEnd - testString
+    ld a, c
     ld (ix + FILE_WORKING_SIZE), a
-    xor a
+    ld a, b
     ld (ix + FILE_WORKING_SIZE + 1), a
-    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
-    call flush
-    call closeStream
-test3:
-    ld de, testFile
-    call openFileWrite
-    ; Writing file manually because stream write functions aren't implemented yet
-    call getStreamBuffer
-    push de
-        push hl \ pop de
-        ld hl, testString3
-        ld bc, testString3End - testString3
-        ldir
-    pop de
-    call getStreamEntry
-    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
-    ld a, testString3End - testString3
-    ld (ix + FILE_STREAM), a   ; Set stream pointer to 3
-    ld (ix + FILE_WORKING_SIZE), a
     xor a
-    ld (ix + FILE_WORKING_SIZE + 1), a
-    ld (ix + FILE_WORKING_SIZE + 2), a ; Set file length to 3
+    ld (ix + FILE_WORKING_SIZE + 2), a
     call flush
+    ; Write next block (TODO)
     call closeStream
     ret
 
 bootFile:
     .db "/bin/init", 0
+castle:
+    .db "/bin/castle", 0
 testFile:
     .db "/var/test", 0
 testString:
-    .db "This file was written at\nruntime!"
+    .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefghi2"
 testStringEnd:
-testString2:
-    .db "This file was modified at\nruntime!"
-testString2End:
-testString3:
-    .db "This file was created and\nmodified twice at runtime!"
-testString3End:
