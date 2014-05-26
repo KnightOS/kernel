@@ -610,15 +610,13 @@ flush:
     push af
     di
         call getStreamEntry
+        jr $
         jr nz, _flush_fail
         bit 6, (ix + FILE_FLAGS)
         jp z, _flush_fail ; Fail if not writable
 _flush_withStream:
         bit 0, (ix + FILE_WRITE_FLAGS) ; Check if flushed
         jr nz, .exitEarly
-        xor a
-        cp (ix + FILE_STREAM) ; Check to see if anything written to this block
-        jr z, .exitEarly
         push ix
         push hl
         push bc
