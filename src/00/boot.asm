@@ -204,14 +204,34 @@ test:
     xor a
     ld (ix + FILE_STREAM), a ; Set stream pointer to start of next block
     ld bc, testStringEnd - testString
-    ld a, c
-    ld (ix + FILE_WORKING_SIZE), a
-    ld a, b
-    ld (ix + FILE_WORKING_SIZE + 1), a
-    xor a
+    ld (ix + FILE_WORKING_SIZE), c
+    ld (ix + FILE_WORKING_SIZE + 1), b
     ld (ix + FILE_WORKING_SIZE + 2), a
     call flush
-    ; Write next block (TODO)
+    ; Write next block
+    ld c, (ix + FILE_SECTION_ID)
+    ld (ix + FILE_PREV_SECTION), c
+    ld b, (ix + FILE_SECTION_ID + 1)
+    ld (ix + FILE_PREV_SECTION + 1), b
+    push bc
+        ld a, 0xFF
+        ld (ix + FILE_SECTION_ID), a
+        ld (ix + FILE_SECTION_ID + 1), a
+        call getStreamBuffer
+        push de
+            push hl \ pop de
+            ld hl, testString_block2
+            ld bc, testStringEnd - testString_block2
+            ldir
+        pop de
+        call getStreamEntry
+        res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
+        ld a, testStringEnd - testString_block2
+        ld (ix + FILE_STREAM), a
+        call flush
+    pop bc
+    ld (ix + FILE_SECTION_ID), c
+    ld (ix + FILE_SECTION_ID + 1), b
     call closeStream
     ret
 
@@ -222,5 +242,7 @@ castle:
 testFile:
     .db "/var/test", 0
 testString:
-    .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefghi2"
+    .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefgh\n\n"
+testString_block2:
+    .db "256 bytes!"
 testStringEnd:
