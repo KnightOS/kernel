@@ -79,7 +79,51 @@ sDEMulA:
         djnz .loop
     pop bc
     ret
-    
+
+
+;; mul16To32 [Maths]
+;;  Performs an unsigned multiplication of DE and BC.
+;; Inputs:
+;;  DE: Factor 1
+;;  BC: Factor 2
+;; Outputs:
+;;  DEHL: Result of DE * BC
+mul16To32:
+    xor hl, hl
+
+    sla e
+    rl d
+    jr nc, $ + 4
+    ld h, b
+    ld l, c
+
+.macro mul16To32Iter
+    add hl, hl
+    rl e
+    rl d
+    jr nc, $ + 6
+    add hl, bc
+    jr nc, $ + 3
+    inc de
+.endmacro
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+    mul16To32Iter
+.undefine mul16To32Iter
+    ret
+
 ;; div32By16 [Maths]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
