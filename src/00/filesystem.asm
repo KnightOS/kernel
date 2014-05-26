@@ -903,7 +903,7 @@ _:
             jr z, _
         pop hl
         pop bc
-        jr .skip + 3
+        jr -_
 _:          ; Parent IDs match, check name
             ld c, (hl)
             dec hl
@@ -992,6 +992,7 @@ checkForRemainingSlashes:
     ret
 
 ; Compare string, but also allows '/' as a delimiter.  Also compares HL in reverse.
+; Also allows for paths to have a trailing '/'
 ; Z for equal, NZ for not equal
 ; HL = backwards string
 ; DE = fowards string
