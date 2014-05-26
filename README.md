@@ -22,7 +22,8 @@ Windows. You'll need to install:
 
 * Mono (or Microsoft.NET on Windows)
 * GNU Make
-* [genkfs](https://github.com/KnightOS/genkfs)
+* [sass](https://github.com/KnightOS/sass) (aur/sass)
+* [genkfs](https://github.com/KnightOS/genkfs) (aur/genkfs)
 
 The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
 install Cygwin and perform the build from there.

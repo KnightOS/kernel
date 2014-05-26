@@ -615,10 +615,7 @@ flush:
         jp z, _flush_fail ; Fail if not writable
 _flush_withStream:
         bit 0, (ix + FILE_WRITE_FLAGS) ; Check if flushed
-        jr nz, .exitEarly
-        xor a
-        cp (ix + FILE_STREAM) ; Check to see if anything written to this block
-        jr z, .exitEarly
+        jp nz, .exitEarly
         push ix
         push hl
         push bc
@@ -664,14 +661,60 @@ _flush_withStream:
                 pop hl
             pop de
             ; HL is new section ID, DE is header pointer
+.firstSection:
             push hl
-                ; Find out what we need to do - there are lots of edge cases
+                ; We have to check to see if the section we're editing is already allocated, and if
+                ; so, we have to reallocate it elsewhere.
+                ; Best case - current section ID is set to 0xFFFF
+                ld c, (ix + FILE_PREV_SECTION)
+                ld b, (ix + FILE_PREV_SECTION + 1)
+                res 7, b
+                ld (kernelGarbage), bc
+                ld bc, 0xFFFF
+                ld l, (ix + FILE_SECTION_ID)
+                ld h, (ix + FILE_SECTION_ID + 1)
+                call cpHLBC ; BC == 0xFFFF
+                jr z, _ ; Current section ID is 0xFFFF, so skip this
+                ; Grab the next section ID from the obsolete section
+                getBankA
+                push af
+                    ld a, h
+                    setBankA
+                    ld a, l
+                    rlca \ rlca \ inc a \ inc a
+                    ld l, a
+                    ld h, 0x40
+                    ld c, (hl)
+                    inc hl
+                    ld b, (hl)
+                pop af
+                setBankA
+_:              ld (kernelGarbage + 2), bc
+                ld bc, 4
+                ld hl, kernelGarbage
+                call writeFlashBuffer
+                ; Update previous section's header if needed
                 ld l, (ix + FILE_PREV_SECTION)
                 ld h, (ix + FILE_PREV_SECTION + 1)
                 ld bc, 0xFFFF
                 call cpHLBC
-                jp z, .firstSection
-            pop hl
+                jr z, _ ; "if needed"
+                ld a, h
+                setBankA
+                ld a, l
+                rlca \ rlca \ inc a \ inc a
+                ld l, a
+                ld h, 0x40
+                ex de, hl
+            pop hl \ push hl
+                ld (kernelGarbage), hl
+                ld hl, kernelGarbage
+                ld bc, 2
+                call writeFlashBuffer
+_:          pop hl
+            ; Load current section ID into file handle
+            ld (ix + FILE_SECTION_ID), l
+            ld (ix + FILE_SECTION_ID + 1), h
 .done:
             call lockFlash
         pop de
@@ -687,41 +730,6 @@ _:  pop af
     pop ix
     cp a
     ret
-.firstSection:
-        ; We know that the current section is the first section of the file
-        ; We have to check to see if the section we're editing is already allocated, and if
-        ; so, we have to reallocate it elsewhere.
-        ; Best case - current section ID is set to 0xFFFF
-        ld b, 0x7F
-        ld (kernelGarbage), bc
-        ld b, 0xFF
-        ld l, (ix + FILE_SECTION_ID)
-        ld h, (ix + FILE_SECTION_ID + 1)
-        call cpHLBC ; BC == 0xFFFF
-        jr z, _ ; Current section ID is 0xFFFF, so skip this
-        ; Grab the next section ID from the obsolete section
-        getBankA
-        push af
-            ld a, h
-            setBankA
-            ld a, l
-            rlca \ rlca \ inc a \ inc a
-            ld l, a
-            ld h, 0x40
-            ld c, (hl)
-            inc hl
-            ld b, (hl)
-        pop af
-        setBankA
-_:      ld (kernelGarbage + 2), bc
-        ld bc, 4
-        ld hl, kernelGarbage
-        call writeFlashBuffer
-    pop hl
-    ; Load current section ID into file handle
-    ld (ix + FILE_SECTION_ID), l
-    ld (ix + FILE_SECTION_ID + 1), h
-    jp .done
 _flush_fail:
     pop af
     jp po, _
