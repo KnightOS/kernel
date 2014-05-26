@@ -89,7 +89,7 @@ sDEMulA:
 ;; Outputs:
 ;;  DEHL: Result of DE * BC
 mul16To32:
-    xor hl, hl
+    ld hl, 0
 
     sla e
     rl d
