@@ -110,6 +110,7 @@ mul8By8To16:
         mul8By8To16Iter
 .undefine mul8By8To16Iter
     pop de \ pop hl
+    ret
 
 ;; mul16By8To24 [Maths]
 ;;  Performs an unsigned multiplication of A and DE.
