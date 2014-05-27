@@ -79,7 +79,117 @@ sDEMulA:
         djnz .loop
     pop bc
     ret
-    
+
+;; mul8By8To16 [Maths]
+;;  Performs an unsigned multiplication of H and E
+;; Inputs:
+;;  H: Multiplier
+;;  E: Multiplicand
+;; Outputs:
+;;  HL: Product of H and E.
+mul8By8To16:
+    push de
+        ld l, 0
+        ld d, l
+
+        sla h
+        jr nc, $ + 3
+        ld l, e
+
+.macro mul8By8To16Iter
+        add hl, hl
+        jr nc, $ + 3
+        add hl, de
+.endmacro
+        mul8By8To16Iter
+        mul8By8To16Iter
+        mul8By8To16Iter
+        mul8By8To16Iter
+        mul8By8To16Iter
+        mul8By8To16Iter
+        mul8By8To16Iter
+.undefine mul8By8To16Iter
+    pop de
+    ret
+
+;; mul16By8To24 [Maths]
+;;  Performs an unsigned multiplication of A and DE.
+;; Inputs:
+;;  A: Multiplier
+;;  DE: Multiplicand
+;; Outputs:
+;;  AHL: Product of A and DE.
+mul16By8To24:
+    push bc
+        ld hl, 0
+        ld c, l
+
+        add a, a
+        jr nc, $ + 4
+        ld h, d
+        ld l, e
+
+.macro mul16By8To24Iter
+        add hl, hl
+        rla
+        jr nc, $ + 4
+        add hl, de
+        adc a, c
+.endmacro
+        mul16By8To24Iter
+        mul16By8To24Iter
+        mul16By8To24Iter
+        mul16By8To24Iter
+        mul16By8To24Iter
+        mul16By8To24Iter
+        mul16By8To24Iter
+.undefine mul16By8To24Iter
+    pop bc
+    ret
+
+;; mul16By16To32 [Maths]
+;;  Performs an unsigned multiplication of DE and BC.
+;; Inputs:
+;;  DE: Multiplier
+;;  BC: Multiplicand
+;; Outputs:
+;;  DEHL: Product of DE and BC.
+mul16By16To32:
+    ld hl, 0
+
+    sla e
+    rl d
+    jr nc, $ + 4
+    ld h, b
+    ld l, c
+
+.macro mul16By16To32Iter
+    add hl, hl
+    rl e
+    rl d
+    jr nc, $ + 6
+    add hl, bc
+    jr nc, $ + 3
+    inc de
+.endmacro
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+    mul16By16To32Iter
+.undefine mul16By16To32Iter
+    ret
+
 ;; div32By16 [Maths]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
