@@ -365,6 +365,9 @@ populateStreamBuffer:
         push de
         push hl
         push bc
+            ld hl, 0xFFFF
+            call cpHLBC
+            jr z, _
             ld a, b
             setBankA
             ld a, c
@@ -373,6 +376,20 @@ populateStreamBuffer:
             ld l, 0
             ld bc, KFS_BLOCK_SIZE
             push ix \ pop de
+            ldir
+        pop bc
+        pop hl
+        pop de
+        pop af
+        setBankA
+    pop af
+    ret
+_:          push ix \ pop de ; New blocks get to be 0xFF
+            ld h, d \ ld l, e
+            inc de
+            ld a, 0xFF
+            ld (hl), a
+            ld bc, KFS_BLOCK_SIZE
             ldir
         pop bc
         pop hl
@@ -615,6 +632,47 @@ _:  pop af
     or 1
     ret
 
+; Flushes writes and loads the next block
+advanceBlock:
+    call flush
+    ret nz
+    push ix
+    push hl
+    push bc
+    push af
+    ld a, i
+    push af
+    di
+        call getStreamEntry
+        ld l, (ix + FILE_SECTION_ID)
+        ld h, (ix + FILE_SECTION_ID + 1)
+        ld (ix + FILE_PREV_SECTION), l
+        ld (ix + FILE_PREV_SECTION + 1), h
+        ; Grab the next block
+        ld a, h
+        setBankA
+        ld a, l
+        rlca \ rlca \ inc a \ inc a
+        ld l, a
+        ld h, 0x40
+        ld c, (hl)
+        inc hl
+        ld b, (hl)
+        ld (ix + FILE_SECTION_ID), c
+        ld (ix + FILE_SECTION_ID + 1), b
+        ld l, (ix + FILE_BUFFER)
+        ld h, (ix + FILE_BUFFER + 1)
+        push hl \ pop ix
+        call populateStreamBuffer
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop hl
+    pop ix
+    ret
+
 ;; flush [Filestreams]
 ;;  Flushes pending writes to disk.
 ;; Inputs:
@@ -634,10 +692,10 @@ flush:
         call getStreamEntry
         jr nz, _flush_fail
         bit 6, (ix + FILE_FLAGS)
-        jp z, _flush_fail ; Fail if not writable
+        jp z, _flush_exitEarly ; Do nothing if not writable
 _flush_withStream:
         bit 0, (ix + FILE_WRITE_FLAGS) ; Check if flushed
-        jp nz, .exitEarly
+        jp nz, _flush_exitEarly
         push ix
         push hl
         push bc
@@ -744,7 +802,7 @@ _:          pop hl
         pop hl
         pop ix
         set 0, (ix + FILE_WRITE_FLAGS) ; Mark as flushed
-.exitEarly:
+_flush_exitEarly:
     pop af
     jp po, _
     ei

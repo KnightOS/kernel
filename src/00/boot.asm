@@ -207,15 +207,8 @@ test:
     ld (ix + FILE_WORKING_SIZE), c
     ld (ix + FILE_WORKING_SIZE + 1), b
     ld (ix + FILE_WORKING_SIZE + 2), a
-    call flush
+    call advanceBlock
     ; Write next block
-    ld c, (ix + FILE_SECTION_ID)
-    ld (ix + FILE_PREV_SECTION), c
-    ld b, (ix + FILE_SECTION_ID + 1)
-    ld (ix + FILE_PREV_SECTION + 1), b
-    ld a, 0xFF
-    ld (ix + FILE_SECTION_ID), a
-    ld (ix + FILE_SECTION_ID + 1), a
     call getStreamBuffer
     push de
         push hl \ pop de
