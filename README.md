@@ -6,11 +6,12 @@ z80 systems, including:
 * A tree-based filesystem
 * Multitasking (up to 32 concurrent processes)
 * Dynamic memory management
-* Drivers for most of the embedded hardware
-* Support for the color TI-84+ SE
 
-This kernel is the basis of [KnightOS](https://github.com/KnightSoft/KnightOS), which is a good resource
+This kernel is the basis of [KnightOS](https://github.com/KnightOS/KnightOS), which is a good resource
 for others hoping to implement a userspace.
+
+This project is only useful to systems programmers. Please look into KnightOS instead if you are not a
+systems programmer.
 
 ## Compiling
 
@@ -23,10 +24,12 @@ Windows. You'll need to install:
 * Mono (or Microsoft.NET on Windows)
 * GNU Make
 * [sass](https://github.com/KnightOS/sass) (aur/sass)
+* [mktiupgrade](https://github.com/KnightOS/mktiupgrade) (aur/mktiupgrade)
 * [genkfs](https://github.com/KnightOS/genkfs) (aur/genkfs)
+* [wabbitemu](https://wabbit.codeplex.com/) (aur/wabbitemu) [optional]
 
 The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
-install Cygwin and perform the build from there.
+install Cygwin and perform the build from there. Windows users should install sass into their %PATH%.
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
 supported calculator model, use the given make target:
@@ -60,9 +63,7 @@ yourself. Here is a simple example init program, which can be assembled with the
         .dw 20
         .db KEXC_ENTRY_POINT
         .dw start
-        .db KEXC_KERNEL_VER
-        .db 0, 1 ; Minimum kernel is 0.1.x
-        .db 0xFF
+        .db KEXC_HEADER_END
     start:
         pcall(getLcdLock)
         pcall(allocScreenBuffer)
@@ -70,10 +71,9 @@ yourself. Here is a simple example init program, which can be assembled with the
         ld de, 0
         pcall(drawStr)
         pcall(fastCopy)
-    _:  jr _
-        
+        jr $
     message:
-        .asciiz "Hello, userspace!"
+        .db "Hello, userspace!", 0
 
 When you compile the kernel, you'll get a ROM file with an empty filesystem. To build the filesystem, you
 will need to make an example on your own system to build it from. Then, you can use
@@ -89,7 +89,7 @@ upgrade the kernel without touching the userspace filesystem.
 
 The kernel offers an API to userspace to interact with things like threads, memory, hardware, the
 filesystem, and more. The API is documented through special comments in the source code, which are
-extracted to generate the [online API reference](http://www.knightos.org/documentation/).
+extracted to generate the [online API reference](http://www.knightos.org/documentation/reference/).
 
 ## Versioning
 
@@ -98,6 +98,12 @@ take the form of `major.minor.patch`. "Patch" is updated when bugs are fixed and
 minor changes. "Minor" is updated for new features and major non-breaking changes. "Major" is
 updated with breaking changes. When you compile your kernel, the kernel version (as an ASCII
 string) will be written to address 0x64 on page 0x00.
+
+If you are working with a kernel that is not built from a major release, you will have a
+sligthly different kernel version. Appended to the version will be "-nn-hhhhhhhh". "nn" is the
+number of commits that have been made since your kernel release. "hhhhhhhh" is the git shorthash
+of the commit you're currently on. A "+" will be appended to this if your working directory is
+dirty.
 
 ## Getting Help
 
@@ -108,12 +114,12 @@ not always listening, so stick around - it may be a while before your question i
 ## Contributing
 
 Contributions to the kernel should follow our
-[contribution guidelines](https://github.com/KnightSoft/kernel/blob/master/CONTRIBUTING.md).
+[contribution guidelines](https://github.com/KnightOS/kernel/blob/master/CONTRIBUTING.md).
 All offers are welcome, but not all will be accepted. You might want to join #knightos (see previous
 section) to join in on development discussion before you start writing code.
 
 ## Licensing
 
 The kernel uses the permissive
-[MIT license](https://github.com/KnightSoft/kernel/blob/master/LICENSE). It permits use and
+[MIT license](https://github.com/KnightOS/kernel/blob/master/LICENSE). It permits use and
 modification in most scenarios, including commercial.
