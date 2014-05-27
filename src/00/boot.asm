@@ -207,31 +207,20 @@ test:
     ld (ix + FILE_WORKING_SIZE), c
     ld (ix + FILE_WORKING_SIZE + 1), b
     ld (ix + FILE_WORKING_SIZE + 2), a
-    call flush
+    call advanceBlock
     ; Write next block
-    ld c, (ix + FILE_SECTION_ID)
-    ld (ix + FILE_PREV_SECTION), c
-    ld b, (ix + FILE_SECTION_ID + 1)
-    ld (ix + FILE_PREV_SECTION + 1), b
-    push bc
-        ld a, 0xFF
-        ld (ix + FILE_SECTION_ID), a
-        ld (ix + FILE_SECTION_ID + 1), a
-        call getStreamBuffer
-        push de
-            push hl \ pop de
-            ld hl, testString_block2
-            ld bc, testStringEnd - testString_block2
-            ldir
-        pop de
-        call getStreamEntry
-        res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
-        ld a, testStringEnd - testString_block2
-        ld (ix + FILE_STREAM), a
-        call flush
-    pop bc
-    ld (ix + FILE_SECTION_ID), c
-    ld (ix + FILE_SECTION_ID + 1), b
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, testString_block2
+        ld bc, testStringEnd - testString_block2
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
+    ld a, testStringEnd - testString_block2
+    ld (ix + FILE_STREAM), a
+    call flush
     call closeStream
     ret
 
