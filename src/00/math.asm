@@ -88,7 +88,7 @@ sDEMulA:
 ;; Outputs:
 ;;  HL: Product of H and E.
 mul8By8To16:
-    push hl \ push de
+    push de
         ld l, 0
         ld d, l
 
@@ -109,7 +109,7 @@ mul8By8To16:
         mul8By8To16Iter
         mul8By8To16Iter
 .undefine mul8By8To16Iter
-    pop de \ pop hl
+    pop de
     ret
 
 ;; mul16By8To24 [Maths]
