@@ -23,10 +23,12 @@ Windows. You'll need to install:
 * Mono (or Microsoft.NET on Windows)
 * GNU Make
 * [sass](https://github.com/KnightOS/sass) (aur/sass)
+* [mktiupgrade](https://github.com/KnightOS/mktiupgrade) (aur/mktiupgrade)
 * [genkfs](https://github.com/KnightOS/genkfs) (aur/genkfs)
+* [wabbitemu](https://wabbit.codeplex.com/) (aur/wabbitemu) [optional]
 
 The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
-install Cygwin and perform the build from there.
+install Cygwin and perform the build from there. Windows users should install sass into their %PATH%.
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
 supported calculator model, use the given make target:
