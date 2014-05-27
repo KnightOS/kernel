@@ -111,7 +111,6 @@ mul8By8To16:
 .undefine mul8By8To16Iter
     pop de
     ret
->>>>>>> 57eaf5ade4628e3972834ae01e3f685cbd513931
 
 ;; mul16By8To24 [Maths]
 ;;  Performs an unsigned multiplication of A and DE.
