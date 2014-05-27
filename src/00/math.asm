@@ -189,7 +189,6 @@ mul16By16To32:
 .undefine mul16By16To32Iter
     ret
 
->>>>>>> d15361b... Added 8*8, 16*8 and 16*16 multiplication routines.
 ;; div32By16 [Maths]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
