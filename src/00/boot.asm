@@ -213,25 +213,21 @@ test:
     ld (ix + FILE_PREV_SECTION), c
     ld b, (ix + FILE_SECTION_ID + 1)
     ld (ix + FILE_PREV_SECTION + 1), b
-    push bc
-        ld a, 0xFF
-        ld (ix + FILE_SECTION_ID), a
-        ld (ix + FILE_SECTION_ID + 1), a
-        call getStreamBuffer
-        push de
-            push hl \ pop de
-            ld hl, testString_block2
-            ld bc, testStringEnd - testString_block2
-            ldir
-        pop de
-        call getStreamEntry
-        res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
-        ld a, testStringEnd - testString_block2
-        ld (ix + FILE_STREAM), a
-        call flush
-    pop bc
-    ld (ix + FILE_SECTION_ID), c
-    ld (ix + FILE_SECTION_ID + 1), b
+    ld a, 0xFF
+    ld (ix + FILE_SECTION_ID), a
+    ld (ix + FILE_SECTION_ID + 1), a
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, testString_block2
+        ld bc, testStringEnd - testString_block2
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
+    ld a, testStringEnd - testString_block2
+    ld (ix + FILE_STREAM), a
+    call flush
     call closeStream
     ret
 

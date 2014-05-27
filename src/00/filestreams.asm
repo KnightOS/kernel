@@ -521,7 +521,29 @@ _:  pop af
             ld b, (ix + FILE_WORKING_SIZE + 1)
             ld l, (ix + FILE_SECTION_ID)
             ld h, (ix + FILE_SECTION_ID + 1)
-            push hl \ pop iy ; TODO: Traverse to find the first section ID
+            ; Traverse the sections to find the first
+            push af
+            push de
+            push hl
+_:              ld a, h
+                setBankA
+                ld a, l
+                rlca \ rlca
+                ld l, a
+                ld h, 0x40
+                ld e, (hl)
+                inc hl
+                ld d, (hl)
+                ex de, hl
+                ld de, 0x7FFF
+                call cpHLDE
+                jr z, _
+                inc sp \ inc sp \ push hl
+            jr -_
+_:          pop hl
+            pop de
+            pop af
+            push hl \ pop iy
         pop hl
 .resumeWrite:
         call createFileEntry
