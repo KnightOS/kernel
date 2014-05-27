@@ -32,7 +32,7 @@ TI83p: PRIVILEGED := 70000
 TI83p: KEY := 04
 TI83p: UPGRADEEXT := 8xu
 TI83p: BOOT := 7C000
-TI83p: LENGTH := 80000
+TI83p: LENGTH := 0x80000
 TI83p: kernel
 
 TI83pSE: PLATFORM := TI83pSE
@@ -41,7 +41,7 @@ TI83pSE: PRIVILEGED := 1F0000
 TI83pSE: KEY := 04
 TI83pSE: UPGRADEEXT := 8xu
 TI83pSE: BOOT := 1FC000
-TI83pSE: LENGTH := 200000
+TI83pSE: LENGTH := 0x200000
 TI83pSE: kernel
 
 TI84p: PLATFORM := TI84p
@@ -50,7 +50,7 @@ TI84p: PRIVILEGED := F0000
 TI84p: KEY := 0A
 TI84p: UPGRADEEXT := 8xu
 TI84p: BOOT := FC000
-TI84p: LENGTH := 100000
+TI84p: LENGTH := 0x100000
 TI84p: kernel
 
 TI84pSE: PLATFORM := TI84pSE
@@ -59,7 +59,7 @@ TI84pSE: PRIVILEGED := 1F0000
 TI84pSE: KEY := 0A
 TI84pSE: UPGRADEEXT := 8xu
 TI84pSE: BOOT := 1FC000
-TI84pSE: LENGTH := 200000
+TI84pSE: LENGTH := 0x200000
 TI84pSE: kernel
 
 TI84pCSE: PLATFORM := TI84pCSE
@@ -68,7 +68,7 @@ TI84pCSE: PRIVILEGED := 3F0000
 TI84pCSE: KEY := 0F
 TI84pCSE: UPGRADEEXT := 8cu
 TI84pCSE: BOOT := 3FC000
-TI84pCSE: LENGTH := 400000
+TI84pCSE: LENGTH := 0x400000
 TI84pCSE: kernel $(OUTDIR)
 
 DEFINES=$(PLATFORM)
@@ -79,10 +79,10 @@ INCLUDE=inc/;$(BINDIR)
 	TI73 TI83p TI83pSE TI84p TI84pSE TI84pCSE
 
 kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATFORM)/02.bin $(OUTDIR)$(PLATFORM)/privileged.bin $(OUTDIR)$(PLATFORM)/boot.bin
-	$(ASPREFIX)build/MakeROM.exe $(BINDIR)kernel.rom $(LENGTH) \
-		$(BINDIR)00.bin:0 $(BINDIR)01.bin:4000 \
-		$(BINDIR)02.bin:8000 $(BINDIR)boot.bin:$(BOOT) \
-		$(BINDIR)privileged.bin:$(PRIVILEGED)
+	mkrom $(BINDIR)kernel.rom $(LENGTH) \
+		$(BINDIR)00.bin:0x00 $(BINDIR)01.bin:0x4000 \
+		$(BINDIR)02.bin:0x8000 $(BINDIR)boot.bin:0x$(BOOT) \
+		$(BINDIR)privileged.bin:0x$(PRIVILEGED)
 	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom $(BINDIR)00.inc
 	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom $(BINDIR)01.inc
 	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom $(BINDIR)02.inc

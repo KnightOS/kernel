@@ -26,6 +26,7 @@ Windows. You'll need to install:
 * [sass](https://github.com/KnightOS/sass) (aur/sass)
 * [mktiupgrade](https://github.com/KnightOS/mktiupgrade) (aur/mktiupgrade)
 * [genkfs](https://github.com/KnightOS/genkfs) (aur/genkfs)
+* [mkrom](https://github.com/KnightOS/mkrom) (aur/mkrom)
 * [wabbitemu](https://wabbit.codeplex.com/) (aur/wabbitemu) [optional]
 
 The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
