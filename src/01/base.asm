@@ -9,4 +9,4 @@
 #include "text.asm"
 #include "font.asm"
 
-.echo "Bytes remaining on page 02: {0}" 0x8000-$
+.echo "Bytes remaining on page 01: {0}" 0x8000-$
