@@ -65,9 +65,9 @@ calloc:
     push bc
     push de
     push hl
-        push bc \ pop de
-        call DEMulA
-        push hl \ pop bc
+        push af \ push bc \ pop de
+        call mul16By8To24
+        push hl \ pop bc \ pop af
         call malloc
         jr nz, .fail
         xor a
