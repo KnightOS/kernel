@@ -319,7 +319,7 @@ _:  pop af
     ei
 _:  pop af
 
-    cp 1 ; Set NZ for failure
+    or 1 ; Set NZ for failure
     ld a, errOutOfMem
     ret
     
