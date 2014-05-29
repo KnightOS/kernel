@@ -1032,3 +1032,46 @@ compareFileStrings:
     ld a, (hl)
     or a
     ret
+
+;; renameFile [Filesystem]
+;;  Renames a file.
+;; Inputs:
+;;  DE: Path to file (string pointer)
+;;  HL: New name
+;; Outputs:
+;;  Z: Set if the file was renamed, reset if file did not exist.
+;;  A: Preserved on success, error code on failure
+renameFile:
+    push hl \ push ix \ push bc \ push de \ push iy
+        push af
+            push hl
+                call findFileEntry
+                jr nz, .notFound
+                setBankA
+
+                ld a, fsModifiedFile
+                call unlockFlash
+                call writeFlashByte
+                call lockFlash
+
+                push hl \ pop ix
+            pop hl
+            
+            ld e, (ix)
+            ld d, (ix + -1)
+            ld c, (ix + -3)
+            ld b, (ix + -4)
+            ld a, (ix + -6) \ ld iyl, a
+            ld a, (ix + -7) \ ld iyh, a
+            ld a, (ix + -5)
+            call createFileEntry
+        pop af
+        jr .done
+.notFound:
+            ld h, a
+        pop af
+        or 1
+        ld a, h
+.done:
+    pop iy \ pop de \ pop bc \ pop ix \ pop hl
+    ret
