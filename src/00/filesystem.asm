@@ -228,17 +228,17 @@ _:  pop af
     ld (kernelGarbage + 0x102), a
     ret
 
-;; createFileEntry [Filesystem]
-;;  Creates a new file entry in the FAT.
-;; Inputs:
-;;  HL: File name
-;;  DE: Parent ID
-;;  ABC: Length
-;;  IY: Section ID
-;; Outputs:
-;;  Z: Set on success, reset on failure
-;;  A: New entry Flash page (on success); Error code (on failure)
-;;  HL: New entry address relative to 0x4000 (on success)
+; createFileEntry [Internal]
+;  Creates a new file entry in the FAT.
+; Inputs:
+;  HL: File name
+;  DE: Parent ID
+;  ABC: Length
+;  IY: Section ID
+; Outputs:
+;  Z: Set on success, reset on failure
+;  A: New entry Flash page (on success); Error code (on failure)
+;  HL: New entry address relative to 0x4000 (on success)
 createFileEntry:
     ; TODO: Check for file name too long
     push af
@@ -428,7 +428,7 @@ findFATEnd:
     or 1
     ret
 
-; createDirectoryEntry [Filesystem] - Internal function
+; createDirectoryEntry [Internal]
 ;  Creates a new directory entry in the FAT.
 ; Inputs:
 ;  HL: Directory name
