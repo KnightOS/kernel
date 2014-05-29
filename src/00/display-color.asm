@@ -665,7 +665,7 @@ _:
             or a
             sbc hl, bc
             ld a, l
-            call DEMulA
+            call mul16By8To24
             ld a, LCDREG_GRAM
             out (PORT_LCD_CMD), a
             out (PORT_LCD_CMD), a

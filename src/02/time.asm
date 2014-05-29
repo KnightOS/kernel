@@ -147,7 +147,7 @@ convertTimeFromTicks:
         push hl 
             push hl \ pop de
             ld a, 3
-            call DEMulA
+            call mul16By8To24
 
             ld a, h
             ld c, l
