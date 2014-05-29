@@ -175,9 +175,6 @@ reboot:
 #endif
 
     call test
-    ld de, testFile
-    ld hl, newTestFilename
-    call renameFile
 
     ld de, bootFile
     call fileExists
@@ -225,6 +222,10 @@ test:
     ld (ix + FILE_STREAM), a
     call flush
     call closeStream
+    
+    ld de, testFile
+    ld hl, newTestFilename
+    call renameFile
     ret
 
 bootFile:
@@ -234,7 +235,7 @@ castle:
 testFile:
     .db "/var/test", 0
 newTestFilename:
-    .db "testtest", 0
+    .db "renamedtest", 0
 testString:
     .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefgh\n\n"
 testString_block2:
