@@ -50,6 +50,7 @@ _:                      ld a, (hl)
                         djnz -_
                     pop bc
 _:              pop af
+                ld d, a
             pop bc
             pop hl
             push de

@@ -193,7 +193,7 @@ killCurrentThread_DeallocationDone:
     dec (hl)
     xor a
     ld (currentThreadIndex), a
-    jp contextSwitch_search
+    jp contextSwitch_manual
 
 ;; killThread [Threading]
 ;;  Kills the specified thread.
