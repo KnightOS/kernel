@@ -208,7 +208,7 @@ _:
     pop af
     ret
 
-; rst $28
+; rst 0x28
 bcall:
     push hl
     push af
