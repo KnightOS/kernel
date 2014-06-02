@@ -605,14 +605,16 @@ _:  pop bc
 ;;  Z: Set if successful, reset otherwise
 setReturnPoint:
     push hl
-        push de
-            ex de, hl
-            call getThreadEntry
-            jr nz, _
-            call sharedSetInitial
-            ld (ix), e
-            ld (ix + 1), d
-_:      pop de
+    push ix
+    push de
+        ex de, hl
+        call getThreadEntry
+        jr nz, _
+        call sharedSetInitial
+        ld (ix), e
+        ld (ix + 1), d
+_:  pop de
+    pop ix
     pop hl
     ret
 
