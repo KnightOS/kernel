@@ -86,7 +86,7 @@ kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATF
 	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom $(BINDIR)00.inc
 	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom $(BINDIR)01.inc
 	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom $(BINDIR)02.inc
-	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)kernel.inc
+	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc inc/constants.asm $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)kernel.inc
 	mktiupgrade -p -k build/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
 $(OUTDIR)$(PLATFORM)/00.bin: src/00/*.asm inc/constants.asm src/00/jumptable.config
