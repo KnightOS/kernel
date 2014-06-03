@@ -218,6 +218,64 @@ div32By16:
     djnz .loop
     ret
 
+;; div8by8 [Maths]
+;;  Performs `D = D / E`
+;; Outputs:
+;;  D: D / E
+;;  A: Remainder
+div8by8:
+    xor a
+    ; Unrolled 8 times
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    sla d
+    rla
+    cp e
+    jr c, $+4
+    sub e
+    inc d
+    ret
+
 ;; sub16From32 [Maths]
 ;;  Performs `ACIX = ACIX - DE`
 sub16from32:
