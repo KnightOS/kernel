@@ -62,7 +62,7 @@ DEMulA:
     ret
     
 ;; sDEMulA [Maths]
-;; Performs `HL = DE * A`. The operation is signed.
+;;  Performs `HL = DE * A`. The operation is signed.
 sDEMulA:
     push bc
         ld hl, 0
