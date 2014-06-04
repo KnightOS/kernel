@@ -174,7 +174,9 @@ reboot:
     out (PORT_LCD_CMD), a ; Contrast
 #endif
 
+#ifndef COLOR
     call test
+#endif
 
     ld de, bootFile
     call fileExists
