@@ -520,7 +520,7 @@ _:  pop af
         push hl
             ld de, kernelGarbage + 0x100
             call findDirectoryEntry
-            jr nz, .wtf
+            jp nz, .wtf
             setBankA
         pop de
         ex de, hl
@@ -690,7 +690,7 @@ flush:
     push af
     di
         call getStreamEntry
-        jr nz, _flush_fail
+        jp nz, _flush_fail
         bit 6, (ix + FILE_FLAGS)
         jp z, _flush_exitEarly ; Do nothing if not writable
 _flush_withStream:

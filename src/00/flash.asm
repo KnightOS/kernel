@@ -280,7 +280,7 @@ eraseFlashPage:
         pop af
         
         ld c, a
-        and 0b111111100
+        and 0b1111100
         ld b, swapSector
         ; b is page in swap sector, a is page in target sector, c is target page
 _:
@@ -292,7 +292,7 @@ _:
         inc a
         push af
         ld a, b
-        and 0b000000011
+        and 0b0000011
         or a
         jr z, .return
         pop af

@@ -252,7 +252,7 @@ createFileEntry:
     push de
     push bc
         call findFATEnd
-        jr nz, .endOfFilesystem
+        jp nz, .endOfFilesystem
 
 .endOfTable:
         ; Write new entry here
@@ -278,7 +278,7 @@ createFileEntry:
             inc c
 _:          call cpHLBC
         pop bc
-        jr c, .endOfFilesystem
+        jp c, .endOfFilesystem
         ; We're good to go, let's do this
         ; DE is the address in FAT (here, we'll modify it to be the end of the entry):
         ex de, hl
