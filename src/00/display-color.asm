@@ -665,7 +665,7 @@ _:
             or a
             sbc hl, bc
             ld a, l
-            call mul16By8To24
+            call mul16By8
             ld a, LCDREG_GRAM
             out (PORT_LCD_CMD), a
             out (PORT_LCD_CMD), a

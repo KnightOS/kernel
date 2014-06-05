@@ -29,38 +29,6 @@ cpBCDE:
     pop hl
     ret
     
-;; DEMulBC [Maths]
-;;  Performs `HL = DE * BC`
-DEMulBC:
-    push af
-        ld hl, 0
-        ld a, 16
-.loop:
-        add hl, hl
-        sla c
-        rl b
-        jr nc, $ + 3
-        add hl, de
-        dec a
-        jr nz, .loop
-    pop af
-    ret
-    
-;; DEMulA [Maths]
-;;  Performs `HL = DE * A`
-DEMulA:
-    push bc
-        ld hl, 0
-        ld b, 8
-.loop:
-        add hl, hl
-        rla
-        jr nc, $ + 3
-        add hl, de
-        djnz .loop
-    pop bc
-    ret
-    
 ;; sDEMulA [Maths]
 ;;  Performs `HL = DE * A`. The operation is signed.
 sDEMulA:
@@ -80,14 +48,14 @@ sDEMulA:
     pop bc
     ret
 
-;; mul8By8To16 [Maths]
+;; mul8By8 [Maths]
 ;;  Performs an unsigned multiplication of H and E
 ;; Inputs:
 ;;  H: Multiplier
 ;;  E: Multiplicand
 ;; Outputs:
 ;;  HL: Product of H and E.
-mul8By8To16:
+mul8By8:
     push de
         ld l, 0
         ld d, l
@@ -96,30 +64,30 @@ mul8By8To16:
         jr nc, $ + 3
         ld l, e
 
-.macro mul8By8To16Iter
+.macro mul8By8Iter
         add hl, hl
         jr nc, $ + 3
         add hl, de
 .endmacro
-        mul8By8To16Iter
-        mul8By8To16Iter
-        mul8By8To16Iter
-        mul8By8To16Iter
-        mul8By8To16Iter
-        mul8By8To16Iter
-        mul8By8To16Iter
-.undefine mul8By8To16Iter
+        mul8By8Iter
+        mul8By8Iter
+        mul8By8Iter
+        mul8By8Iter
+        mul8By8Iter
+        mul8By8Iter
+        mul8By8Iter
+.undefine mul8By8Iter
     pop de
     ret
 
-;; mul16By8To24 [Maths]
+;; mul16By8 [Maths]
 ;;  Performs an unsigned multiplication of A and DE.
 ;; Inputs:
 ;;  A: Multiplier
 ;;  DE: Multiplicand
 ;; Outputs:
 ;;  AHL: Product of A and DE.
-mul16By8To24:
+mul16By8:
     push bc
         ld hl, 0
         ld c, l
@@ -129,32 +97,32 @@ mul16By8To24:
         ld h, d
         ld l, e
 
-.macro mul16By8To24Iter
+.macro mul16By8Iter
         add hl, hl
         rla
         jr nc, $ + 4
         add hl, de
         adc a, c
 .endmacro
-        mul16By8To24Iter
-        mul16By8To24Iter
-        mul16By8To24Iter
-        mul16By8To24Iter
-        mul16By8To24Iter
-        mul16By8To24Iter
-        mul16By8To24Iter
-.undefine mul16By8To24Iter
+        mul16By8Iter
+        mul16By8Iter
+        mul16By8Iter
+        mul16By8Iter
+        mul16By8Iter
+        mul16By8Iter
+        mul16By8Iter
+.undefine mul16By8Iter
     pop bc
     ret
 
-;; mul16By16To32 [Maths]
+;; mul16By16 [Maths]
 ;;  Performs an unsigned multiplication of DE and BC.
 ;; Inputs:
 ;;  DE: Multiplier
 ;;  BC: Multiplicand
 ;; Outputs:
 ;;  DEHL: Product of DE and BC.
-mul16By16To32:
+mul16By16:
     ld hl, 0
 
     sla e
@@ -163,7 +131,7 @@ mul16By16To32:
     ld h, b
     ld l, c
 
-.macro mul16By16To32Iter
+.macro mul16By16Iter
     add hl, hl
     rl e
     rl d
@@ -172,22 +140,22 @@ mul16By16To32:
     jr nc, $ + 3
     inc de
 .endmacro
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-    mul16By16To32Iter
-.undefine mul16By16To32Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+    mul16By16Iter
+.undefine mul16By16Iter
     ret
 
 ;; div32By16 [Maths]

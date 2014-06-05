@@ -147,7 +147,7 @@ convertTimeFromTicks:
         push hl 
             push hl \ pop de
             ld a, 3
-            call mul16By8To24
+            call mul16By8
 
             ld a, h
             ld c, l

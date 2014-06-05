@@ -66,7 +66,7 @@ calloc:
     push de
     push hl
         push af \ push bc \ pop de
-        call mul16By8To24
+        call mul16By8
         push hl \ pop bc \ pop af
         call malloc
         jr nz, .fail

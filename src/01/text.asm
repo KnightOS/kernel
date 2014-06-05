@@ -113,7 +113,7 @@ _:
 _:      push de
             ld de, 6
             sub 0x20
-            call mul16By8To24
+            call mul16By8
             ex de, hl
             ld hl, kernel_font
             add hl, de
@@ -166,7 +166,7 @@ _:
 _:      push de
             ld de, 6
             sub 0x20
-            call mul16By8To24
+            call mul16By8
             ex de, hl
             ld hl, kernel_font
             add hl, de
@@ -419,7 +419,7 @@ measureChar:
     push af
         ld de, 6
         sub 0x20
-        call mul16By8To24
+        call mul16By8
         ex de, hl
         ld hl, kernel_font
         add hl, de
