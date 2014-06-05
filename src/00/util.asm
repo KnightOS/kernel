@@ -402,7 +402,7 @@ cpHLDE_sort:
         call cpHLDE
         jr -_
 
-;; sleep [Miscellaneous ]
+;; sleep [Miscellaneous]
 ;;  Delays a number of milliseconds.
 ;; Inputs:
 ;;  HL: delay in milliseconds
