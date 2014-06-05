@@ -599,7 +599,7 @@ icos:
 ;;  A: The result of the conversion
 hexToByte:
     push bc
-        ld c, $27
+        ld c, 39
         ld a, (hl)
         or 32
         sub '0'
