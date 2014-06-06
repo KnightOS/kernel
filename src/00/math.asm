@@ -558,30 +558,3 @@ icos:
     .db 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 54, 55, 56, 57, 57, 58
     .db 59, 59, 60, 60, 61, 61, 62, 62, 62, 63, 63, 63, 63, 63, 63, 63
 
-;; hexToByte [Maths]
-;;  Case-agnostic routine to convert a hexadecimal string
-;;  to a byte.
-;; Inputs:
-;;  HL: Pointer to string
-;; Outputs:
-;;  A: The result of the conversion
-hexToByte:
-    push bc
-        ld c, 39
-        ld a, (hl)
-        or 32
-        sub '0'
-        cp 10
-        jr c, _
-        sub c ; 'a'-'0'-10
-_:      add a \ add a \ add a \ add a
-        ld b, a
-        inc hl
-        ld a, (hl)
-        or 32
-        sub '0'
-        jr c, _
-        sub c ; 'a'-'0'-10
-_:      or b
-    pop bc
-    ret
