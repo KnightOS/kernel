@@ -75,34 +75,38 @@ DEFINES=$(PLATFORM)
 BINDIR=$(OUTDIR)$(PLATFORM)/
 INCLUDE=inc/;$(BINDIR)
 
-.PHONY: clean kernel \
+.PHONY: clean kernel baserom \
 	TI73 TI83p TI83pSE TI84p TI84pSE TI84pCSE
 
-kernel: $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATFORM)/02.bin $(OUTDIR)$(PLATFORM)/privileged.bin $(OUTDIR)$(PLATFORM)/boot.bin
+kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATFORM)/02.bin $(OUTDIR)$(PLATFORM)/privileged.bin $(OUTDIR)$(PLATFORM)/boot.bin
 	mkrom $(BINDIR)kernel.rom $(LENGTH) \
 		$(BINDIR)00.bin:0x00 $(BINDIR)01.bin:0x4000 \
 		$(BINDIR)02.bin:0x8000 $(BINDIR)boot.bin:0x$(BOOT) \
 		$(BINDIR)privileged.bin:0x$(PRIVILEGED)
-	$(ASPREFIX)build/CreateJumpTable.exe 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)kernel.rom $(BINDIR)00.inc
-	$(ASPREFIX)build/CreateJumpTable.exe 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)kernel.rom $(BINDIR)01.inc
-	$(ASPREFIX)build/CreateJumpTable.exe 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)kernel.rom $(BINDIR)02.inc
+	patchrom src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.inc
+	patchrom src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.inc
+	patchrom src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.inc
 	cat inc/kernel.inc inc/kernelmem.inc inc/defines.inc inc/constants.asm $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)kernel.inc
-	mktiupgrade -p -k build/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
+	mktiupgrade -p -k keys/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
+
+baserom:
+	mkdir -p $(BINDIR)
+	mkrom $(BINDIR)kernel.rom $(LENGTH) /dev/null:0x00
 
 $(OUTDIR)$(PLATFORM)/00.bin: src/00/*.asm inc/constants.asm src/00/jumptable.config
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/00/" --symbols $(BINDIR)00.sym --listing $(BINDIR)00.list src/00/base.asm $(BINDIR)00.bin
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 00 src/00/jumptable.config $(BINDIR)00.sym $(BINDIR)00.inc
+	patchrom src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.inc
 
 $(OUTDIR)$(PLATFORM)/01.bin: $(OUTDIR)$(PLATFORM)/00.bin src/01/*.asm inc/constants.asm src/01/jumptable.config
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/01/" --symbols $(BINDIR)01.sym --listing $(BINDIR)01.list src/01/base.asm $(BINDIR)01.bin
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 01 src/01/jumptable.config $(BINDIR)01.sym $(BINDIR)01.inc
+	patchrom src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.inc
 
 $(OUTDIR)$(PLATFORM)/02.bin: $(OUTDIR)$(PLATFORM)/00.bin src/02/*.asm inc/constants.asm src/02/jumptable.config
 	@mkdir -p $(BINDIR)
 	$(AS) $(ASFLAGS) --define "$(DEFINES)" --include "$(INCLUDE);src/02/" --symbols $(BINDIR)02.sym --listing $(BINDIR)02.list src/02/base.asm $(BINDIR)02.bin
-	$(ASPREFIX)build/CreateJumpTable.exe --symbols 02 src/02/jumptable.config $(BINDIR)02.sym $(BINDIR)02.inc
+	patchrom src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.inc
 
 $(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm inc/constants.asm $(OUTDIR)$(PLATFORM)/00.bin
 	@mkdir -p $(BINDIR)
