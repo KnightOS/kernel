@@ -209,6 +209,7 @@ eraseFlashSector:
     push af
     di
     ld a, b
+    and 0b11111100
 
     push hl
     push de
@@ -249,7 +250,7 @@ _:  pop af
     ld (0x0555), a ; Unlock
     ld a, 0x30
     ld (0x4000), a ; Erase
-    ; Wait for 0xcip
+    ; Wait for chip
 _:  ld a, (0x4000)
     bit 7, a
     ret nz
@@ -343,20 +344,13 @@ copySectorToSwap:
         ldir
 #endif
 #ifdef CPU15
-        ld hl, 0x4000
-        add hl, sp
-        ld sp, hl
-        call flashFunctions + 0x4000
+        jp flashFunctions + 0x4000
+.return:
         xor a
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
-        ld hl, 0
-        add hl, sp
-        ld bc, 0x4000
-        or a
-        sbc hl, bc
-        ld sp, hl
 #else
-        call flashFunctions
+.return:
+        jp flashFunctions
 #endif
     pop de
     pop hl
@@ -378,13 +372,15 @@ _:  pop af
     ld de, 0x4000
     ld bc, 0x4000
 .loop:
+    ld a, (hl)
+    ld (.end - .ram + 0x4000 + flashFunctions), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (hl)
+    ld a, (.end - .ram + 0x4000 + flashFunctions)
     ld (de), a        ; Data
     inc de
     dec bc
@@ -419,9 +415,8 @@ _:
     or a
     jr nz, .preLoop
     
-    ld a, 0x81
-    setBankB
-    ret
+    setBankB(0x81)
+    jp .return
 .end:
 
 #else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
@@ -473,7 +468,7 @@ _:  cp (hl)
     or a
     ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .preLoop
-    ret
+    jp .return
 .end:
 #endif
 
@@ -514,20 +509,13 @@ copyFlashPage:
         pop bc
         pop af
 #ifdef CPU15
-        ld hl, 0x4000
-        add hl, sp
-        ld sp, hl
-        call flashFunctions + 0x4000
+        jp flashFunctions + 0x4000
+.return:
         xor a
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
-        ld hl, 0
-        add hl, sp
-        ld bc, 0x4000
-        or a
-        sbc hl, bc
-        ld sp, hl
 #else
-        call flashFunctions
+        jp flashFunctions
+.retrurn:
 #endif
     pop de
     pop hl
@@ -551,18 +539,20 @@ _:  pop af
     ld de, 0x4000
     ld bc, 0x4000
 .loop:
+    ld a, (hl)
+    ld (.ram_end - .ram + 0x4000 + flashFunctions), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (hl)
+    ld a, (.ram_end - .ram + 0x4000 + flashFunctions)
     ld (de), a        ; Data
     inc de
     dec bc
     
-_:    xor (hl)
+_:  xor (hl)
     bit 7, a
     jr z, _
     bit 5, a
@@ -571,7 +561,7 @@ _:    xor (hl)
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
-    ret
+    jp .return
 _:
     inc hl
     ld a, b
@@ -582,9 +572,9 @@ _:
     jr nz, .loop
     
     setBankB(0x81)
-    ret
+    jp .return
 .ram_end:
-#else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
+#else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
 .ram:
     ld e, b
     

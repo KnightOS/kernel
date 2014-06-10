@@ -75,7 +75,7 @@ _:  pop af
                 inc hl
                 ld a, (hl)
                 or a ; cp 0
-                jr nz, .notFinal - 1 ; (-1 adds the inc hl)
+                jr nz, .notFinal - 1 ; (-1 adds the dec hl)
                 dec hl
 .final:
                 set 7, (iy)
@@ -212,6 +212,10 @@ _:  pop af
                 ld (iy + FILE_BUFFER + 1), b
                 dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Move HL to middle file size byte
                 ; Check for final block
+                ; Note to self: how on earth does this properly check if this is the last block
+                ; Will this fail on files >64K in length?
+                ; Someone should examine this more closely later, I'm in the middle of something.
+                ; openFileRead is likely affected by the same.
                 xor a
                 ld (iy + FILE_FINAL_LENGTH), a
                 ld a, (hl)
@@ -223,14 +227,14 @@ _:  pop af
                 inc hl
                 ld a, (hl)
                 or a ; cp 0
-                jr nz, .notFinal - 1 ; (-1 adds the inc hl)
+                jr nz, .notFinal - 1 ; -1 adds dec hl
                 dec hl
 .final:
                 set 7, (iy + FILE_FLAGS)
                 ld a, (hl)
                 ld (iy + FILE_FINAL_LENGTH), a
                 jr .notFinal
-                ;dec hl
+                dec hl
 .notFinal:
                 inc hl
                 ld a, (hl)
@@ -773,6 +777,11 @@ _:              ld (kernelGarbage + 2), bc
                 ld bc, 4
                 ld hl, kernelGarbage
                 call writeFlashBuffer
+                ld bc, (kernelGarbage + 2) ; Grab next section ID again
+                ld hl, 0xFFFF
+                call cpHLBC
+            pop hl \ push hl
+                call nz, flush_updateNextSection
                 ; Update previous section's header if needed
                 ld l, (ix + FILE_PREV_SECTION)
                 ld h, (ix + FILE_PREV_SECTION + 1)
@@ -825,6 +834,76 @@ flush_withStream:
     ld a, i
     push af
         jp _flush_withStream
+
+; We have to do a flash erasure for this procedure
+; HL is the new section ID
+; BC is the section to update
+; This is the worst case for performance, to be avoided
+flush_updateNextSection:
+    push de ; Can destroy all others
+        ld a, b
+        setBankA
+        ld a, c
+        rlca \ rlca
+        ld e, a
+        ld d, 0x40
+        ; We'll do a quick check to make sure we really really have to erase flash
+        ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
+        ex de, hl
+        ld a, (hl)
+        and d
+        xor d
+        jr nz, .mustErase + 1
+        inc hl
+        ld a, (hl)
+        and e
+        xor e
+        jr nz, .mustErase
+        ; Woo we can do it without an erasure
+        ex de, hl
+        ld (kernelGarbage), hl
+        dec de
+        ld bc, 2
+        ld hl, kernelGarbage
+        call writeFlashBuffer
+    pop de
+    ret
+.mustErase:
+    pop de
+    ret
+    ; TODO
+    ; Current status
+    ; Will erase the page that needs to be modified and leave the rest intact
+    ; The page-to-be-modified needs to be copied back with the modifications in place
+        dec hl
+        ex de, hl
+        ; DE points to the address that needs fixing up
+        ; HL is the value to fix it up to
+        ; We copy this sector to swap and then erase the original sector
+        ; And then we copy each page back except for the important one
+        ; If it is the important one we jump into our own RAM blob and
+        ; let it do all the work
+        getBankA
+        push de
+        push hl
+            call copySectorToSwap
+            call eraseFlashSector
+
+            ld b, swapSector
+            ld d, a ; Flash page being dealt with
+            and 0b11111100 ; Start of sector
+            ld e, a
+_:          or e
+            cp d
+            call nz, copyFlashPage
+            inc a
+            inc b
+            and 0b00000011
+            jr nz, -_
+            ld a, d
+            setBankA
+.modifiedPage:
+            ; TODO
 
 ;; streamReadByte [Filestreams]
 ;;  Reads a single byte from a file stream and advances the stream.

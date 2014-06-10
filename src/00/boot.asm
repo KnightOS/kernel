@@ -224,10 +224,23 @@ test:
     ld (ix + FILE_STREAM), a
     call flush
     call closeStream
-    
+
+    ; Edit test file
     ld de, testFile
-    ld hl, newTestFilename
-    call renameFile
+    call openFileWrite
+    call getStreamBuffer
+    push de
+        push hl \ pop de
+        ld hl, editString
+        ld bc, editStringEnd - editString
+        ldir
+    pop de
+    call getStreamEntry
+    res 0, (ix + FILE_WRITE_FLAGS) ; not flushed
+    ld a, 3
+    ld (ix + FILE_STREAM), a ; Move stream 3 places forward
+    call flush
+    call closeStream
     ret
 
 bootFile:
@@ -236,10 +249,11 @@ castle:
     .db "/bin/castle", 0
 testFile:
     .db "/var/test", 0
-newTestFilename:
-    .db "renamedtest", 0
 testString:
     .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefgh\n\n"
 testString_block2:
     .db "256 bytes!"
 testStringEnd:
+editString:
+    .db "This file has been edited after it was originally written."
+editStringEnd:
