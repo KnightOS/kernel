@@ -176,6 +176,7 @@ reboot:
 
 #ifndef COLOR
     call test
+test_return:
 #endif
 
     ld de, bootFile
@@ -192,6 +193,9 @@ test:
     ld de, testFile
     call fileExists
     ret z
+
+    ld sp, 0xC000 ; Stack mischief
+
     call openFileWrite
     ; Writing file manually because stream write functions aren't implemented yet
     call getStreamBuffer
@@ -240,8 +244,11 @@ test:
     ld a, 3
     ld (ix + FILE_STREAM), a ; Move stream 3 places forward
     call flush
+    call advanceBlock
     call closeStream
-    ret
+    ; Stack is not the same as it was when we were called but we should just be able to manually do it
+    pop hl
+    jp test_return
 
 bootFile:
     .db "/bin/init", 0

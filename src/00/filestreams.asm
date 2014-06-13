@@ -501,7 +501,7 @@ _:  pop af
     ret
 .closeWritableStream:
         call flush_withStream
-        
+
         xor a
         ld l, (ix + FILE_ENTRY_PTR)
         ld h, (ix + FILE_ENTRY_PTR + 1)
@@ -543,6 +543,8 @@ _:  pop af
             ld l, (ix + FILE_SECTION_ID)
             ld h, (ix + FILE_SECTION_ID + 1)
             ; Traverse the sections to find the first
+            ; TODO: We can skip one iteration by pulling the PREV_SECTION_ID
+            ; from the file handle
             push af
             push de
             push hl
@@ -568,7 +570,7 @@ _:          pop hl
         pop hl
 .resumeWrite:
         call createFileEntry
-        jr nz, .wtf + 2
+        jp nz, .wtf + 2
 
         ; Clear away file handle
         push hl
@@ -616,9 +618,30 @@ _:          ld a, (hl)
 
             ld l, (ix + FILE_SECTION_ID)
             ld h, (ix + FILE_SECTION_ID + 1)
+            ; Traverse to find first section
+            push af
+            push hl
+_:              ld a, h
+                setBankA
+                ld a, l
+                rlca \ rlca
+                ld l, a
+                ld h, 0x40
+                ld e, (hl)
+                inc hl
+                ld d, (hl)
+                ex de, hl
+                ld de, 0x7FFF
+                call cpHLDE
+                jr z, _
+                inc sp \ inc sp \ push hl
+            jr -_
+_:          pop hl
+            pop af
             push hl \ pop iy
 
             ex de, hl
+            ld hl, kernelGarbage + 0x100 ; File name
 
             ld a, (ix + FILE_WORKING_SIZE + 2)
             ld c, (ix + FILE_WORKING_SIZE)
@@ -839,6 +862,9 @@ flush_withStream:
 ; HL is the new section ID
 ; BC is the section to update
 ; This is the worst case for performance, to be avoided
+; The performance of this can probably be made better by way of some custom RAM shellcode
+; instead of using the flash driver directly
+; To be investigated later, this is an edge case after all
 flush_updateNextSection:
     push de ; Can destroy all others
         ld a, b
@@ -869,23 +895,14 @@ flush_updateNextSection:
     pop de
     ret
 .mustErase:
-    pop de
-    ret
-    ; TODO
-    ; Current status
-    ; Will erase the page that needs to be modified and leave the rest intact
-    ; The page-to-be-modified needs to be copied back with the modifications in place
         dec hl
         ex de, hl
         ; DE points to the address that needs fixing up
         ; HL is the value to fix it up to
-        ; We copy this sector to swap and then erase the original sector
-        ; And then we copy each page back except for the important one
-        ; If it is the important one we jump into our own RAM blob and
-        ; let it do all the work
         getBankA
         push de
         push hl
+            ; Clear the sector and restore all but the affected page
             call copySectorToSwap
             call eraseFlashSector
 
@@ -900,10 +917,38 @@ _:          or e
             inc b
             and 0b00000011
             jr nz, -_
-            ld a, d
-            setBankA
 .modifiedPage:
-            ; TODO
+            ; Re-write the old page, minus the first 0x200 bytes
+            ld a, d
+            and 0b00000011
+            add a, swapSector
+            ld b, a
+            ld a, d
+            ; A is source page
+            ; B is destination page
+            ; ld h, 0x40 ; TODO: Support this in copyFlashExcept
+            call copyFlashExcept
+            ld a, b
+            setBankA
+            ld a, d
+            ld hl, 0x4000
+            ld de, kernelGarbage
+            ld bc, 0x200
+            ldir ; Move the header into kernelGarbage to edit
+            setBankA
+        pop hl
+        pop de
+        ex de, hl
+        ld h, kernelGarbage >> 8 ; TODO: What if kernelGarbage isn't aligned?
+        ld (hl), e
+        inc hl
+        ld (hl), d
+        ld hl, kernelGarbage
+        ld de, 0x4000
+        ld bc, 0x200
+        call writeFlashBuffer
+    pop de
+    ret
 
 ;; streamReadByte [Filestreams]
 ;;  Reads a single byte from a file stream and advances the stream.

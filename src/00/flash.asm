@@ -472,6 +472,152 @@ _:  cp (hl)
 .end:
 #endif
 
+;; copyFlashExcept [Flash]
+;;  Copies all but the first 0x200 bytes of Flash from one page to another.
+;; Inputs:
+;;  A: Destination page
+;;  B: Source page
+;; Notes:
+;;  Flash must be unlocked and the destination page must be cleared.
+copyFlashExcept:
+; TODO: Allow user to specify an arbituary address to omit, perhaps in 0x100 byte blocks
+    push de
+    push bc
+    ld d, a
+    push af
+    ld a, i
+    push af
+    di
+    ld a, d
+    
+    push hl
+    push de
+        push af
+        push bc
+        ld hl, .ram
+#ifdef CPU15
+            ld a, 1
+            out (PORT_RAM_PAGING), a
+            ; This routine can perform better on some models if we rearrange memory 
+            ld de, flashFunctions + 0x4000
+            ld bc, .ram_end - .ram
+            ldir
+#else
+        ld de, flashFunctions
+        ld bc, .ram_end - .ram
+        ldir
+#endif
+        pop bc
+        pop af
+#ifdef CPU15
+        jp flashFunctions + 0x4000
+.return:
+        xor a
+        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
+#else
+        jp flashFunctions
+.retrurn:
+#endif
+    pop de
+    pop hl
+    
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop bc
+    pop de
+    ret
+    
+#ifdef CPU15
+.ram:
+    setBankA ; Destination
+    ld a, b
+    setBankB ; Source
+    
+.preLoop:    
+    ld hl, 0x8000 + 0x200
+    ld de, 0x4000 + 0x200
+    ld bc, 0x4000 - 0x200
+.loop:
+    ld a, (hl)
+    ld (.ram_end - .ram + 0x4000 + flashFunctions), a
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
+    ld a, 0x55
+    ld (0x0555), a    ; Unlock
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
+    ld a, (.ram_end - .ram + 0x4000 + flashFunctions)
+    ld (de), a        ; Data
+    inc de
+    dec bc
+    
+_:  xor (hl)
+    bit 7, a
+    jr z, _
+    bit 5, a
+    jr z, -_
+    ; Error, abort
+    ld a, 0xF0
+    ld (0), a
+    setBankB(0x81)
+    jp .return
+_:
+    inc hl
+    ld a, b
+    or a
+    jr nz, .loop
+    ld a, c
+    or a
+    jr nz, .loop
+    
+    setBankB(0x81)
+    jp .return
+.ram_end:
+#else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
+.ram:
+    ld e, b
+    
+    ld (flashFunctions + flashFunctionSize - 1), a
+.preLoop:
+    ld hl, 0x4000
+    ld bc, 0x4000
+.loop:
+    push af
+        ld a, e
+        setBankA ; The inefficiency on this model comes from swapping pages during the loop
+        ld d, (hl)
+    pop af
+    setBankA
+    ; copy D to (HL)
+    ld a, 0xAA
+    ld (0x0AAA), a    ; Unlock
+    ld a, 0x55
+    ld (0x0555), a    ; Unlock
+    ld a, 0xA0
+    ld (0x0AAA), a    ; Write command
+    ld (hl), d        ; Data
+    
+    ld a, d
+_:  cp (hl)
+    jr nz, -_ ; Does this work?
+    
+    dec bc
+    inc hl
+    
+    ld a, b
+    or a
+    ld a, (flashFunctions + flashFunctionSize - 1)
+    jr nz, .loop
+    ld a, c
+    or a
+    ld a, (flashFunctions + flashFunctionSize - 1)
+    jr nz, .loop
+    ret
+.ram_end:
+#endif
+
 ;; copyFlashPage [Flash]
 ;;  Copies one page of Flash to another.
 ;; Inputs:
