@@ -175,7 +175,7 @@ reboot:
 #endif
 
 #ifndef COLOR
-    call test
+    ;call test
 test_return:
 #endif
 

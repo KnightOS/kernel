@@ -394,7 +394,7 @@ _:  xor (hl)
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
-    ret
+    jp .return
 _:
     inc hl
     ld a, b
