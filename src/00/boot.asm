@@ -174,8 +174,8 @@ reboot:
     out (PORT_LCD_CMD), a ; Contrast
 #endif
 
-#ifndef COLOR
-    ;call test
+#ifdef TI84pSE ; Will get it working on other calcs later
+    call test
 test_return:
 #endif
 
@@ -189,6 +189,7 @@ test_return:
 
     jp contextSwitch_manual
 
+#ifdef TI84pSE
 test:
     ld de, testFile
     call fileExists
@@ -249,6 +250,7 @@ test:
     ; Stack is not the same as it was when we were called but we should just be able to manually do it
     pop hl
     jp test_return
+#endif
 
 bootFile:
     .db "/bin/init", 0

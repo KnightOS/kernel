@@ -368,35 +368,45 @@ _:  pop af
     setBankA(swapSector)
     
 .preLoop:    
-    ld hl, 0x8000
-    ld de, 0x4000
+    ld de, 0x8000 ; Source page
+    ld hl, 0x4000 ; Swap page
     ld bc, 0x4000
 .loop:
-    ld a, (hl)
-    ld (.end - .ram + 0x4000 + flashFunctions), a
+    ld a, (de)
+    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld (_ - .ram + flashFunctions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (.end - .ram + 0x4000 + flashFunctions)
-    ld (de), a        ; Data
-    inc de
-    dec bc
+.smc:
+    ld a, 0 ; SMC here
+    ld (hl), a        ; Data
     
-_:  xor (hl)
+_:  ld a, 0 ; SMC again
+    xor (hl)
     bit 7, a
     jr z, _
     bit 5, a
     jr z, -_
+    ; Note: we skip the error handler here
+    ; something's wrong with this Flash code, it works great
+    ; but the chip reports an error (or at least this broken
+    ; code thinks it does). This will have to be fixed at
+    ; some point.
+    jr _
     ; Error, abort
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
     jp .return
 _:
+    inc de
     inc hl
+    dec bc
+
     ld a, b
     or a
     jr nz, .loop
@@ -496,12 +506,12 @@ copyFlashExcept:
         push bc
         ld hl, .ram
 #ifdef CPU15
-            ld a, 1
-            out (PORT_RAM_PAGING), a
-            ; This routine can perform better on some models if we rearrange memory 
-            ld de, flashFunctions + 0x4000
-            ld bc, .ram_end - .ram
-            ldir
+        ld a, 1
+        out (PORT_RAM_PAGING), a
+        ; This routine can perform better on some models if we rearrange memory 
+        ld de, flashFunctions + 0x4000
+        ld bc, .ram_end - .ram
+        ldir
 #else
         ld de, flashFunctions
         ld bc, .ram_end - .ram
@@ -536,35 +546,40 @@ _:  pop af
     setBankB ; Source
     
 .preLoop:    
-    ld hl, 0x8000 + 0x200
-    ld de, 0x4000 + 0x200
+    ld de, 0x8000 + 0x200
+    ld hl, 0x4000 + 0x200
     ld bc, 0x4000 - 0x200
 .loop:
-    ld a, (hl)
-    ld (.ram_end - .ram + 0x4000 + flashFunctions), a
+    ld a, (de)
+    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld (_  - .ram + flashFunctions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (.ram_end - .ram + 0x4000 + flashFunctions)
-    ld (de), a        ; Data
-    inc de
-    dec bc
+.smc:
+    ld a, 0
+    ld (hl), a
     
-_:  xor (hl)
+_:  ld a, 0
+    xor (hl)
     bit 7, a
     jr z, _
     bit 5, a
     jr z, -_
+    jr _ ; See note on copySectorToSwap
     ; Error, abort
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
     jp .return
 _:
+    inc de
     inc hl
+    dec bc
+
     ld a, b
     or a
     jr nz, .loop
@@ -681,35 +696,40 @@ _:  pop af
     setBankB ; Source
     
 .preLoop:    
-    ld hl, 0x8000
-    ld de, 0x4000
+    ld de, 0x8000
+    ld hl, 0x4000
     ld bc, 0x4000
 .loop:
-    ld a, (hl)
-    ld (.ram_end - .ram + 0x4000 + flashFunctions), a
+    ld a, (de)
+    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld (_ + - .ram + flashFunctions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (.ram_end - .ram + 0x4000 + flashFunctions)
-    ld (de), a        ; Data
-    inc de
-    dec bc
+.smc:
+    ld a, 0
+    ld (hl), a
     
-_:  xor (hl)
+_:  ld a, 0
+    xor (hl)
     bit 7, a
     jr z, _
     bit 5, a
     jr z, -_
+    jr _ ; See note on copySectorToSwap
     ; Error, abort
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
     jp .return
 _:
+    inc de
     inc hl
+    dec bc
+
     ld a, b
     or a
     jr nz, .loop
