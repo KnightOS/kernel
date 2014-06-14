@@ -175,7 +175,7 @@ reboot:
 #endif
 
 #ifdef TI84pSE ; Will get it working on other calcs later
-    call test
+    ;call test
 test_return:
 #endif
 
