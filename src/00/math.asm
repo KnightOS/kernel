@@ -271,19 +271,19 @@ _:  push hl \ pop ix
 ;;  Performs `ACIX = ACIX + DE`
 add16to32:
     push hl
-    push de
-        push ix \ pop hl
         push de
-            ld d, a
-            ld e, c
-        pop bc
-        add hl, bc
-        jr nc, _
-        inc de
-_:  push hl \ pop ix
-    ld a, d \ ld c, e
-    pop de
-    pop bc
+            push ix \ pop hl
+            push de
+                ld d, a
+                ld e, c
+            pop bc
+            add hl, bc
+            jr nc, _
+            inc de
+_:          push hl \ pop ix
+            ld a, d \ ld c, e
+        pop de
+    pop hl
     ret
 
 ;; divHLByC [Maths]
