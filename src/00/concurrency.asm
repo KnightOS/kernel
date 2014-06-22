@@ -1,12 +1,12 @@
-;; acquireMutex [Concurrency]
+;; lockMutex [Concurrency]
 ;;  Atomically locks a mutex byte.  The application should
 ;;  initialize the byte with [[initMutex]].
-;;  This routine blocks until the mutex is acquired.
+;;  This routine blocks until the mutex is locked.
 ;;  Interrupts will be enabled to perform a context switch
 ;;  (if needed) and restored to their former state when done.
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
-acquireMutex:
+lockMutex:
     push af
         ; There is not a set-and-check instruction on z80,
         ; so interrupts must be disabled for the check.
@@ -28,18 +28,18 @@ _:  pop af
     ret
 
 ;; initMutex [Concurrency]
-;;  Initializes a byte at (HL) to be used with acquireMutex
-;;  and releaseMutex.
+;;  Initializes a byte at (HL) to be used with lockMutex
+;;  and unlockMutex.
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
 initMutex:
 
-;; releaseMutex [Concurrency]
+;; unlockMutex [Concurrency]
 ;;  Atomically unlocks a mutex byte.  If the mutex is not
 ;;  locked already by this thread, the result is undefined!
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
-releaseMutex:
+unlockMutex:
     ld (hl), 0
     ret
 
@@ -92,9 +92,9 @@ condWait:
         pop de
         call getCurrentThreadID
         ld (ix), a
-        call releaseMutex
+        call unlockMutex
         call suspendCurrentThread
-        call acquireMutex
+        call lockMutex
 _:  pop ix
     pop af
     ret
