@@ -47,6 +47,7 @@ drawHexHL   .equ 0x0D01
 #include "random.asm"
 #include "strings.asm"
 #include "util.asm"
+#include "concurrency.asm"
 
 .echo "Assigned kernel memory:"
 .echo "threadTable: 0x{0:X4}" threadTable
