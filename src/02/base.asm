@@ -12,5 +12,6 @@
 #include "compression.asm"
 #include "sort.asm"
 #include "graphics.asm"
+#include "concurrency.asm"
 
 .echo "Bytes remaining on page 02: {0}" 0x8000-$
