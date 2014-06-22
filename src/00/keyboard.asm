@@ -52,9 +52,7 @@ getKey:
 _:
 getKey_skipCheck:
     push bc
-    ld a, i
     push af
-    di
     push de
     push hl
 .getK2:
@@ -118,9 +116,7 @@ getKey_skipCheck:
     pop de
     ld b, a
     pop af
-    jp po, _
-    ei
-_:  ld a, b
+    ld a, b
     pop bc
     ret
 
