@@ -45,6 +45,7 @@ drawHexHL   .equ 0x0D01
 
 #include "math.asm"
 #include "util.asm"
+#include "concurrency.asm"
 
 #ifdef DEBUG
 #include "debug.asm"
