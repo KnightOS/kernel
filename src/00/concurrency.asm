@@ -14,12 +14,12 @@ lockMutex:
         push af
 _:          di
             ld a, (hl)
-            or a
+            inc a
             jr z, _
             ei
             call contextSwitch
             jr -_
-_:          inc a
+_:          call getCurrentThreadID
             ld (hl), a
         pop af
         jp po, _
@@ -33,15 +33,23 @@ _:  pop af
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
 initMutex:
+    ld (hl), 0xFF
+    ret
 
 ;; unlockMutex [Concurrency]
 ;;  Atomically unlocks a mutex byte.  If the mutex is not
-;;  locked already by this thread, the result is undefined!
+;;  locked already by this thread, the thread will be killed!
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
 unlockMutex:
-    ld (hl), 0
-    ret
+    push af
+        call getCurrentThreadID
+        cp (hl)
+        jr z, _
+        jp killCurrentThread
+_:  pop af
+    jr initMutex
+
 
 ;; condInit [Concurrency]
 ;;  Returns a pointer to a newly allocated condition variable.
