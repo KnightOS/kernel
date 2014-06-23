@@ -48,62 +48,66 @@ lockFlash:
 ;; Notes:
 ;;  Flash must be unlocked. This can only *reset* bits of Flash.
 writeFlashByte:
-    push bc
-    ld b, a
-    push af
-    ld a, i
-    push af
-    di
-    ld a, b
-
+; The procedure is thus:
+;    0xAA -> (0xAAA)
+;    0x55 -> (0x555)
+;    0x0A -> (0xAAA)
+;    DATA -> (PDEST)
+;    Poll:
+;       A <- (PDEST)
+;       Bit 7 == data, then return
+;       Bit 5 == 0, then poll
+;       A <- (PDEST)
+;       Bit 7 == data, then return
+;       Fail
     push hl
-    push de
     push bc
-        push hl
-        push de
-        push bc
-            ld hl, .ram
-            ld de, flashFunctions
-            ld bc, .ram_end - .ram
-            ldir
-        pop bc
-        pop de
-        pop hl
-        call flashFunctions
-    pop bc
-    pop de
-    pop hl
-    
-    pop af
-    jp po, _
-    ei
+    push de
+    push af
+        ld b, a
+        ld a, i
+        push af
+            di
+            ld a, b
+            push hl
+                ld hl, .ram
+                ld de, flashFunctions
+                ld bc, .ram_end - .ram
+                ldir
+            pop hl
+            ld b, a
+            jp flashFunctions
+.return:
+        pop af
+        jp po, _
+        ei
 _:  pop af
+    pop de
     pop bc
+    pop hl
     ret
-
-; Flash operations must be done from RAM
 .ram:
-    and (hl) ; Ensure that no bits are set
-    ld b, a
     ld a, 0xAA
-    ld (0x0AAA), a    ; Unlock
+    ld (0xAAA), a
     ld a, 0x55
-    ld (0x0555), a    ; Unlock
+    ld (0x555), a
     ld a, 0xA0
-    ld (0x0AAA), a    ; Write command
-    ld (hl), b        ; Data
-    
-    ; Wait for chip
-_:  ld a, b
-    xor (hl)
-    bit 7, a
-    jr z, .done
-    bit 5, (hl)
-    jr z, -_
-    ; Error, abort
-.done:
-    ld (hl), 0xF0
-    ret
+    ld (0xAAA), a
+    ld (hl), b
+.poll:
+    ld c, (hl)
+    ld a, c
+    xor b
+    jp p, .return ; Bit 7 of A is set?
+    bit 5, c
+    jr z, .poll
+    ld a, (hl)
+    xor b
+    jp p, .return
+    ; Operation failed, abort
+    ld a, 0xF0
+    ld (0), a
+    jp .return
 .ram_end:
 
 ;; writeFlashBuffer [Flash]
@@ -117,39 +121,33 @@ _:  ld a, b
 ;;  from Flash, you must load any data to be written into RAM. This
 ;;  will only *reset* bits of Flash.
 writeFlashBuffer:
-#ifdef COLOR
-    ; TODO: Fix this crap
-    ret
-#endif
-    push af
-    ld a, i
-    push af
-    di
-
     push hl
-    push de
     push bc
-        push hl
-        push de
-        push bc
-            ld hl, .ram
-            ld de, flashFunctions
-            ld bc, .ram_end - .ram
-            ldir
-        pop bc
-        pop de
-        pop hl
-        call flashFunctions
-    pop bc
-    pop de
-    pop hl
-    
-    pop af
-    jp po, _
-    ei
+    push de
+    push af
+        ld a, i
+        push af
+            di
+            push hl
+            push de
+            push bc
+                ld hl, .ram
+                ld de, flashFunctions
+                ld bc, .ram_end - .ram
+                ldir
+            pop bc
+            pop de
+            pop hl
+            jp flashFunctions
+.return:
+        pop af
+        jp po, _
+        ei
 _:  pop af
+    pop de
+    pop bc
+    pop hl
     ret
-    
 .ram:
 .loop:
     ld a, 0xAA
@@ -161,9 +159,6 @@ _:  pop af
     ld a, (hl)
     ld (de), a        ; Data
     
-    inc de
-    dec bc
-    
 _:  xor (hl)
     bit 7, a
     jr z, _
@@ -172,16 +167,20 @@ _:  xor (hl)
     ; Error, abort
     ld a, 0xF0
     ld (0), a
-    ret
-_:  inc hl
-    ld a, 0xF0
+    jp .return
+_:  ld a, 0xF0
     ld (de), a
+
+    inc de
+    inc hl
+    dec bc
+
     xor a
     cp c
     jr nz, .loop
     cp b
     jr nz, .loop
-    ret
+    jp .return
 .ram_end:
 
 ;; eraseSwapSector [Flash]
