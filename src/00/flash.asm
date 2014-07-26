@@ -188,8 +188,10 @@ _:  ld a, 0xF0
 ;; Notes:
 ;;  Flash must be unlocked.
 eraseSwapSector:
-    ld a, swapSector
-    call eraseFlashSector
+    push af
+        ld a, swapSector
+        call eraseFlashSector
+    pop af
     ret
 
 ;; eraseFlashSector [Flash]
@@ -302,175 +304,169 @@ _:
 ;; Notes:
 ;;  Flash must be unlocked.
 copySectorToSwap:
-    push af
     call eraseSwapSector
-    pop af
 
     push bc
     ld b, a
     push af
     ld a, i
-    ld a, i
     push af
-    di
-    ld a, b
-
-    and 0b011111100 ; Get the sector for the specified page
-    
-    push hl
     push de
-        ld hl, .ram
+    push hl
+        di
+        and 0b11111100
+        push hl
+        push bc
+        push de
+            ld hl, .ram
+            ld de, flashFunctions
+            ld bc, .ram_end - .ram
+            ldir
+        pop de
+        pop bc
+        pop hl
 #ifdef CPU15
+        ; We'll move flashFunctions into bank 3 so that we can put both
+        ; pages involved into bank 1 and 2 for a while
         push af
             ld a, 1
-            out (PORT_RAM_PAGING), a
-        
-            ld de, flashFunctions + 0x4000 ; By rearranging memory, we can make the routine perform better
-            ld bc, .end - .ram
-            ldir
+            out (0x05), a
         pop af
-#else
-        ld de, flashFunctions
-        ld bc, .end - .ram
-        ldir
-#endif
-#ifdef CPU15
         jp flashFunctions + 0x4000
-.return:
-        xor a
-        out (PORT_RAM_PAGING), a ; Restore correct memory mapping
 #else
-.return:
         jp flashFunctions
 #endif
-    pop de
+.return:
+#ifdef CPU15
+    ; Switch us back to normal, with R:00 in bank 3 and R:01 in bank 2
+    xor a
+    out (0x05), a
+    setBankB(0x81)
+#endif
     pop hl
-    
+    pop de
     pop af
     jp po, _
     ei
 _:  pop af
     pop bc
     ret
-    
+; On 15 MHz calcs, we can do this faster with clever mapping
+; This is not possible on the TI-73 and TI-83+
 #ifdef CPU15
 .ram:
     setBankB
     setBankA(swapSector)
-    
-.preLoop:    
-    ld de, 0x8000 ; Source page
-    ld hl, 0x4000 ; Swap page
+
+.page_loop:
+    ld hl, 0x8000
+    ld de, 0x4000
     ld bc, 0x4000
-.loop:
-    ld a, (de)
-    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
-    ld (_ - .ram + flashFunctions + 0x4000 + 1), a
+.inner_loop:
+    ld a, (hl)
+    ex af, af'
+    ld a, 0xF0
+    ld (0), a
     ld a, 0xAA
-    ld (0x0AAA), a    ; Unlock
+    ld (0x0AAA), a
     ld a, 0x55
-    ld (0x0555), a    ; Unlock
+    ld (0x0555), a
     ld a, 0xA0
-    ld (0x0AAA), a    ; Write command
-.smc:
-    ld a, 0 ; SMC here
-    ld (hl), a        ; Data
-    
-_:  ld a, 0 ; SMC again
+    ld (0x0AAA), a
+    ex af, af'
+    ld (de), a
+    ex de, hl
+.poll:
     xor (hl)
     bit 7, a
     jr z, _
     bit 5, a
-    jr z, -_
-    ; Note: we skip the error handler here
-    ; something's wrong with this Flash code, it works great
-    ; but the chip reports an error (or at least this broken
-    ; code thinks it does). This will have to be fixed at
-    ; some point.
-    jr _
+    jr z, .poll
     ; Error, abort
     ld a, 0xF0
     ld (0), a
-    setBankB(0x81)
     jp .return
-_:
+_:  ld a, 0xF0
+    ld (hl), a
+    ex de, hl
+    
     inc de
     inc hl
     dec bc
 
-    ld a, b
-    or a
-    jr nz, .loop
-    ld a, c
-    or a
-    jr nz, .loop
-    
+    xor a
+    cp c
+    jr nz, .inner_loop
+    cp b
+    jr nz, .inner_loop
+
+    getBankA
+    inc a
+    cp swapSector + 4
+    jp z, .return
+    setBankA
     getBankB
     inc a
     setBankB
-    
-    getBankA
-    inc a
-    setBankA
-    and 0b000000011
-    or a
-    jr nz, .preLoop
-    
-    setBankB(0x81)
-    jp .return
-.end:
-
-#else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
+    jr .page_loop
+.ram_end:
+#else ; TI-73, TI-83+
 .ram:
-    ld e, a
-    
-    ld a, swapSector
-    ld (flashFunctions + flashFunctionSize - 1), a
-.preLoop:
+    jr $
+    ld d, a
+    setBankA
+    ld e, swapSector
+
+.page_loop:
     ld hl, 0x4000
     ld bc, 0x4000
-.loop:
-    push af
-        ld a, e
-        setBankA ; The inefficiency on this model comes from swapping pages during the loop
-        ld d, (hl)
-    pop af
+.inner_loop:
+    ld a, (hl) ; source sector
+    ex af, af'
+    ld a, e ; swap sector
     setBankA
-    ; copy D to (HL)
+    ld a, 0xF0
+    ld (0), a
     ld a, 0xAA
-    ld (0x0AAA), a    ; Unlock
+    ld (0x0AAA), a
     ld a, 0x55
-    ld (0x0555), a    ; Unlock
+    ld (0x0555), a
     ld a, 0xA0
-    ld (0x0AAA), a    ; Write command
-    ld (hl), d        ; Data
-    
-    ld a, d
-_:  cp (hl)
-    jr nz, -_ ; Does this work?
-    
-    dec bc
-    inc hl
-    
-    ld a, b
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    jr nz, .loop
-    ld a, c
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    jr nz, .loop
-    
-    inc e
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    inc a
-    ld (flashFunctions + flashFunctionSize - 1), a
-    and 0b000000011
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    jr nz, .preLoop
+    ld (0x0AAA), a
+    ex af, af'
+    ld (hl), a
+.poll:
+    xor (hl)
+    bit 7, a
+    jr z, _
+    bit 5, a
+    jr z, .poll
+    ; Error, abort
+    ld a, 0xF0
+    ld (0), a
     jp .return
-.end:
+_:  ld a, 0xF0
+    ld (hl), a
+    
+    inc hl
+    dec bc
+
+    ld a, d
+    setBankA
+
+    xor a
+    cp c
+    jr nz, .inner_loop
+    cp b
+    jr nz, .inner_loop
+
+    inc d \ inc e
+    ld a, d
+    setBankA
+    and 0b00000011
+    jr nz, .page_loop
+    jp .return
+.ram_end:
 #endif
 
 ;; copyFlashExcept [Flash]
