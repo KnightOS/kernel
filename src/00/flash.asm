@@ -204,30 +204,22 @@ eraseFlashSector:
     ld b, a
     push af
     ld a, i
-    ld a, i
     push af
     di
     ld a, b
     and 0b11111100
-
     push hl
     push de
     push bc
-        push hl
-        push de
-        push bc
-            ld hl, .ram
-            ld de, flashFunctions
-            ld bc, .ram_end - .ram
-            ldir
-        pop bc
-        pop de
-        pop hl
-        call flashFunctions
+        ld hl, .ram
+        ld de, flashFunctions
+        ld bc, .ram_end - .ram
+        ldir
     pop bc
     pop de
     pop hl
-    
+    jp flashFunctions
+.return:
     pop af
     jp po, _
     ei
@@ -250,15 +242,15 @@ _:  pop af
     ld a, 0x30
     ld (0x4000), a ; Erase
     ; Wait for chip
-_:  ld a, (0x4000)
+_:  ld a, (0)
     bit 7, a
-    ret nz
+    jp nz, .return
     bit 5, a
     jr z, -_
     ; Error, abort
     ld a, 0xF0
     ld (0x4000), a
-    ret
+    jp .return
 .ram_end:
 
 ;; eraseFlashPage [Flash]
