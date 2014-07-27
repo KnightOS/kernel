@@ -412,7 +412,6 @@ _:  ld a, 0xF0
 .ram_end:
 #else ; TI-73, TI-83+
 .ram:
-    jr $
     ld d, a
     setBankA
     ld e, swapSector
