@@ -82,19 +82,19 @@ drawCharShared:
         add a, 6
         ld e, a
         ld d, b
-        jr .exit
+        jr exit_drawCharShared
 _:
         cp '\r'
         jr nz, _
         ld d, b
-        jr .exit
+        jr exit_drawCharShared
 _:
         cp '\t'
         jr nz, _
         ld a, d
         add a, 4
         ld d, a
-        jr .exit
+        jr exit_drawCharShared
 _:
         push de
             sub 0x20
@@ -127,7 +127,7 @@ _:
         pop af
         add a, d
         ld d, a
-.exit:
+exit_drawCharShared:
     pop bc
     pop hl
     pop af
