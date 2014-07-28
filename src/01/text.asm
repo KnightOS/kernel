@@ -18,6 +18,27 @@ newline:
     pop af
     ret
 
+wrapChar:
+    push ix
+        ld ixl, 0
+        call wrapCharShared
+    pop ix
+    ret
+
+wrapCharAND:
+    push ix
+        ld ixl, 1
+        call wrapCharShared
+    pop ix
+    ret
+
+wrapCharXOR:
+    push ix
+        ld ixl, 2
+        call wrapCharShared
+    pop ix
+    ret
+
 ;; drawChar [Text]
 ;;  Draws a character to the screen buffer using OR logic (turns pixels ON).
 ;; Inputs:
@@ -82,36 +103,23 @@ drawCharShared:
         add a, 6
         ld e, a
         ld d, b
-        jr exit_drawCharShared
+        jr .exit
 _:
         cp '\r'
         jr nz, _
         ld d, b
-        jr exit_drawCharShared
-_:
-        cp '\t'
-        jr nz, _
-        ld a, d
-        add a, 4
-        ld d, a
-        jr exit_drawCharShared
-_:
-        push de
+        jr .exit
+    
+_:      push de
+            ld de, 6
             sub 0x20
-            ld l, a
-            ld h, 0
-            add hl, hl
-            ld d, h
-            ld e, l
-            add hl, hl
-            add hl, de
+            call mul16By8
             ex de, hl
             ld hl, kernel_font
             add hl, de
             ld a, (hl)
             inc hl
         pop de
-        
         ld b, 5
         push af
             ld a, d
@@ -127,7 +135,7 @@ _:
         pop af
         add a, d
         ld d, a
-exit_drawCharShared:
+.exit:
     pop bc
     pop hl
     pop af
@@ -138,6 +146,71 @@ _:      pop af
     pop af
     ret
 
+wrapCharShared:
+    push af
+    push hl
+    push bc
+        cp '\n'
+        jr nz, _
+        ld a, e
+        add a, 6
+        ld e, a
+        ld d, b
+        jr .exit
+_:
+        cp '\r'
+        jr nz, _
+        ld d, b
+        jr .exit
+    
+_:      push de
+            ld de, 6
+            sub 0x20
+            call mul16By8
+            ex de, hl
+            ld hl, kernel_font
+            add hl, de
+            ld a, (hl)
+            inc hl
+        pop de
+        ; Check for wrapping
+        push af
+            add a, d
+            cp 96
+            jr c, _
+            ; Wrap
+            ld a, e
+            add a, 6
+            ld e, a
+            ld d, b
+
+_:          ld a, e
+            cp 64
+            jr nc, ++_
+            ld b, 5
+            ld a, ixl
+            or a
+            call z, putSpriteOR
+            dec a
+            call z, putSpriteAND
+            dec a
+            call z, putSpriteXOR
+        pop af
+        add a, d
+        ld d, a
+.exit:
+    pop bc
+    pop hl
+    pop af
+    ret
+_:
+        pop af
+    jr .exit
+_:
+        ld e, 64
+        pop af
+    jr .exit
+
 ;; drawStr [Text]
 ;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON).
 ;; Inputs:
@@ -147,14 +220,19 @@ _:      pop af
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStr:
-    push ix
-        ld ixl, 0
-        call drawStrShared
-    pop ix
+    push hl
+    push af
+_:      ld a, (hl)
+        or a
+        jr z, _
+        call drawChar
+        inc hl
+        jr -_
+_:  pop af
+    pop hl
     ret
 
 ;; drawStrAND [Text]
@@ -166,14 +244,19 @@ drawStr:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrAND:
-    push ix
-        ld ixl, 1
-        call drawStrShared
-    pop ix
+    push hl
+    push af
+_:      ld a, (hl)
+        or a
+        jr z, _
+        call drawCharAND
+        inc hl
+        jr -_
+_:  pop af
+    pop hl
     ret
 
 ;; drawStrXOR [Text]
@@ -185,27 +268,21 @@ drawStrAND:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrXOR:
-    push ix
-        ld ixl, 2
-        call drawStrShared
-    pop ix
-    ret
-    
-drawStrShared:
+    push hl
     push af
 _:      ld a, (hl)
         or a
         jr z, _
-        call drawCharShared
+        call drawCharXOR
         inc hl
         jr -_
 _:  pop af
+    pop hl
     ret
-    
+
 ;; wrapStr [Text]
 ;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON),
 ;;  and wraps it around the screen with character breaks.
@@ -216,17 +293,24 @@ _:  pop af
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator or to the next character that would have been drawn if the string hadn't run off-screen.
+;;  HL: The next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStr:
-    push ix
-        ld ixl, 0
-        call wrapStrShared
-    pop ix
+    push af
+_:      ld a, (hl)
+        or a
+        jr z, _
+        call wrapChar
+        ld a, e
+        cp MONO_LCD_HEIGHT
+        jr nc, _
+        inc hl
+        jr -_
+_:  pop af
     ret
 
-;; wrapStrAND [Text]
+;; drawStrAND [Text]
 ;;  Draws a zero-delimited string to the screen buffer using AND logic (turns pixels OFF),
 ;;  and wraps it around the screen with character breaks.
 ;; Inputs:
@@ -236,17 +320,22 @@ wrapStr:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator or to the next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrAND:
-    push ix
-        ld ixl, 1
-        call wrapStrShared
-    pop ix
+    push hl
+    push af
+_:      ld a, (hl)
+        or a
+        jr z, _
+        call wrapCharAND
+        inc hl
+        jr -_
+_:  pop af
+    pop hl
     ret
 
-;; wrapStrXOR [Text]
+;; drawStrXOR [Text]
 ;;  Draws a zero-delimited string to the screen buffer using XOR logic (inverts pixels),
 ;;  and wraps it around the screen with character breaks.
 ;; Inputs:
@@ -256,48 +345,19 @@ wrapStrAND:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: Advanced to the null terminator or to the next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrXOR:
-    push ix
-        ld ixl, 2
-        call wrapStrShared
-    pop ix
-    ret
-
-wrapStrShared:
+    push hl
     push af
 _:      ld a, (hl)
         or a
         jr z, _
-        push af \ push hl
-            push de
-                sub 0x20
-                ld l, a
-                ld h, 0
-                add hl, hl
-                ld d, h
-                ld e, l
-                add hl, hl
-                add hl, de
-                ex de, hl
-                ld hl, kernel_font
-                add hl, de
-            pop de
-            ld a, (hl)
-            inc hl
-            add a, d
-            cp MONO_LCD_WIDTH
-            call nc, newline
-        pop hl \ pop af
-        call drawCharShared
-        ld a, e
-        cp MONO_LCD_HEIGHT
-        jr nc, _
+        call wrapCharXOR
         inc hl
         jr -_
 _:  pop af
+    pop hl
     ret
 
 ;; drawHexA [Text]
