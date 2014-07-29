@@ -118,9 +118,14 @@ _:
         jr .exit
 _:
         push de
-            ld de, 6
             sub 0x20
-            call mul16By8
+            ld l, a
+            ld h, 0
+            add hl, hl
+            ld d, h
+            ld e, l
+            add hl, hl
+            add hl, de
             ex de, hl
             ld hl, kernel_font
             add hl, de
@@ -178,9 +183,14 @@ _:
         jr .exit
 _:
         push de
-            ld de, 6
             sub 0x20
-            call mul16By8
+            ld l, a
+            ld h, 0
+            add hl, hl
+            ld d, h
+            ld e, l
+            add hl, hl
+            add hl, de
             ex de, hl
             ld hl, kernel_font
             add hl, de
