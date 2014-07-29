@@ -109,8 +109,15 @@ _:
         jr nz, _
         ld d, b
         jr .exit
-    
-_:      push de
+_:
+        cp '\t'
+        jr nz, _
+        ld a, d
+        add a, 6
+        ld d, a
+        jr .exit
+_:
+        push de
             ld de, 6
             sub 0x20
             call mul16By8
@@ -162,8 +169,15 @@ _:
         jr nz, _
         ld d, b
         jr .exit
-    
-_:      push de
+_:
+        cp '\t'
+        jr nz, _
+        ld a, d
+        add a, 6
+        ld d, a
+        jr .exit
+_:
+        push de
             ld de, 6
             sub 0x20
             call mul16By8
@@ -223,16 +237,10 @@ _:
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStr:
-    push hl
-    push af
-_:      ld a, (hl)
-        or a
-        jr z, _
-        call drawChar
-        inc hl
-        jr -_
-_:  pop af
-    pop hl
+    push ix
+        ld ixl, 0
+        call drawStrShared
+    pop ix
     ret
 
 ;; drawStrAND [Text]
@@ -247,16 +255,10 @@ _:  pop af
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrAND:
-    push hl
-    push af
-_:      ld a, (hl)
-        or a
-        jr z, _
-        call drawCharAND
-        inc hl
-        jr -_
-_:  pop af
-    pop hl
+    push ix
+        ld ixl, 1
+        call drawStrShared
+    pop ix
     ret
 
 ;; drawStrXOR [Text]
@@ -271,12 +273,19 @@ _:  pop af
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 drawStrXOR:
+    push ix
+        ld ixl, 2
+        call drawStrShared
+    pop ix
+    ret
+    
+drawStrShared:
     push hl
     push af
 _:      ld a, (hl)
         or a
         jr z, _
-        call drawCharXOR
+        call drawCharShared
         inc hl
         jr -_
 _:  pop af
@@ -297,17 +306,10 @@ _:  pop af
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStr:
-    push af
-_:      ld a, (hl)
-        or a
-        jr z, _
-        call wrapChar
-        ld a, e
-        cp MONO_LCD_HEIGHT
-        jr nc, _
-        inc hl
-        jr -_
-_:  pop af
+    push ix
+        ld ixl, 0
+        call wrapStrShared
+    pop ix
     ret
 
 ;; drawStrAND [Text]
@@ -323,16 +325,10 @@ _:  pop af
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrAND:
-    push hl
-    push af
-_:      ld a, (hl)
-        or a
-        jr z, _
-        call wrapCharAND
-        inc hl
-        jr -_
-_:  pop af
-    pop hl
+   push ix
+        ld ixl, 1
+        call wrapStrShared
+    pop ix
     ret
 
 ;; drawStrXOR [Text]
@@ -348,16 +344,24 @@ _:  pop af
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrXOR:
-    push hl
+    push ix
+        ld ixl, 2
+        call wrapStrShared
+    pop ix
+    ret
+    
+wrapStrShared:
     push af
 _:      ld a, (hl)
         or a
         jr z, _
-        call wrapCharXOR
+        call wrapCharShared
+        ld a, e
+        cp MONO_LCD_HEIGHT
+        jr nc, _
         inc hl
         jr -_
 _:  pop af
-    pop hl
     ret
 
 ;; drawHexA [Text]
