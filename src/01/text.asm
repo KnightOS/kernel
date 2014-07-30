@@ -312,7 +312,7 @@ _:  pop af
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  HL: The next character that would have been drawn if the string hadn't run off-screen.
+;;  HL: The null terminator, or the next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStr:
@@ -322,7 +322,7 @@ wrapStr:
     pop ix
     ret
 
-;; drawStrAND [Text]
+;; wrapStrAND [Text]
 ;;  Draws a zero-delimited string to the screen buffer using AND logic (turns pixels OFF),
 ;;  and wraps it around the screen with character breaks.
 ;; Inputs:
@@ -332,6 +332,7 @@ wrapStr:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
+;;  HL: The null terminator, or the next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrAND:
@@ -341,7 +342,7 @@ wrapStrAND:
     pop ix
     ret
 
-;; drawStrXOR [Text]
+;; wrapStrXOR [Text]
 ;;  Draws a zero-delimited string to the screen buffer using XOR logic (inverts pixels),
 ;;  and wraps it around the screen with character breaks.
 ;; Inputs:
@@ -351,6 +352,7 @@ wrapStrAND:
 ;;  B: Left margin
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
+;;  HL: The null terminator, or the next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrXOR:
