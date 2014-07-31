@@ -27,15 +27,6 @@ _:          call getCurrentThreadID
 _:  pop af
     ret
 
-;; initMutex [Concurrency]
-;;  Initializes a byte at (HL) to be used with lockMutex
-;;  and unlockMutex.
-;; Inputs:
-;;  HL: Pointer to mutex byte
-initMutex:
-    ld (hl), 0xFF
-    ret
-
 ;; unlockMutex [Concurrency]
 ;;  Atomically unlocks a mutex byte.  If the mutex is not
 ;;  locked already by this thread, the thread will be killed!
@@ -48,7 +39,16 @@ unlockMutex:
         jr z, _
         jp killCurrentThread
 _:  pop af
-    jr initMutex
+    ; jr initMutex
+
+;; initMutex [Concurrency]
+;;  Initializes a byte at (HL) to be used with lockMutex
+;;  and unlockMutex.
+;; Inputs:
+;;  HL: Pointer to mutex byte
+initMutex:
+    ld (hl), 0xFF
+    ret
 
 
 ;; condInit [Concurrency]
