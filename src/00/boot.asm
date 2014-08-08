@@ -37,7 +37,9 @@ _:  di
 
     ld sp, kernelGarbage + kernelGarbageSize
 
+#ifndef SKIPON
     call suspendDevice
+#endif
 ;; reboot [System]
 ;;  Restarts the device.
 reboot:
