@@ -174,12 +174,7 @@ reboot:
     out (PORT_LCD_CMD), a ; Contrast
 #endif
 
-#ifdef TI84pSE ; Will get it working on other calcs later
-    ;call test
-test_return:
-#endif
-
-    ld de, bootFile
+    ld de, init
     call fileExists
     ld a, panic_init_not_found
     jp nz, panic
@@ -189,80 +184,5 @@ test_return:
 
     jp contextSwitch_manual
 
-#ifdef TI84pSE
-test:
-    ld de, testFile
-    call fileExists
-    ret z
-
-    ld sp, 0xC000 ; Stack mischief
-
-    call openFileWrite
-    ; Writing file manually because stream write functions aren't implemented yet
-    call getStreamBuffer
-    push de
-        push hl \ pop de
-        ld hl, testString
-        ld bc, 0x100
-        ldir
-    pop de
-    call getStreamEntry
-    res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
-    xor a
-    ld (ix + FILE_STREAM), a ; Set stream pointer to start of next block
-    ld bc, testStringEnd - testString
-    ld (ix + FILE_WORKING_SIZE), c
-    ld (ix + FILE_WORKING_SIZE + 1), b
-    ld (ix + FILE_WORKING_SIZE + 2), a
-    call advanceBlock
-    ; Write next block
-    call getStreamBuffer
-    push de
-        push hl \ pop de
-        ld hl, testString_block2
-        ld bc, testStringEnd - testString_block2
-        ldir
-    pop de
-    call getStreamEntry
-    res 0, (ix + FILE_WRITE_FLAGS) ; Not flushed
-    ld a, testStringEnd - testString_block2
-    ld (ix + FILE_STREAM), a
-    call flush
-    call closeStream
-
-    ; Edit test file
-    ld de, testFile
-    call openFileWrite
-    call getStreamBuffer
-    push de
-        push hl \ pop de
-        ld hl, editString
-        ld bc, editStringEnd - editString
-        ldir
-    pop de
-    call getStreamEntry
-    res 0, (ix + FILE_WRITE_FLAGS) ; not flushed
-    ld a, 3
-    ld (ix + FILE_STREAM), a ; Move stream 3 places forward
-    call flush
-    call advanceBlock
-    call closeStream
-    ; Stack is not the same as it was when we were called but we should just be able to manually do it
-    pop hl
-    jp test_return
-#endif
-
-bootFile:
+init:
     .db "/bin/init", 0
-castle:
-    .db "/bin/castle", 0
-testFile:
-    .db "/var/test", 0
-testString:
-    .db "This file is over 256 bytes. Ramble ramble ramble ramble ramble ramble ramble ramble ramble ramble blah blah blah blah foo foo foo foo bar bar bar bar bar test test test test test test who knew it was so difficult to type 256 bytes worth of junk abcdefgh\n\n"
-testString_block2:
-    .db "256 bytes!"
-testStringEnd:
-editString:
-    .db "This file has been edited after it was originally written."
-editStringEnd:

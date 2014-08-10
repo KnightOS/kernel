@@ -175,7 +175,7 @@ handleKeyboard:
     jr sysInterruptDone
 
 handleOnMODE:
-    ld de, bootFile
+    ld de, init
     call launchProgram
     ld h, 1
     call setInitialA
