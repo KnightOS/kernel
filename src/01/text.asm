@@ -160,9 +160,10 @@ _:      pop af
 
 ; Inputs:
 ;  A:   Char
-;  C:   Draw using OR, AND, or XOR
+;  IXH: Margin
+;  IXL: Draw using OR, AND, or XOR
 ;  D,E: Drawing coordinates
-;  H,L: Bounding box limits
+;  B,C: Bounding box limits
 wrapCharShared:
     push af
     push bc
@@ -174,14 +175,14 @@ wrapCharShared:
         ld a, e
         add a, 6
         ld e, a		; Move down 6 pixels (1 row of text)
-        ld d, b		; Move to left margin
+        ld d, ixh	; Move to left margin
         jr .exit
 
 _:      ; If char is carriage return, move to beggining of line
         ; What the hell is the point of a carriage return anyways?
         cp '\r'
         jr nz, _
-        ld d, b
+        ld d, ixh
         jr .exit
 
 _:      ; If char is a tab, move right 6 pixels
@@ -211,25 +212,23 @@ _:	; Get index of char in kernel font table
         pop de
 
         ; Check for wrapping
-	ex (sp),hl		; Load sprit pointer onto stack and retrieve limits
 	; If right side of char goes beyond limit...
         add a, d
-        cp h
+        cp b
         jr c, _
         ; ...shift down 6 pixels and over to left margin
         ld a, e
         add a, 6
         ld e, a
-        ld d, b
+        ld d, ixh
 
 	; If Y coordinate is not below screen...
 _:      ld a, e
-        cp l
-        jr nc, ++_
+        cp c
+        jr nc, _
 	; ...draw sprite
-	ex (sp),hl		; Put limits back on stack and retrieve sprite pointer
         ld b, 5		; set sprite height
-        ld a, c
+        ld a, ixl
         or a		; C=0 for OR
         call z, putSpriteOR
         dec a		; C=1 for AND
@@ -246,11 +245,7 @@ _:      ld a, e
     pop af
     ret
 _:
-	ex (sp),hl		; Put limits back on stack and retrieve sprite pointer
-    jr .exit
-_:
-        ld e, l			; Set Y to lower limit
-	ex (sp),hl		; Put limits back on stack and retrieve sprite pointer
+        ld e, c			; Set Y to lower limit
     jr .exit
 
 ;; drawStr [Text]
@@ -324,80 +319,83 @@ _:  pop af
 ;;  Draws a zero-delimited string to the screen buffer using OR logic (turns pixels ON),
 ;;  and wraps it inside a rectangle, with character breaks.
 ;; Inputs:
-;;  IX: String
+;;  HL: String pointer
 ;;  IY: Screen buffer
-;;  B: Left margin
+;;  A: Left margin
 ;;  D, E: X, Y
-;;  H, L: X Limit, Y Limit
+;;  B, C: X Limit, Y Limit
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  IX: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
+;;  HL: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStr:
-    push bc
-        ld c, 0			; Tell wrapCharShared to use OR logic
+    push ix
+        ld ixh, a
+        ld ixl, 0			; Tell wrapCharShared to use OR logic
         call wrapStrShared
-    pop bc
+    pop ix
     ret
 
 ;; wrapStrAND [Text]
 ;;  Draws a zero-delimited string to the screen buffer using AND logic (turns pixels OFF),
 ;;  and wraps it inside a rectangle, with character breaks.
 ;; Inputs:
-;;  IX: String
+;;  HL: String pointer
 ;;  IY: Screen buffer
-;;  B: Left margin
+;;  A: Left margin
 ;;  D, E: X, Y
-;;  H, L: X Limit, Y Limit
+;;  B, C: X Limit, Y Limit
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  IX: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
+;;  HL: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrAND:
-    push bc
-        ld c, 1
+    push ix
+        ld ixh, a
+        ld ixl, 1			; Tell wrapCharShared to use AND logic
         call wrapStrShared
-    pop bc
+    pop ix
     ret
 
 ;; wrapStrXOR [Text]
 ;;  Draws a zero-delimited string to the screen buffer using XOR logic (inverts pixels),
 ;;  and wraps it inside a rectangle, with character breaks.
 ;; Inputs:
-;;  IX: String
+;;  HL: String pointer
 ;;  IY: Screen buffer
-;;  B: Left margin
+;;  A: Left margin
 ;;  D, E: X, Y
-;;  H, L: X Limit, Y Limit
+;;  B, C: X Limit, Y Limit
 ;; Outputs:
 ;;  D, E: Advanced to position of the end of the string
-;;  IX: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
+;;  HL: Pointer to null terminator or next character that would have been drawn if the string hadn't run off-screen.
 ;; Notes:
 ;;  The left margin is only required if your string contains newlines or carriage returns.
 wrapStrXOR:
-    push bc
-        ld c, 2
+    push ix
+        ld ixh, a
+        ld ixl, 2			; Tell wrapCharShared to use XOR logic
         call wrapStrShared
-    pop bc
+    pop ix
     ret
     
 wrapStrShared:
     push af
         ; Return if next char is null
-_:      ld a, (ix)
+_:      ld a, (hl)
         or a
         jr z, _
 
         call wrapCharShared
 	; Return if Y coordinate is greater than lower limit
         ld a, e
-        cp l
+        cp c
         jr nc, _
 
 	; Go to next char
-        inc ix
+        inc hl
         jr -_
 _:  pop af
     ret
