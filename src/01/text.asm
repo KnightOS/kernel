@@ -174,8 +174,8 @@ wrapCharShared:
         jr nz, _
         ld a, e
         add a, 6
-        ld e, a                 ; Move down 6 pixels (1 row of text)
-        ld d, ixh               ; Move to left margin
+        ld e, a         ; Move down 6 pixels (1 row of text)
+        ld d, ixh       ; Move to left margin
         jr .exit
 
 _:      ; If char is carriage return, move to beggining of line
@@ -194,7 +194,7 @@ _:      ; If char is a tab, move right 6 pixels
         ld d, a
         jr .exit
 
-_:    ; Get index of char in kernel font table
+_:      ; Get index of char in kernel font table
         push de
             sub 0x20
             ld l, a
@@ -227,25 +227,25 @@ _:      ld a, e
         cp c
         jr nc, _
         ; ...draw sprite
-        ld b, 5                 ; set sprite height
+        ld b, 5         ; set sprite height
         ld a, ixl
-        or a                    ; IXL=0 for OR
+        or a            ; C=0 for OR
         call z, putSpriteOR
-        dec a                   ; IXL=1 for AND
+        dec a           ; C=1 for AND
         call z, putSpriteAND
-        dec a                   ; IXL=2 for XOR
+        dec a           ; C=2 for XOR
         call z, putSpriteXOR
-    dec hl
-    ld a, (hl)                  ; Load width of char into a
+        dec hl
+        ld a, (hl)      ; Load width of char into a
         add a, d
-        ld d, a                 ; add width of char to X coordinate
+        ld d, a         ; add width of char to X coordinate
 .exit:
     pop hl
     pop bc
     pop af
     ret
 _:
-        ld e, c                 ; Set Y to lower limit
+    ld e, c         ; Set Y to lower limit
     jr .exit
 
 ;; drawStr [Text]
@@ -332,7 +332,7 @@ _:  pop af
 wrapStr:
     push ix
         ld ixh, a
-        ld ixl, 0               ; Tell wrapCharShared to use OR logic
+        ld ixl, 0       ; Tell wrapCharShared to use OR logic
         call wrapStrShared
     pop ix
     ret
@@ -354,7 +354,7 @@ wrapStr:
 wrapStrAND:
     push ix
         ld ixh, a
-        ld ixl, 1               ; Tell wrapCharShared to use AND logic
+        ld ixl, 1       ; Tell wrapCharShared to use AND logic
         call wrapStrShared
     pop ix
     ret
@@ -376,7 +376,7 @@ wrapStrAND:
 wrapStrXOR:
     push ix
         ld ixh, a
-        ld ixl, 2               ; Tell wrapCharShared to use XOR logic
+        ld ixl, 2       ; Tell wrapCharShared to use XOR logic
         call wrapStrShared
     pop ix
     ret
@@ -456,7 +456,6 @@ drawHexHL:
 measureChar:
     push hl
     push de
-    push af
         ld de, 6
         sub 0x20
         call mul16By8
@@ -464,7 +463,6 @@ measureChar:
         ld hl, kernel_font
         add hl, de
         ld a, (hl)
-    pop af
     pop de
     pop hl
     ret
@@ -480,17 +478,17 @@ measureChar:
 measureStr:
     push hl
     push bc
-_:     push af
-            ld a, (hl)
-            or a
-            jr z, _
-            call measureChar
-        pop bc
+        ld b, 0
+.loop:
+        ld a, (hl)
+        or a
+        jr z, _
+        call measureChar
         add a, b
-        ld a, b
+        ld b, a
         inc hl
-        jr -_
-_:  pop af
+        jr .loop
+_:  ld a, b
     pop bc
     pop hl
     ret
