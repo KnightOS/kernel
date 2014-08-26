@@ -162,50 +162,9 @@ stringLength:
 ;;  For 15MHz CPUs, B is a value from 0 to 4, where 0 is critical and 4 is full.
 ;;  For 6MHz CPUs, B is either 0 or 1, where 0 is critical and 1 is good.
 getBatteryLevel:
-#ifdef CPU15
-#ifdef COLOR
    ; TODO
    ld b, 4
    ret
-#else
-    push af
-        ld bc, 0x0000
-        ; Reset battery threshold
-        in a, (PORT_INT_TRIG)
-        or 0b11 << BIT_MEM_TIMER_BATTERY
-        out (PORT_MEM_TIMER), a
-_:      push bc
-            rrc c \ rrc c
-            in a, (PORT_INT_TRIG)
-            and 0b00111111
-            or c
-            out (PORT_MEM_TIMER), a
-            in a, (PORT_CALC_STATUS)
-            bit BIT_CALC_STATUS_BATTERY, a
-            jr z, ++_
-        pop bc
-        inc c
-        inc b
-        ld a, b
-        cp 4
-        jr nz, -_
-
-_:  pop af
-    ret
-_:  pop bc
-    pop af
-    ret
-#endif
-#else
-    push af
-        in a, (PORT_CALC_STATUS)
-        and CALC_STATUS_BATTERY
-        add a, a
-        add a, a
-        ld b, a
-    pop af
-    ret
-#endif
 
 ;; compareStrings [Miscellaneous]
 ;;  Determines if two strings are equal, and checks alphabetical sort order.
