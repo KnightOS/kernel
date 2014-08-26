@@ -458,7 +458,7 @@ measureChar:
     push de
         ld de, 6
         sub 0x20
-	jr c, _		; Return 0 if char < 0x20
+        jr c, _        ; Return 0 if char < 0x20
         call mul16By8
         ex de, hl
         ld hl, kernel_font
