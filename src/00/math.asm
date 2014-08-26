@@ -292,16 +292,18 @@ _:          push hl \ pop ix
 ;;  HL: HL / C
 ;;  A: Remainder
 divHLbyC:
-   xor a
-   ld b, 16
-_: add hl, hl
-   rla
-   cp c
-   jr c, $ + 4
-   sub c
-   inc l
-   djnz -_
-   ret
+    push bc
+        xor a
+        ld b, 16
+_:      add hl, hl
+        rla
+        cp c
+        jr c, $ + 4
+        sub c
+        inc l
+        djnz -_
+    pop bc
+    ret
 
 ;; divACByDE [Miscellaneous]
 ;;  Performs `AC = AC / DE`
