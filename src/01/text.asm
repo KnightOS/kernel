@@ -458,14 +458,19 @@ measureChar:
     push de
         ld de, 6
         sub 0x20
+	jr c, _		; Return 0 if char < 0x20
         call mul16By8
         ex de, hl
         ld hl, kernel_font
         add hl, de
         ld a, (hl)
+.exit:
     pop de
     pop hl
     ret
+
+_:  xor a
+    jr .exit
 
 ;; measureStr [Text]
 ;;  Measures the width of a string in pixels.
