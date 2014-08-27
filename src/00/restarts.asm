@@ -195,6 +195,11 @@ pcall:
                         ret
 .returnPoint:
     ; Stack state : ret address, original AF, interrupt state, page
+                        ; Put AF at (kernelGarbage) for later use
+                        ld (kernelGarbage + 2), sp
+                        ld sp, kernelGarbage + 2
+                        push af
+                        ld sp, (kernelGarbage + 2)
 #ifdef FLASH4MB
                 xor a
                 out (PORT_MEMA_HIGH), A
@@ -203,9 +208,21 @@ pcall:
             out (PORT_BANKA), a
         pop af
         jp po, _
-        ei
-_:
     pop af
+    ; Fetch AF from backup
+    ld (kernelGarbage + 2), sp
+    ld sp, kernelGarbage
+    pop af
+    ld sp, (kernelGarbage + 2)
+    ei
+    ret
+_:  ; Same thing without enabling interrupts
+    pop af
+    ; Fetch AF from backup
+    ld (kernelGarbage + 2), sp
+    ld sp, kernelGarbage
+    pop af
+    ld sp, (kernelGarbage + 2)
     ret
 
 ; rst 0x28
