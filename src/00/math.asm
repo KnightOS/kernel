@@ -305,7 +305,7 @@ _:      add hl, hl
     pop bc
     ret
 
-;; divACByDE [Miscellaneous]
+;; divACByDE [Maths]
 ;;  Performs `AC = AC / DE`
 ;; Outputs:
 ;;  AC: AC / DE
