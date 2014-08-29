@@ -130,6 +130,41 @@ drawVLine:
     pop hl \ pop de \ pop bc \ pop af
     ret
 
+;; drawVLineAND [Display]
+;;  Draws a vertical line on the screen buffer using AND (turns pixels OFF) logic.
+;;  Does clipping.
+;; Inputs:
+;;  IY: screen buffer
+;;  A, L: X, Y
+;;  C: height
+drawVLineAND:
+    push af \ push bc \ push de \ push hl
+        ld b, a
+        ld a, 63
+        sub l
+        cp c
+        jr c, .exitEarly
+        ld a, b
+        call getPixel
+        cpl
+        ld b, a
+        ld a, h
+        or l
+        jr z, .exitEarly
+        ld a, b
+        ld b, c
+        ld c, a
+        ld de, 12
+.vline_loop:
+        ld a, c
+        and (hl)
+        ld (hl), a
+        add hl, de
+        djnz .vline_loop
+.exitEarly:
+    pop hl \ pop de \ pop bc \ pop af
+    ret 
+
 ;; rectXOR [Display]
 ;;  Draws a filled rectangle on the screen buffer using XOR (invert) logic.
 ;; Inputs:
