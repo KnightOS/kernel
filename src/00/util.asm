@@ -134,26 +134,6 @@ _:    in a, (PORT_LCD_CMD)
     pop af
     ret
 
-;; stringLength [Miscellaneous]
-;;  Determines the length of a zero delimited string.
-;; Inputs:
-;;  HL: String pointer
-;; Outputs:
-;;  BC: String length
-stringLength:
-    push af
-    push hl
-        xor a
-        ld b, a
-        ld c, a
-        cpir
-        ; bc = -bc
-        xor a \ sub c \ ld c, a \ sbc a, a \ sub b \ ld b, a
-        dec bc
-    pop hl
-    pop af
-    ret
-
 ;; getBatteryLevel [Miscellaneous]
 ;;  Determines the approximate battery level.
 ;; Outputs:
@@ -165,49 +145,6 @@ getBatteryLevel:
    ; TODO
    ld b, 4
    ret
-
-;; compareStrings [Miscellaneous]
-;;  Determines if two strings are equal, and checks alphabetical sort order.
-;; Inputs:
-;;  HL: String pointer
-;;  DE: String pointer
-;; Outputs:
-;;  Z: Set if equal, reset if not equal
-;;  C: Set if string HL is alphabetically earlier than string DE
-compareStrings:
-    ld a, (de)
-    or a
-    jr z, .end
-    cp (hl)
-    jr nz, .exit
-    inc hl
-    inc de
-    jr compareStrings
-.end:
-    ld a, (hl)
-    or a
-.exit:
-    ccf
-    ret
-
-;; stringCopy [Miscellaneous]
-;;  Copies a string.
-;; Inputs:
-;;  HL: String pointer
-;;  DE: Destination
-stringCopy:
-    push de
-    push hl
-    ex de, hl
-_:  ld a, (de)
-    ld (hl), a
-    or a
-    jr z, _
-    inc hl \ inc de
-    jr -_
-_:  pop de
-    pop hl
-    ret
 
 ;; getBootCodeVersionString [Miscellaneous]
 ;;  Gets the version string from the device's boot code.
@@ -322,27 +259,6 @@ indirect16HL:
     pop af
     ret
 
-;; compareStrings_sort [Miscellaneous]
-;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
-;;  then calls compareStrings.
-;; Inputs:
-;;  HL: Pointer to string pointer
-;;  DE: Pointer to string pointer
-;; Outputs:
-;;  Z: Set if equal, reset if not equal
-;;  C: Set if string (HL) is alphabetically earlier than string (DE)
-;; Notes:
-;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
-;;  It allows sorting a list of pointers to strings by the strings' sort order.
-compareStrings_sort:
-    push hl
-    push de
-        call indirect16HLDE
-        call compareStrings
-_:  pop de
-    pop hl
-    ret
-
 ;; cpHLDE_sort [Miscellaneous]
 ;;  Compares 16-bit integers at (HL) and (DE).  That is, calls indirect16HLDE,
 ;;  then calls cpHLDE.
@@ -414,4 +330,17 @@ _:
 _:
     pop af                  ; ++50/54
     ret                     ; ++60/64
+    
+;; getKernelMajorVersion [Miscellaneous]
+;;  Returns the kernel's major version number.
+;; Outputs:
+;;  HL: major verison number
+;;  Z: set on success, reset on error
+getKernelMajorVersion:
+    push de
+        ld hl, kernelVersion
+        call strtoi
+        ex de, hl
+    pop de
+    ret
     

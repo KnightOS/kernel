@@ -44,6 +44,7 @@ drawHexHL   .equ 0x0D01
 #include "keyboard.asm"
 
 #include "math.asm"
+#include "strings.asm"
 #include "util.asm"
 
 #ifdef DEBUG
