@@ -128,6 +128,13 @@ strtoi:
         jr nz, $+3
         inc hl
         push af
+.skipLeadingLoop:
+            ld a, (hl)
+            cp '0'
+            jr nz, .noMoreLeading
+            inc hl
+            jr .skipLeadingLoop
+.noMoreLeading:
             push hl
                 dec b
                 ld c, 0
