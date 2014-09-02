@@ -106,7 +106,7 @@ strchr:
     ret
     
 ;; strtoi [Strings]
-;;  Converts an ASCII-encoded unsigned decimal into a word of variable size.
+;;  Converts an ASCII-encoded signed decimal into a word of variable size.
 ;; Inputs:
 ;;  HL: pointer on ASCII-encoded decimal
 ;;  B: maximum number of digits to convert
