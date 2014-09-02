@@ -112,86 +112,110 @@ strchr:
 ;;  B: maximum number of digits to convert
 ;; Outputs:
 ;;  DEHL: converted word
-;;  Z: set on success
+;;  Z: set on success, reset on error
 ;; Notes:
 ;;  The routine will ignore leading zeroes to produce a number composed by a 
 ;;  maximum of 10 digits, the maximal value being 4,294,967,295. If a 10-digits
 ;;  number with a greater value is encountered, no error will be thrown but the
 ;;  number won't be converted as expected.
+;;  Besides, the routine supports negative numbers that starts with the character '-'.
+;;  This character has no effect on the number of digits parsed.
 ;;  Destroys BC', DE' and HL'.
 strtoi:
     push bc
-        push hl
-            dec b
-            ld c, 0
-.countDigits:
-            ld a, (hl)
-            cp '0'
-            jr c, .noMoreDigits
-            cp '9' + 1
-            jr nc, .noMoreDigits
-            inc hl
-            inc c
-            ld a, 9 ; maximum of 10 digits
-            cp c
-            jr c, .noMoreDigits
-            ld a, b
-            cp c
-            jr nc, .countDigits
-.noMoreDigits:
-            xor a
-            cp c
-        pop hl
-        jr z, .error
-        ; HL = string
-        ; B = number of digits
-        ; for(; B >= 0 ; string++, B--)
-        ;   DEHL += (*string - '0') * miniLUT[B - 1];
-        exx
-        ld de, 0
-        ld hl, 0
-        exx
-        ld b, c
-.formWordLoop:
         ld a, (hl)
-        sub '0'
-        push hl
-            ld l, b
-            ld h, 0
-            dec l
-            add hl, hl
-            add hl, hl
-            ld de, .factorsLUT + 3
-            add hl, de
-            ld d, (hl)
-            dec hl
-            ld e, (hl)
-            dec hl
-            ld c, (hl)
-            dec hl
-            ld l, (hl)
-            ld h, c
-            call mul32By8
-            push de
-                push hl
-                    exx
-                pop bc
-                add hl, bc
-                ex de, hl
-            pop bc
-            adc hl, bc
-            ex de, hl
-            exx
-        pop hl
+        sub '-'
+        jr nz, $+3
         inc hl
-        djnz .formWordLoop
-        exx
-        push de \ push hl
+        push af
+            push hl
+                dec b
+                ld c, 0
+.countDigits:
+                ld a, (hl)
+                cp '0'
+                jr c, .noMoreDigits
+                cp '9' + 1
+                jr nc, .noMoreDigits
+                inc hl
+                inc c
+                ld a, 9 ; maximum of 10 digits
+                cp c
+                jr c, .noMoreDigits
+                ld a, b
+                cp c
+                jr nc, .countDigits
+.noMoreDigits:
+                xor a
+                cp c
+            pop hl
+            jr z, .error
+            ; HL = string
+            ; B = number of digits
+            ; for(; B >= 0 ; string++, B--)
+            ;   DEHL += (*string - '0') * miniLUT[B - 1];
             exx
-        pop hl \ pop de
+            ld de, 0
+            ld hl, 0
+            exx
+            ld b, c
+.formWordLoop:
+            ld a, (hl)
+            sub '0'
+            push hl
+                ld l, b
+                ld h, 0
+                dec l
+                add hl, hl
+                add hl, hl
+                ld de, .factorsLUT + 3
+                add hl, de
+                ld d, (hl)
+                dec hl
+                ld e, (hl)
+                dec hl
+                ld c, (hl)
+                dec hl
+                ld l, (hl)
+                ld h, c
+                call mul32By8
+                push de
+                    push hl
+                        exx
+                    pop bc
+                    add hl, bc
+                    ex de, hl
+                pop bc
+                adc hl, bc
+                ex de, hl
+                exx
+            pop hl
+            inc hl
+            djnz .formWordLoop
+            exx
+            push de \ push hl
+                exx
+            pop hl \ pop de
+        pop af
+        jr nz, .noNegate
+        ld b, h
+        ld c, l
+        ld hl, 0
+        or a
+        sbc hl, bc
+        ld b, h
+        ld c, l
+        ld hl, 0
+        sbc hl, de
+        ld d, h
+        ld e, l
+        ld h, b
+        ld l, c
+.noNegate:
         xor a
-        jr .error + 2
+        jr .error + 3
 .error:
+        pop af
         xor a
         inc a
     pop bc
