@@ -29,9 +29,14 @@ cpBCDE:
     pop hl
     ret
     
-;; sDEMulA [Maths]
-;;  Performs `HL = DE * A`. The operation is signed.
-sDEMulA:
+;; smul16By8 [Maths]
+;;  Performs a signed multiplication of A and DE.
+;; Inputs:
+;;  A: Multiplier
+;;  DE: Multiplicand
+;; Outputs:
+;;  HL: Product of A and DE.
+smul16By8:
     push bc
         ld hl, 0
         ld bc, 0x0800
@@ -158,6 +163,41 @@ mul16By16:
 .undefine mul16By16Iter
     ret
 
+;; mul32By8 [Maths]
+;;  Performs an unsigned multiplication of DEHL and A.
+;; Outputs:
+;;  DEHL: product of DEHL and A
+mul32By8:
+    push bc \ push ix
+        ld ixl, 8
+        push de
+            push hl
+                ld hl, 0
+                ld d, h
+                ld e, l
+.loop:
+                add hl, hl
+                rl e
+                rl d
+                rla
+                jr nc, .noAdd
+            pop bc
+            add hl, bc
+            ex (sp), hl
+            push hl
+                adc hl, de
+            pop de
+            ex de, hl
+            ex (sp), hl
+            push bc
+.noAdd:
+                dec ixl
+                jr nz, .loop
+            pop bc
+        pop bc
+    pop ix \ pop bc
+    ret
+    
 ;; div32By16 [Maths]
 ;;  Performs `ACIX = ACIX / DE`
 ;; Outputs:
