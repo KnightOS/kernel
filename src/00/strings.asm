@@ -1,10 +1,10 @@
-;; stringLength [Strings]
+;; strlen [Strings]
 ;;  Determines the length of a zero delimited string.
 ;; Inputs:
 ;;  HL: String pointer
 ;; Outputs:
 ;;  BC: String length
-stringLength:
+strlen:
     push af
     push hl
         xor a
@@ -18,7 +18,7 @@ stringLength:
     pop af
     ret
     
-;; compareStrings [Strings]
+;; strcmp [Strings]
 ;;  Determines if two strings are equal, and checks alphabetical sort order.
 ;; Inputs:
 ;;  HL: String pointer
@@ -26,7 +26,7 @@ stringLength:
 ;; Outputs:
 ;;  Z: Set if equal, reset if not equal
 ;;  C: Set if string HL is alphabetically earlier than string DE
-compareStrings:
+strcmp:
     ld a, (de)
     or a
     jr z, .end
@@ -34,7 +34,7 @@ compareStrings:
     jr nz, .exit
     inc hl
     inc de
-    jr compareStrings
+    jr strcmp
 .end:
     ld a, (hl)
     or a
@@ -42,9 +42,9 @@ compareStrings:
     ccf
     ret
     
-;; compareStrings_sort [Strings]
+;; strcmp_sort [Strings]
 ;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
-;;  then calls compareStrings.
+;;  then calls strcmp.
 ;; Inputs:
 ;;  HL: Pointer to string pointer
 ;;  DE: Pointer to string pointer
@@ -54,21 +54,21 @@ compareStrings:
 ;; Notes:
 ;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
 ;;  It allows sorting a list of pointers to strings by the strings' sort order.
-compareStrings_sort:
+strcmp_sort:
     push hl
     push de
         call indirect16HLDE
-        call compareStrings
+        call strcmp
 _:  pop de
     pop hl
     ret
     
-;; stringCopy [Strings]
+;; strcpy [Strings]
 ;;  Copies a string.
 ;; Inputs:
 ;;  HL: String pointer
 ;;  DE: Destination
-stringCopy:
+strcpy:
     push de
     push hl
     ex de, hl

@@ -267,7 +267,7 @@ createFileEntry:
         ld h, (ix + -1)
         ld l, (ix + -2) ; Grab file name from stack
         push bc
-            call stringLength
+            call strlen
             inc bc ; Zero delimited
         pop hl
         push bc
@@ -506,7 +506,7 @@ createDirectoryEntry:
         push hl
             ld l, (ix + 0)
             ld h, (ix + 1)
-            call stringLength
+            call strlen
             ld hl, 6
             add hl, bc
             ld b, h \ ld c, l
@@ -625,7 +625,7 @@ _:  push af
             sbc hl, bc
             jr nc, _ ; It's already in RAM
             ld h, d \ ld l, e
-            call stringLength
+            call strlen
             ld de, kernelGarbage + 10 ; + 10 gets us past what findDirectoryEntry uses
             ldir
             ld de, kernelGarbage + 10

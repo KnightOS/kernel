@@ -162,7 +162,7 @@ getBootCodeVersionString:
         push de
             setBankA(bootPage)
             ld hl, 0x400F ; Location of boot code version string
-            call stringLength
+            call strlen
             inc bc
             call malloc
             push ix \ pop de

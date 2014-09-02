@@ -290,7 +290,7 @@ _:  pop af
     push af
         ; Set up some important parts of the file entry first
         ex de, hl
-        call stringLength
+        call strlen
         inc bc
         push ix
              call malloc
@@ -508,7 +508,7 @@ _:  pop af
         cp (ix + FILE_ENTRY_PAGE)
         jp nz, .overwriteFile
         ; Find the parent directory and extract the file name alone
-        call stringLength
+        call strlen
         inc bc
         ld de, kernelGarbage + 0x100
         push bc
