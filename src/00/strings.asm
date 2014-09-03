@@ -133,7 +133,18 @@ strtoi:
             cp '0'
             jr nz, .noMoreLeading
             inc hl
-            jr .skipLeadingLoop
+            ld a, (hl)
+            cp '0'
+            jr c, .return0
+            cp '9' + 1
+            jr c, .skipLeadingLoop
+.return0:
+            ld hl, 0
+            ld de, 0
+        pop af
+        xor a
+    pop bc
+    ret
 .noMoreLeading:
             push hl
                 dec b
