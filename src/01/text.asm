@@ -428,6 +428,79 @@ dhlet:
 dispdh:
     jp drawChar
 
+;; drawDecA [Text]
+;;  Draws the contents of A in decimal to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  D, E: X, Y
+;;  A: Value
+;; Outputs:
+;;  D, E: Advanced to position of next character
+drawDecA:
+    push bc \ push hl
+        ; use C to keep track of leading zeroes
+        ld c, 0
+        ; display hundreds
+        push af
+            push de
+                ld e, 100
+                ld d, a
+                call div8by8
+                ld a, d
+            pop de
+            or a
+            jr z, .no100
+            inc c
+            ld b, a
+            add a, '0'
+            call drawChar
+            ld a, b
+            ld b, e
+            ld e, a
+            ld h, 100
+            call mul8By8
+            ld e, b
+        pop af
+        sub l
+        jr .done100
+.no100:
+        pop af
+.done100:
+        ; display tens
+        push af
+            push de
+                ld e, 10
+                ld d, a
+                call div8by8
+                ld a, d
+            pop de
+            ld b, a
+            or a
+            ; this may not be a leading zero
+            or c
+            ld a, b
+            jr z, .no10
+            ld b, a
+            add a, '0'
+            call drawChar
+            ld a, b
+            ld b, e
+            ld e, a
+            ld h, 10
+            call mul8By8
+            ld e, b
+        pop af
+        sub l
+        jr .done10
+.no10:
+        pop af
+.done10:
+        ; draw units
+        add a, '0'
+        call drawChar
+    pop hl \ pop bc
+    ret
+    
 ;; drawHexHL [Text]
 ;;  Draws the contents of HL in hexadecimal to the screen buffer using OR logic (turns pixels ON).
 ;; Inputs:
@@ -443,6 +516,18 @@ drawHexHL:
         ld a, l
         call drawHexA
     pop af
+    ret
+   
+;; drawDecHL [Text]
+;;  Draws the contents of HL in decimal to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  D, E: X, Y
+;;  HL: Value
+;; Outputs:
+;;  D, E: Advanced to position of next character
+drawDecHL:
+    ; TODO
     ret
    
 ;; measureChar [Text]
