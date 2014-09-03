@@ -337,10 +337,31 @@ _:
 ;;  HL: major verison number
 ;;  Z: set on success, reset on error
 getKernelMajorVersion:
-    push de
+    push de \ push bc
         ld hl, kernelVersion
+        ld b, 10
         call strtoi
-        ex de, hl
-    pop de
+    pop bc \ pop de
+    ret
+    
+;; getKernelMinorVersion [Miscellaneous]
+;;  Returns the kernel's minor version number.
+;; Outputs:
+;;  HL: minor verison number
+;;  Z: set on success, reset on error
+getKernelMinorVersion:
+    push de \ push bc
+        ld hl, kernelVersion
+        ld b, '.'
+        call strchr
+        jr nz, .error
+        inc hl
+        ld b, 10
+        call strtoi
+        jr z, .error + 2
+.error:
+        xor a
+        inc a
+    pop bc \ pop de
     ret
     
