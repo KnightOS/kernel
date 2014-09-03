@@ -334,7 +334,7 @@ _:
 ;; getKernelMajorVersion [Miscellaneous]
 ;;  Returns the kernel's major version number.
 ;; Outputs:
-;;  HL: major verison number
+;;  HL: major version number
 ;;  Z: set on success, reset on error
 getKernelMajorVersion:
     push de \ push bc
@@ -347,7 +347,7 @@ getKernelMajorVersion:
 ;; getKernelMinorVersion [Miscellaneous]
 ;;  Returns the kernel's minor version number.
 ;; Outputs:
-;;  HL: minor verison number
+;;  HL: minor version number
 ;;  Z: set on success, reset on error
 getKernelMinorVersion:
     push de \ push bc
@@ -358,10 +358,116 @@ getKernelMinorVersion:
         inc hl
         ld b, 10
         call strtoi
-        jr z, .error + 2
 .error:
-        xor a
-        inc a
     pop bc \ pop de
+    ret
+    
+;; getKernelPatchNumber [Miscellaneous]
+;;  Returns the kernel's patch number.
+;; Outputs:
+;;  HL: patch number
+;;  Z: set on success, reset on error
+getKernelPatchNumber:
+    push de \ push bc
+        ld hl, kernelVersion
+        ld b, '.'
+        call strchr
+        jr nz, .error
+        inc hl
+        call strchr
+        jr nz, .error
+        inc hl
+        ld b, 10
+        call strtoi
+.error:
+    pop bc \ pop de
+    ret
+    
+;; getKernelCommitsSinceTag [Miscellaneous]
+;;  Returns how many commits have been made since the last kernel tag.
+;; Outputs:
+;;  HL: number of commits
+;;  Z: set on success, reset on error
+getKernelCommitsSinceTag:
+    push de \ push bc
+        ld hl, kernelVersion
+        ld b, '.'
+        call strchr
+        jr nz, .error
+        inc hl
+        call strchr
+        jr nz, .error
+        inc hl
+        ld b, '-'
+        call strchr
+        jr nz, .error
+        inc hl
+        ld b, 10
+        call strtoi
+.error:
+    pop bc \ pop de
+    ret
+    
+;; getKernelShortHash [Miscellaneous]
+;;  Returns the kernel's short hash, copied to malloc-ed RAM.
+;; Outputs:
+;;  HL: pointer on short hash string
+;;  Z: set on success, reset on error
+;; Notes:
+;;  Make sure to free HL after you're done with the string. Failure
+;;  to do so will result in memory leaks !!
+getKernelShortHash:
+    push de \ push bc
+        ld hl, kernelVersion
+        ld b, '.'
+        call strchr
+        jr nz, .error
+        inc hl
+        call strchr
+        jr nz, .error
+        inc hl
+        ld b, '-'
+        call strchr
+        jr nz, .error
+        inc hl
+        call strchr
+        jr nz, .error
+        inc hl
+        ; calculate the hash's length
+        call strlen
+        ; skip the potential + that's at the end of the string
+        push hl
+            add hl, bc
+            dec hl
+            ld a, (hl)
+            cp '+'
+            jr nz, $+3
+            dec bc
+        pop hl
+        call malloc
+        jr nz, .error
+        push ix \ pop de \ push de
+            ldir
+            ex de, hl
+            dec hl
+            ld (hl), 0
+        pop hl
+.error:
+    pop bc \ pop de
+    ret
+    
+;; isKernelDirty [Miscellaneous]
+;;  Tests if the kernel is dirty, i.e if it has uncommited changes.
+;; Outputs:
+;;  Z: set if dirty
+isKernelDirty:
+    push bc
+        ld hl, kernelVersion
+        call strlen
+        add hl, bc
+        dec hl
+        ld a, (hl)
+        cp '+'
+    pop bc
     ret
     
