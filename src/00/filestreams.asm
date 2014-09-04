@@ -959,9 +959,9 @@ _:          or e
 ;;  A: Data read (on success); Error code (on failure)
 streamReadByte:
     push ix
-        call getStreamEntry
-        jr nz, .fail
         push hl
+            call getStreamEntry
+            jr nz, .fail
             ld l, (ix + FILE_BUFFER)
             ld h, (ix + FILE_BUFFER + 1)
             ld a, (ix + FILE_STREAM)
@@ -995,11 +995,12 @@ _:          ld a, (ix + FILE_STREAM)
             jr nc, _
             ; We need to get the next block (or end of stream)
             call getNextBuffer
-_:          pop hl
+_:      pop hl
     pop ix
     cp a
     ret
 .fail:
+    pop hl
     pop ix
     ret
 
