@@ -140,7 +140,7 @@ drawVLine:
 drawVLineAND:
     push af \ push bc \ push de \ push hl
         ld b, a
-        ld a, 63
+        ld a, 64
         sub l
         cp c
         jr c, .exitEarly
