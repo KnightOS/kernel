@@ -51,15 +51,9 @@ writeFlashByte:
 ; The procedure is thus:
 ;    0xAA -> (0xAAA)
 ;    0x55 -> (0x555)
-;    0x0A -> (0xAAA)
+;    0xA0 -> (0xAAA)
 ;    DATA -> (PDEST)
-;    Poll:
-;       A <- (PDEST)
-;       Bit 7 == data, then return
-;       Bit 5 == 0, then poll
-;       A <- (PDEST)
-;       Bit 7 == data, then return
-;       Fail
+;    Poll to completion
     push hl
     push bc
     push de
@@ -69,6 +63,7 @@ writeFlashByte:
         push af
             di
             ld a, b
+            and (hl) ; Remove any bits that cannot be written
             push hl
                 ld hl, .ram
                 ld de, flashFunctions
@@ -87,6 +82,8 @@ _:  pop af
     pop hl
     ret
 .ram:
+    ld a, 0xF0
+    ld (0), a ; Reset to be safe
     ld a, 0xAA
     ld (0xAAA), a
     ld a, 0x55
@@ -95,15 +92,23 @@ _:  pop af
     ld (0xAAA), a
     ld (hl), b
 .poll:
+    ; To poll, read the data back at (hl) to get the chip status. This is
+    ; referred to as Q. The data programmed is B.
+    ; 1. If Q7 == B7, we're done.
+    ; 2. If Q5 == 1, poll again.
+    ; 3. Read (HL) into Q again.
+    ; 4. If Q7 == B7, we're done, otherwise the program failed.
     ld c, (hl)
     ld a, c
     xor b
-    jp p, .return ; Bit 7 of A is set?
-    bit 5, c
+    bit 7, a
+    jp z, .return ; 1: Check Q7 == B7 and return if so
+    bit 5, c      ; 2: Check Q5 != 0 and poll if so
     jr z, .poll
-    ld a, (hl)
+    ld a, (hl)    ; 3: Read again
     xor b
-    jp p, .return
+    bit 7, a
+    jp z, .return ; 4: Check Q7 == B7 and return if so
     ; Operation failed, abort
     ld a, 0xF0
     ld (0), a
