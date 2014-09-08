@@ -439,6 +439,7 @@ _:  pop af
     ld bc, 0x4000
 .inner_loop:
     ld a, (hl) ; source sector
+    ld (flashFunctions + 0xFF), a
     ex af, af'
     ld a, e ; swap sector
     setBankA
@@ -453,16 +454,18 @@ _:  pop af
     ex af, af'
     ld (hl), a
 .poll:
+    ld a, (flashFunctions + 0xFF)
     xor (hl)
     bit 7, a
-    jr z, _
+    jr z, .continue
     bit 5, a
     jr z, .poll
-    ; Error, abort
+    ld a, (flashFunctions + 0xFF)
+    bit 7, a
+    jr z, .continue
+    ; Error, skip this byte
+.continue:
     ld a, 0xF0
-    ld (0), a
-    jp .return
-_:  ld a, 0xF0
     ld (hl), a
     
     inc hl
