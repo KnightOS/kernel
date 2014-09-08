@@ -155,26 +155,34 @@ _:  pop af
     ret
 .ram:
 .loop:
+    ex de, hl
+    ld a, (de)
+    and (hl)
+    ex af, af'
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
     ld (0x0555), a    ; Unlock
     ld a, 0xA0
     ld (0x0AAA), a    ; Write command
-    ld a, (hl)
-    ld (de), a        ; Data
+    ex af, af'
+    ld (hl), a        ; Data
+    ex de, hl
     
-_:  xor (hl)
+.poll:
+    ; This is completely wrong but doing it right crashes the fucking system
+    xor (hl)
     bit 7, a
-    jr z, _
+    jr z, .continue
     bit 5, a
-    jr z, -_
+    jr z, .poll
     ; Error, abort
     ld a, 0xF0
     ld (0), a
     jp .return
-_:  ld a, 0xF0
-    ld (de), a
+.continue:
+    ld a, 0xF0
+    ld (de), a ; Reset
 
     inc de
     inc hl
