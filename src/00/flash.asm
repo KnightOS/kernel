@@ -327,6 +327,7 @@ copySectorToSwap:
     push de
     push hl
         di
+        ld a, b
         and 0b11111100
         push hl
         push bc
@@ -376,10 +377,11 @@ _:  pop af
     ld de, 0x4000
     ld bc, 0x4000
 .inner_loop:
-    ld a, (hl)
+    ex de, hl
+    ld a, (de)
+    and (hl)
+    ld (flashFunctions + 0x4000 + 0xFF), a
     ex af, af'
-    ld a, 0xF0
-    ld (0), a
     ld a, 0xAA
     ld (0x0AAA), a
     ld a, 0x55
@@ -387,21 +389,24 @@ _:  pop af
     ld a, 0xA0
     ld (0x0AAA), a
     ex af, af'
-    ld (de), a
-    ex de, hl
+    ld (hl), a
+
 .poll:
+    ld a, (flashFunctions + 0x4000 + 0xFF)
     xor (hl)
     bit 7, a
-    jr z, _
+    jr z, .continue
     bit 5, a
     jr z, .poll
-    ; Error, abort
-    ld a, 0xF0
-    ld (0), a
-    jp .return
-_:  ld a, 0xF0
-    ld (hl), a
+    ld a, (flashFunctions + 0x4000 + 0xFF)
+    xor (hl)
+    bit 7, a
+    jr z, .continue
+    ; Error, skip this byte
+.continue:
     ex de, hl
+    ld a, 0xF0
+    ld (de), a
     
     inc de
     inc hl
