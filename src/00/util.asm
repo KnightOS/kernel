@@ -471,3 +471,31 @@ isKernelDirty:
     pop bc
     ret
     
+;; isAlphaNum [Miscellaneous]
+;;  Tests if a character is a letter or a number.
+;; Inputs:
+;;  A: character to test
+;; Outputs:
+;;  C: set if the character is alphanumeric
+isAlphaNum:
+    cp '9' + 1
+    jr nc, .notNum
+    cp '0'
+    ccf
+    ret
+.notNum:
+    cp 'Z' + 1
+    jr nc, .notUpperAlpha
+    cp 'A'
+    ccf
+    ret
+.notUpperAlpha:
+    cp 'z' + 1
+    jr nc, .notLowerAlpha
+    cp 'a'
+    ccf
+    ret
+.notLowerAlpha:
+    or a
+    ret
+    
