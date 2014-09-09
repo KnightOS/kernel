@@ -1356,3 +1356,16 @@ _:      pop de \ push de
     pop de
     pop bc
     ret
+
+;; seek [Filestreams]
+;; Moves into a file stream.
+;; Inputs:
+;;  D: stream ID
+;;  EBC: offset to start of file in bytes
+;; Outputs:
+;;  Z: set on success, reset on failure
+;;  A: error code (on failure)
+seek:
+    cp a
+    ret
+    
