@@ -1,3 +1,8 @@
+initMultitasking:
+    ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
+    ld (lastThreadId), a
+    ret
+
 ; Returns the ID of the thread that will launch next
 getNextThreadID:
     push hl ; Don't care about the data getThreadEntry provides

@@ -30,7 +30,7 @@ rlcall:
 .fill 0x30-$    
 ; 0x0030
 ; RST 0x30
-    jp debugger
+    ret ; unused
 .fill 0x38-$
 ; 0x0038
 ; RST 0x38

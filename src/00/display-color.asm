@@ -29,6 +29,14 @@ colorSupported:
 #else
 ; Color screen is 320x240
 
+initDisplay:
+    ; Set GPIO config
+    ld a, 0xE0
+    out (PORT_GPIO_CONFIG), a
+    ld a, 1
+    ld (color_mode), a
+    ret
+
 ;; colorSupported [Color]
 ;;  Sets Z if color is supported on this device.
 ;; Outputs:

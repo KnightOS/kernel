@@ -1,3 +1,43 @@
+#ifndef COLOR
+initDisplay:
+    ; Initialize LCD
+    ld a, 1 + LCD_CMD_AUTOINCDEC_SETX
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; X-Increment Mode
+
+    ld a, 1 + LCD_CMD_SETOUTPUTMODE
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; 8-bit mode
+
+    ld a, 1 + LCD_CMD_SETDISPLAY
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; Enable screen
+
+    ld a, 7 + LCD_CMD_POWERSUPPLY_SETLEVEL ; versus +3? TIOS uses +7, and that's the only value that works (the datasheet says go with +3)
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; Op-amp control (OPA1) set to max (with DB1 set for some reason)
+
+    ld a, 3 + LCD_CMD_POWERSUPPLY_SETENHANCEMENT ; B
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; Op-amp control (OPA2) set to max
+
+    ; Different amounts of contrast look better on different models
+    #ifdef USB
+        ld a, 0x2F + LCD_CMD_SETCONTRAST
+    #else
+        #ifdef TI73
+            ld a, 0x3B + LCD_CMD_SETCONTRAST
+        #else
+            ld a, 0x34 + LCD_CMD_SETCONTRAST
+        #endif
+    #endif
+
+    ld (currentContrast), a
+    call lcdDelay
+    out (PORT_LCD_CMD), a ; Contrast
+    ret
+#endif
+
 ;; clearBuffer [Display]
 ;;  Turns off all pixels on a screen buffer.
 ;; Inputs:

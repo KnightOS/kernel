@@ -71,13 +71,7 @@ TI84pCSE: BOOT := 3FC000
 TI84pCSE: LENGTH := 0x400000
 TI84pCSE: kernel $(OUTDIR)
 
-SKIPON:=NO
-
-ifeq ($(SKIPON),YES)
-DEFINES=--define $(PLATFORM) --define SKIPON
-else
 DEFINES=--define $(PLATFORM)
-endif
 BINDIR=$(OUTDIR)$(PLATFORM)/
 INCLUDE=include/;$(BINDIR)
 

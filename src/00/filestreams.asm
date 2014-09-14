@@ -1,3 +1,12 @@
+initFilesystem:
+    ; Set all file handles to unused
+    ld hl, fileHandleTable
+    ld (hl), 0xFF
+    ld de, fileHandleTable + 1
+    ld bc, 8 * maxFileStreams
+    ldir
+    ret
+
 ;; openFileRead [Filestreams]
 ;;  Opens a file stream in read-only mode.
 ;; Inputs:

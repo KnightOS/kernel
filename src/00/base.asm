@@ -1,5 +1,4 @@
 ; Base file for KnightOS kernel
-#define DEBUG
 
 #include "platforms.inc"
 #include "defines.inc"
@@ -44,12 +43,9 @@ drawHexHL   .equ 0x0D01
 #include "keyboard.asm"
 
 #include "math.asm"
+#include "random.asm"
 #include "strings.asm"
 #include "util.asm"
-
-#ifdef DEBUG
-#include "debug.asm"
-#endif
 
 .echo "Assigned kernel memory:"
 .echo "threadTable: 0x{0:X4}" threadTable

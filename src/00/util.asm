@@ -48,6 +48,42 @@ _:
     ei
     ret
 
+unprotectRAM:
+#ifdef CPU15
+   xor a
+   out (PORT_RAMEXEC_LOWLIMIT), a ; RAM Lower Limit ; out (25), 0
+   dec a
+   out (PORT_RAMEXEC_UPLIMIT), a ; RAM Upper Limit ; out (26), $FF
+#else
+   xor a
+   out (PORT_RAM_PAGING), a
+   out (PORT_FLASHEXCLUSION), a
+
+   ld a, 0b000000001
+   out (PORT_RAM_PAGING), a
+   xor a
+   out (PORT_FLASHEXCLUSION), a
+#endif
+   ret
+
+unprotectFlash:
+#ifdef CPU15
+   ld a, 0xFF
+   out (PORT_FLASHEXEC_LOWLIMIT), a ; Flash Lower Limit
+   out (PORT_FLASHEXEC_UPLIMIT), a ; Flash Upper Limit
+#else
+   ld a, 0b000000010
+   out (PORT_RAM_PAGING), a
+   xor a
+   out (PORT_FLASHEXCLUSION), a
+
+   ld a, 0b000000111
+   out (PORT_RAM_PAGING), a
+   xor a
+   out (PORT_FLASHEXCLUSION), a
+#endif
+   ret
+
 ; TODO: This could use some improvement
 ;; hexToHL [Miscellaneous]
 ;;  Converts a hexadecimal string to a number.
@@ -498,4 +534,3 @@ isAlphaNum:
 .notLowerAlpha:
     or a
     ret
-    
