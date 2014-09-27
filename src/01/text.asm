@@ -527,7 +527,12 @@ drawHexHL:
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
 drawDecHL:
-    ; TODO
+    push af
+        ld a, h
+        call drawDecA
+        ld a, l
+        call drawDecA
+    pop af
     ret
    
 ;; measureChar [Text]
