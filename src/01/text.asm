@@ -512,9 +512,9 @@ drawDecA:
 drawHexHL:
     push af
         ld a, h
-        call drawDecA
+        call drawHexA
         ld a, l
-        call drawDecA
+        call drawHexA
     pop af
     ret
    
@@ -529,9 +529,9 @@ drawHexHL:
 drawDecHL:
     push af
         ld a, h
-        call drawHexA
+        call drawDecA
         ld a, l
-        call drawHexA
+        call drawDecA
     pop af
     ret
    
