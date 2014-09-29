@@ -28,9 +28,8 @@ Windows. You'll need to install:
 * [genkfs](https://github.com/KnightOS/genkfs) (aur/genkfs)
 * [mkrom](https://github.com/KnightOS/mkrom) (aur/mkrom)
 * [patchrom](https://github.com/KnightOS/patchrom) (aur/patchrom)
-* [wabbitemu](https://wabbit.codeplex.com/) (aur/wabbitemu) [optional]
 
-The last one is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
+genkfs is only strictly neccessary if you hope to build a userspace on top of the kernel. On Windows,
 install Cygwin and perform the build from there. Windows users should install sass into their %PATH%.
 
 The kernel needs to be rebuilt for any system you'd like to target (different calculator models). For each
