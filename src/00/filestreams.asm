@@ -1366,8 +1366,30 @@ _:      pop de \ push de
     pop bc
     ret
 
+; Seeks the stream (after getStreamEntry) to zero
+; Destroys AF HL BC DE
+seek_zero:
+.loop:
+    call selectSection
+    ld h, 0x40
+    add a, a \ add a, a
+    ld l, a
+    ld c, (hl)
+    inc hl
+    ld b, (hl)
+    ld de, 0x7FFF
+    call cpBCDE
+    jr z, .resetPointer ; This is the first section
+    ; Move on to next section
+    ld (ix + FILE_SECTION_ID + 1), c
+    ld (ix + FILE_SECTION_ID), b
+    jr .loop
+.resetPointer:
+    ld (ix + FILE_STREAM), 0
+    ret
+
 ;; seek [Filestreams]
-;; Moves into a file stream.
+;;  Moves the current position in a file stream.
 ;; Inputs:
 ;;  D: stream ID
 ;;  EBC: offset to start of file in bytes
@@ -1375,6 +1397,22 @@ _:      pop de \ push de
 ;;  Z: set on success, reset on failure
 ;;  A: error code (on failure)
 seek:
-    cp a
+    call flush
+    ret nz ; This nicely covers "stream not found"
+    push ix
+    push hl
+    push af
+    ld a, i
+    push af
+    di
+        call getStreamEntry
+        push de
+            call seek_zero
+        pop de
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop hl
+    pop ix
     ret
-    
