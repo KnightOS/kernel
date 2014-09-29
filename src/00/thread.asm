@@ -1,6 +1,11 @@
 initMultitasking:
     ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
     ld (lastThreadId), a
+    ld hl, threadTable
+    ld (hl), 0
+    ld de, threadTable + 1
+    ld bc, threadTableSize
+    ldir
     ret
 
 ; Returns the ID of the thread that will launch next

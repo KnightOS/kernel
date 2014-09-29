@@ -61,6 +61,12 @@ reboot:
     out (PORT_BANKB), a
 #endif
 
+    ld hl, 0x8000
+    ld (hl), 0
+    ld de, 0x8001
+    ld bc, 0x7FFF
+    ldir
+
     call unlockFlash
     call unprotectRAM
     call unprotectFlash
