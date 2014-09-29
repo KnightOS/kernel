@@ -877,6 +877,7 @@ _:      or a ; cp 0
         cp fsEndOfTable
         jr z, .endOfTable
 _:
+.seekandcontinue:
         or a
         sbc hl, bc
         ; TODO: Handle swapping out next page
@@ -914,9 +915,9 @@ _:          ; Parent IDs match, check name
                 call compareDirectories
                 jr z, _
             pop de
-        inc sp \ inc sp ; pop hl
+        pop hl
         pop bc
-        jr .skip
+        jr .seekandcontinue
 _:          inc sp \ inc sp ; pop de
             ; Directories match, update kernelGarbage
             ld (kernelGarbage), bc
