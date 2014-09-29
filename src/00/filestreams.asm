@@ -1381,11 +1381,19 @@ seek_zero:
     call cpBCDE
     jr z, .resetPointer ; This is the first section
     ; Move on to next section
-    ld (ix + FILE_SECTION_ID + 1), c
-    ld (ix + FILE_SECTION_ID), b
+    ld (ix + FILE_SECTION_ID + 1), b
+    ld (ix + FILE_SECTION_ID), c
     jr .loop
 .resetPointer:
     ld (ix + FILE_STREAM), 0
+    push ix
+        ld b, (ix + FILE_SECTION_ID + 1)
+        ld c, (ix + FILE_SECTION_ID)
+        ld d, (ix + FILE_BUFFER + 1)
+        ld e, (ix + FILE_BUFFER)
+        push de \ pop ix
+        call populateStreamBuffer
+    pop ix
     ret
 
 ;; seek [Filestreams]
