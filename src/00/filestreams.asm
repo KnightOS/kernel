@@ -1063,7 +1063,6 @@ _:      pop hl
     ret
 
 ; Given stream entry at IX, grabs the section ID, swaps in the page, and sets A to the block index.
-; Destroys B
 selectSection:
     ld a, (ix + FILE_SECTION_ID + 1)
     setBankA
@@ -1409,18 +1408,83 @@ seek:
     ret nz ; This nicely covers "stream not found"
     push ix
     push hl
+    push de
     push af
     ld a, i
     push af
     di
         call getStreamEntry
-        push de
+        push bc \ push de
             call seek_zero
-        pop de
+        pop de \ pop bc
+.loop:
+        ; Are we done?
+        ld a, e
+        or a ; cp 0
+        jr nz, _
+        ld a, b
+        or a
+        jr z, .done
+        ; Nope, not done. Reduce EB and swap in the next section
+        ld a, b
+        sub 1
+        ld b, a
+        jr nc, _
+        ld a, e
+        or a
+        jr z, _
+        dec e
+_:      call selectSection
+        add a, a \ add a, a
+        ld h, 0x40
+        ld l, 2
+        add l
+        ld l, a ; HL points to next block
+        push bc \ push de
+            ld c, (hl)
+            inc hl
+            ld b, (hl)
+            ld de, 0x7FFF
+            call cpBCDE
+            jr z, .endOfStream
+            ld (ix + FILE_SECTION_ID + 1), b
+            ld (ix + FILE_SECTION_ID), c
+        pop de \ pop bc
+        jr .loop
+.done:
+        ld (ix + FILE_STREAM), c
+        ld b, (ix + FILE_SECTION_ID + 1)
+        ld c, (ix + FILE_SECTION_ID)
+        ld d, (ix + FILE_BUFFER + 1)
+        ld e, (ix + FILE_BUFFER)
+        push de \ pop ix
+        call populateStreamBuffer
     pop af
     jp po, _
     ei
 _:  pop af
+    pop de
     pop hl
     pop ix
+    ret
+.endOfStream:
+        pop de \ pop bc
+        ; Set us to the end of the stream
+        ld c, (ix + FILE_FINAL_LENGTH)
+        ld (ix + FILE_STREAM), c
+        ld b, (ix + FILE_SECTION_ID + 1)
+        ld c, (ix + FILE_SECTION_ID)
+        ld d, (ix + FILE_BUFFER + 1)
+        ld e, (ix + FILE_BUFFER)
+        push de \ pop ix
+        call populateStreamBuffer
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    pop de
+    pop hl
+    pop ix
+    or 1
+    ld a, errEndOfStream
     ret
