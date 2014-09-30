@@ -251,3 +251,52 @@ strtoi:
     .dw 0x9680, 0x0098    ; 10,000,000
     .dw 0xe100, 0x05f5    ; 100,000,000
     .dw 0xca00, 0x3b9a    ; 1,000,000,000
+    
+;; toLower [Strings]
+;;  Converts every alpha character of a string to lowercase.
+;; Inputs:
+;;  HL: pointer to string
+;; Outputs:
+;;  HL: string modified
+toLower:
+    push af \ push hl
+        ld a, (hl)
+        or a
+        jr z, .exit
+        call isAlphaNum
+        jr nc, .notUpperAlpha
+        cp 'a'
+        jr nc, .notUpperAlpha
+        add a, 'a' - 'A'
+        ld (hl), a
+.notUpperAlpha:
+        inc hl
+        jr toLower + 2
+.exit:
+    pop hl \ pop af
+    ret
+    
+;; toUpper [Strings]
+;;  Converts every alpha character of a string to uppercase.
+;; Inputs:
+;;  HL: pointer to string
+;; Outputs:
+;;  HL: string modified
+toUpper:
+    push af \ push hl
+        ld a, (hl)
+        or a
+        jr z, .exit
+        call isAlphaNum
+        jr nc, .notLowerAlpha
+        cp 'a'
+        jr c, .notLowerAlpha
+        sub 'a' - 'A'
+        ld (hl), a
+.notLowerAlpha:
+        inc hl
+        jr toLower + 2
+.exit:
+    pop hl \ pop af
+    ret
+    
