@@ -147,6 +147,8 @@ listDirectory:
 
         cp fsFile
         jr z, .handleFile
+        cp fsSymLink
+        jr z, .handleLink
         cp fsDirectory
         jr z, .handleDirectory
         cp fsEndOfTable
@@ -158,6 +160,7 @@ listDirectory:
         jr .loop
 .handleFile:
 .handleDirectory:
+.handleLink:
         push hl
             push bc
                 ld c, (hl)
@@ -172,14 +175,20 @@ listDirectory:
 .matchingItem:
             pop bc
             pop hl \ push hl
-            cp fsDirectory
-            jr nz, _
-            ; Handle directory
+            cp fsFile
+            jr z, .file
+            cp fsSymLink
+            jr z, .link
+.directory: 
             ld bc, 5
-            jr ++_
-_:          ; Handle file
+            jr .add
+.file:      
             ld bc, 8
-_:          or a
+            jr .add
+.link:      
+            ld bc, 3
+.add:       
+            or a
             sbc hl, bc ; Move HL to first character of name
             ld bc, kernelGarbage
 _:          ld a, (hl)
