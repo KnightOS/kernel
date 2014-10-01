@@ -1379,6 +1379,7 @@ seek_zero:
     ld de, 0x7FFF
     call cpBCDE
     jr z, .resetPointer ; This is the first section
+    res 7, (ix + FILE_FLAGS)
     ; Move on to next section
     ld (ix + FILE_SECTION_ID + 1), b
     ld (ix + FILE_SECTION_ID), c
