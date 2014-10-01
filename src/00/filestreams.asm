@@ -1420,10 +1420,7 @@ seek:
 .loop:
         ; Are we done?
         ld a, e
-        or a ; cp 0
-        jr nz, _
-        ld a, b
-        or a
+        or b
         jr z, .done
         ; Nope, not done. Reduce EB and swap in the next section
         ld a, b
