@@ -697,6 +697,8 @@ _:  pop af
     jp po, _
     ei
 _:  pop af
+    or 1
+    ld a, errFileNotFound
     ret
 
 ;; findFileEntry [Filesystem]
