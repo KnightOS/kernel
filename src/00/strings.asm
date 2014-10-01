@@ -295,7 +295,7 @@ toUpper:
         ld (hl), a
 .notLowerAlpha:
         inc hl
-        jr toLower + 2
+        jr toUpper + 2
 .exit:
     pop hl \ pop af
     ret
