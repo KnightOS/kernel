@@ -5,7 +5,7 @@
 formatMem:
     ld a, 0xFF
     ld (userMemory), a
-    ld hl, kernelMem - (userMemory - kernelMem) - 5 ; Total RAM - Kernel RAM Size - Formatting Overhead + 1
+    ld hl, (0x10000 - userMemory) - 5 ; Total RAM - Kernel RAM Size - Formatting Overhead + 1
     ld (userMemory + 1), hl
     ld hl, userMemory
     ld (0xFFFE), hl
@@ -158,6 +158,62 @@ memSeekToEnd:
         push hl \ pop ix
     pop bc
     pop hl
+    ret
+
+;; memcheck [System]
+;;  Walks over memory and makes sure nothing has corrupted the allocation list.
+;; Outputs:
+;;  Z: Set if OK, reset if broken
+;; Notes:
+;;  A reboot is probably required if this returns NZ.
+memcheck:
+    push af
+    ld a, i
+    push af
+    di
+    push hl
+    push bc
+    push de
+        ld hl, userMemory
+.loop:
+        push hl
+            inc hl \ ld c, (hl)
+            inc hl \ ld b, (hl)
+            inc hl
+            add hl, bc
+        pop bc
+        ld e, (hl) \ inc hl
+        ld d, (hl) \ inc hl
+        call cpBCDE
+        jr nz, .fail
+        ld a, h
+        cp 0
+        jr nz, _
+        ld a, l
+        cp 0
+        jr z, .done
+_:      cp 0x80
+        jr c, .fail
+        jr .loop
+.done:
+    pop de
+    pop bc
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    cp a
+    ret
+.fail:
+    pop de
+    pop bc
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    or 1
     ret
 
 ;; malloc [System]
