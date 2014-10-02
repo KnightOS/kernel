@@ -65,10 +65,8 @@ condInit:
         ; Up to maxThreads-1 may wait.  (All threads waiting would never awaken.)
         ; The extra byte is the counter.
         ld bc, maxThreads
-        call malloc
+        call calloc
         jr nz, .fail
-        xor a
-        call memset
     pop bc
     pop af
     cp a
