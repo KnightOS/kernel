@@ -29,17 +29,22 @@ _:  pop af
 
 ;; mutexUnlock [Concurrency]
 ;;  Atomically unlocks a mutex byte.  If the mutex is not
-;;  locked already by this thread, the thread will be killed!
+;;  locked already by this thread, an error will be returned.
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
 mutexUnlock:
     push af
         call getCurrentThreadID
         cp (hl)
         jr z, _
-        jp killCurrentThread
+        inc sp \ inc sp
+    ld a, errMutexNotLocked
+    ret
 _:  pop af
-    ; jr initMutex
+    ; jr mutexInit
 
 ;; mutexInit [Concurrency]
 ;;  Initializes a byte at (HL) to be used with lockMutex
