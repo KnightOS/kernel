@@ -16,6 +16,7 @@ errNoMagic              .equ 14
 errNoHeader             .equ 15
 errNoEntryPoint         .equ 15
 errKernelMismatch       .equ 15
+errMutexNotLocked       .equ 16
 
 threadRangeMask         .equ 0b11111
 
