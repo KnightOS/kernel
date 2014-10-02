@@ -42,6 +42,7 @@ mutexUnlock:
         jr z, _
         inc sp \ inc sp
     ld a, errMutexNotLocked
+    or 1
     ret
 _:  pop af
     ; jr mutexInit
