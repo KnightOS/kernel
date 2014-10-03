@@ -683,7 +683,7 @@ copyFlashPage:
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
 #else
         jp flashFunctions
-.retrurn:
+.return:
 #endif
     pop de
     pop hl
@@ -720,7 +720,7 @@ _:  pop af
     ld a, 0
     ld (hl), a
     
-_:  ld a, 0
+_:  ld a, 0 ; also smc, don't optimize
     xor (hl)
     bit 7, a
     jr z, _
@@ -738,29 +738,27 @@ _:
     dec bc
 
     ld a, b
-    or a
+    or c
     jr nz, .loop
-    ld a, c
-    or a
-    jr nz, .loop
-    
     setBankB(0x81)
     jp .return
 .ram_end:
 #else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
 .ram:
-    ld e, b
-    
-    ld (flashFunctions + flashFunctionSize - 1), a
+    ; Called with destination in A, target in B
+    ld (.smc2 - .ram + flashFunctions + 1), a
+    ld a, b
+    ld (.smc - .ram + flashFunctions + 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000
 .loop:
-    push af
-        ld a, e
-        setBankA ; The inefficiency on this model comes from swapping pages during the loop
-        ld d, (hl)
-    pop af
+.smc:
+    ld a, 0
+    setBankA
+    ld d, (hl)
+.smc2:
+    ld a, 0
     setBankA
     ; copy D to (HL)
     ld a, 0xAA
@@ -772,20 +770,23 @@ _:
     ld (hl), d        ; Data
     
     ld a, d
-_:  cp (hl)
-    jr nz, -_ ; Does this work?
+_:  xor (hl)
+    bit 7, a
+    jr z, _
+    bit 5, a
+    jr z, -_
+    jr _ ; See note on copySectorToSwap
+    ; Error, abort
+    ld a, 0xF0
+    ld (0), a
+    jp .return
     
+_:  inc hl
     dec bc
-    inc hl
     
     ld a, b
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
+    or c
     jr nz, .loop
-    ld a, c
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    jr nz, .loop
-    ret
+    jp .return
 .ram_end:
 #endif
