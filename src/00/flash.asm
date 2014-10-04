@@ -540,7 +540,7 @@ copyFlashExcept:
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
 #else
         jp flashFunctions
-.retrurn:
+.return:
 #endif
     pop de
     pop hl
@@ -573,7 +573,6 @@ _:  pop af
     ld a, 0
     cp h
     jr z, .skip
-
 .continue_loop:
     ld a, (de)
     ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
@@ -624,20 +623,32 @@ _:
     set 7, d ; Bump up to 0x8000 range
     jr .continue_loop
 .ram_end:
-#else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
+#else ; Models that don't support placing RAM page 01 in bank 3 (slower)
 .ram:
-    ld e, b
-    
-    ld (flashFunctions + flashFunctionSize - 1), a
+    ; Called with destination in A, target in B
+    ld (.smc2 - .ram + flashFunctions + 1), a
+    ld a, b
+    ld (.smc - .ram + flashFunctions + 1), a
+    ld a, h
+    ld (.skip_check_smc - .ram + flashFunctions + 1), a
+    ld a, l
+    ld (.skip_apply_smc - .ram + flashFunctions + 1), a
+    ld (.skip_apply_smc_2 - .ram + flashFunctions + 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000
 .loop:
-    push af
-        ld a, e
-        setBankA ; The inefficiency on this model comes from swapping pages during the loop
-        ld d, (hl)
-    pop af
+.skip_check_smc:
+    ld a, 0
+    cp h
+    jr z, .skip
+.continue_loop:
+.smc:
+    ld a, 0
+    setBankA
+    ld d, (hl)
+.smc2:
+    ld a, 0
     setBankA
     ; copy D to (HL)
     ld a, 0xAA
@@ -649,21 +660,34 @@ _:
     ld (hl), d        ; Data
     
     ld a, d
-_:  cp (hl)
-    jr nz, -_ ; Does this work?
+_:  xor (hl)
+    bit 7, a
+    jr z, _
+    bit 5, a
+    jr z, -_
+    jr _ ; See note on copySectorToSwap
+    ; Error, abort
+    ld a, 0xF0
+    ld (0), a
+    jp .return
     
+_:  inc hl
     dec bc
-    inc hl
     
     ld a, b
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
+    or c
     jr nz, .loop
-    ld a, c
-    or a
-    ld a, (flashFunctions + flashFunctionSize - 1)
-    jr nz, .loop
-    ret
+    jp .return
+.skip:
+.skip_apply_smc:
+    ld a, 0
+    sub h
+    neg
+    add a, b
+    ld b, a
+.skip_apply_smc_2:
+    ld h, 0
+    jr .continue_loop
 .ram_end:
 #endif
 
@@ -770,7 +794,7 @@ _:
     setBankB(0x81)
     jp .return
 .ram_end:
-#else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
+#else ; Models that don't support placing RAM page 01 in bank 3 (slower)
 .ram:
     ; Called with destination in A, target in B
     ld (.smc2 - .ram + flashFunctions + 1), a
