@@ -935,7 +935,7 @@ _:          or e
             ld a, d
             ; A is source page
             ; B is destination page
-            ; ld h, 0x40 ; TODO: Support this in copyFlashExcept
+            ld hl, 0x4042 ; Skip the first 0x200 bytes
             call copyFlashExcept
             ld a, b
             setBankA
