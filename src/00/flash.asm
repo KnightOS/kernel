@@ -490,14 +490,19 @@ _:  pop af
 #endif
 
 ;; copyFlashExcept [Flash]
-;;  Copies all but the first 0x200 bytes of Flash from one page to another.
+;;  Copies one Flash page to another, but omits a certain range of bytes in increments of
+;;  0x100 bytes.
 ;; Inputs:
 ;;  A: Destination page
 ;;  B: Source page
+;;  H: High byte of address to stop copying at
+;;  L: High byte of address to resume copying at
 ;; Notes:
 ;;  Flash must be unlocked and the destination page must be cleared.
+;;  
+;;  If you want to copy all but 0x6000 to 0x6500, set HL to 0x6065.
 copyFlashExcept:
-; TODO: Allow user to specify an arbituary address to omit, perhaps in 0x100 byte blocks
+    ; Note: If we ever get short on space on page 0, we can merge this with copyFlashPage
     push de
     push bc
     ld d, a
@@ -511,6 +516,7 @@ copyFlashExcept:
     push de
         push af
         push bc
+        push hl
         ld hl, .ram
 #ifdef CPU15
         ld a, 1
@@ -524,6 +530,7 @@ copyFlashExcept:
         ld bc, .ram_end - .ram
         ldir
 #endif
+        pop hl
         pop bc
         pop af
 #ifdef CPU15
@@ -551,15 +558,26 @@ _:  pop af
     setBankA ; Destination
     ld a, b
     setBankB ; Source
+    ld a, h
+    ld (.skip_check_smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld a, l
+    ld (.skip_apply_smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld (.skip_apply_smc_2 - .ram + flashFunctions + 0x4000 + 1), a
     
-.preLoop:    
-    ld de, 0x8000 + 0x200
-    ld hl, 0x4000 + 0x200
-    ld bc, 0x4000 - 0x200
+.preLoop:
+    ld de, 0x8000
+    ld hl, 0x4000
+    ld bc, 0x4000
 .loop:
+.skip_check_smc:
+    ld a, 0
+    cp h
+    jr z, .skip
+
+.continue_loop:
     ld a, (de)
     ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
-    ld (_  - .ram + flashFunctions + 0x4000 + 1), a
+    ld (_ + - .ram + flashFunctions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
@@ -570,7 +588,7 @@ _:  pop af
     ld a, 0
     ld (hl), a
     
-_:  ld a, 0
+_:  ld a, 0 ; also smc, don't optimize
     xor (hl)
     bit 7, a
     jr z, _
@@ -588,14 +606,23 @@ _:
     dec bc
 
     ld a, b
-    or a
+    or c
     jr nz, .loop
-    ld a, c
-    or a
-    jr nz, .loop
-    
     setBankB(0x81)
     jp .return
+.skip:
+.skip_apply_smc:
+    ld a, 0
+    sub h
+    neg
+    add a, b
+    ld b, a
+.skip_apply_smc_2:
+    ld h, 0
+    ld d, h
+    res 6, d
+    set 7, d ; Bump up to 0x8000 range
+    jr .continue_loop
 .ram_end:
 #else ; Models that don't support placing RAM page 01 in bank 3 (much slower)
 .ram:
