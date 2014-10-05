@@ -39,6 +39,18 @@ getCurrentThreadID:
     pop hl
     ret
 
+;; checkThread [Threading]
+;;  Checks to see if the specified thread ID is still running.
+;; Inputs:
+;;  A: Thread ID
+;; Outputs:
+;;  Z: Set if running, reset if not found
+checkThread:
+    push hl
+        call getThreadEntry
+    pop hl
+    ret
+
 ;; startThread [Threading]
 ;;  Starts a new thread.
 ;; Inputs:
@@ -451,6 +463,10 @@ exitThread:
 ;;  A: Thread ID
 ;; Outputs:
 ;;  HL: Entry point
+;; Notes:
+;;  This gives you the location of the executable in memory. This does NOT
+;;  get the KEXC entry point (KEXC_ENTRY_POINT) from the executable header.
+;;  For that, use [[getHeaderValue]].
 getEntryPoint:
     call getThreadEntry
     ret nz
@@ -463,19 +479,15 @@ getEntryPoint:
     pop de
     ret
 
-;; getThreadEntry [Threading]
-;;  Gets a pointer to the specified thread's entry in the thread table.
-;; Inputs:
-;;  A: Thread ID
-;; Outputs:
-;;  HL: Thread entry
-;; Notes:
-;;  You must disable interrupts while manipulating the thread table to
-;;  guarantee that it will not change while you do so.
-;;
-;;  Programs that manipulate the thread table directly should force a
-;;  specific major kernel version, as this is liable to change between
-;;  versions.
+; getThreadEntry [Threading]
+;  Gets a pointer to the specified thread's entry in the thread table.
+; Inputs:
+;  A: Thread ID
+; Outputs:
+;  HL: Thread entry
+; Notes:
+;  You must disable interrupts while manipulating the thread table to
+;  guarantee that it will not change while you do so.
 getThreadEntry:
     push bc
         ld c, a
@@ -504,6 +516,9 @@ _:      ld a, 8
 ;;  Z: Set if found, reset if not
 ;;  A: Preserved unless error
 ;;  HL: Header value
+;; Notes:
+;;  This only works for threads that are valid KEXC formatted executables.
+;;  This fails for threads manually created through other means.
 getThreadHeader:
     push ix
         call getThreadEntry

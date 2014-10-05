@@ -1,7 +1,7 @@
-;; formatMem [System]
-;;  Formats memory in preparation for memory allocation.
-;; Notes:
-;;  This function will deallocate **all allocated memory**.
+; formatMem [System]
+;  Formats memory in preparation for memory allocation.
+; Notes:
+;  This function will deallocate **all allocated memory**.
 formatMem:
     ld a, 0xFF
     ld (userMemory), a

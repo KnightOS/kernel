@@ -976,15 +976,23 @@ _:  pop af
     cp a
     ret
 
-;; formatUnusedPages [Filesystem]
-;;  If /bin/init is called with A set to 0xFF, this function
-;;  should be called. It may be appropriate to show the user
-;;  some sort of UI while this is processing, as it will take
-;;  some time to run.
+;; fixKFS [Filesystem]
+;;  Fixes issues found from [[checkFilesystem]]
+fixKFS:
+    ; TODO
+    ret
+
+;; checkFilesystem [Filesystem]
+;;  Checks the integrity of the filesystem and sets certain bits of A with the results.
+;; Outputs:
+;;  A=0: No problems
+;;  A/1: Unformatted pages found
+;;  A/2: Invalid FAT entries found
+;;  A/3: Invalid heap blocks found
+;;  A/4: Unclosed new file entries found
 ;; Notes:
-;;  This function is only relevant to system-level programmers.
-;;  Most programmers do not have to concern themselves with it.
-formatUnusedPages:
+;;  Passing A into [[fixFilesystem]] is the appropriate course of action if A is nonzero.
+checkKFS:
     ; TODO
     ret
 

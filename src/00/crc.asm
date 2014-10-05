@@ -1,7 +1,7 @@
 ;; crc16_init [Maths]
 ;;  Initializes a Cyclic Redundancy Check.
-;; Notes:
-;;  This basically sets DE to 0xffff.
+;; Outputs:
+;;  DE: Fresh CRC value
 crc16_init:
     ld de, 0xffff
     ret
@@ -10,9 +10,9 @@ crc16_init:
 ;;  Updates the current CRC16 with the CRC16 of a single byte.
 ;; Inputs:
 ;;  A: byte to process
-;;  DE: current CRC16
+;;  DE: Current CRC16
 ;; Outputs:
-;;  DE: updated CRC16 of byte
+;;  DE: Updated CRC16
 crc16_updateByte:
     push af \ push bc \ push hl
         ex de, hl
@@ -41,11 +41,11 @@ crc16_updateByte:
 ;; crc16_updateBuffer [Maths]
 ;;  Updates the current CRC16 with the CRC16 of a buffer of given size.
 ;; Inputs:
-;;  HL: pointer on buffer to process
-;;  DE: current CRC16
-;;  BC: number of bytes to process
+;;  HL: Pointer to buffer
+;;  DE: Current CRC16
+;;  BC: Number of bytes to process
 ;; Outputs:
-;;  DE: updated CRC16 of byte
+;;  DE: Updated CRC16
 crc16_updateBuffer:
     push af \ push bc \ push hl
 .loop:

@@ -551,13 +551,15 @@ smax:
 ;; isin [Maths]
 ;;  Returns the sine of the given angle.
 ;; Inputs:
-;;  A: angle
+;;  A: Angle
 ;; Outputs:
-;;  A: sine of the angle, scaled to 64
+;;  A: Sine of the angle, scaled to 64
 ;; Notes:
-;;  To fit assembly, both the input and output have an uncommon format :
-;;  the input angle has a period of 256, and the outputted value will
-;;  be in the range [-64, 64] instead of [-1,1].
+;;  The input angle has a period of 256, and the output value will be
+;;  in the range [-64, 64] to represent [-1, 1].
+;;  
+;;  That is, to get the cosine of 180 degrees, pass in 128 and you will
+;;  receive 0.
 isin:
     sub 0x40 ; a quarter of a period
     ; fall through
@@ -565,13 +567,15 @@ isin:
 ;; icos [Maths]
 ;;  Returns the cosine of the given angle.
 ;; Inputs:
-;;  A: angle
+;;  A: Angle
 ;; Outputs:
-;;  A: sine of the angle, scaled to 64
+;;  A: Sine of the angle, scaled to 64
 ;; Notes:
-;;  To fit assembly, both the input and output have an uncommon format :
-;;  the input angle has a period of 256, and the outputted value will
-;;  be in the range [-63, 63] instead of [-1,1].
+;;  The input angle has a period of 256, and the output value will be
+;;  in the range [-64, 64] to represent [-1, 1].
+;;  
+;;  That is, to get the cosine of 180 degrees, pass in 128 and you will
+;;  receive -64 (two's compliment).
 icos:
     push hl \ push de
         ld hl, .cosLUT

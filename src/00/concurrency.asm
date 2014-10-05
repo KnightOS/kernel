@@ -1,11 +1,14 @@
 ;; mutexLock [Concurrency]
-;;  Atomically locks a mutex byte.  The application should
-;;  initialize the byte with [[initMutex]].
-;;  This routine blocks until the mutex is locked.
-;;  Interrupts will be enabled to perform a context switch
-;;  (if needed) and restored to their former state when done.
+;;  Atomically locks a mutex.
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
+;; Notes:
+;;  The application should have already initialized the mutex with [[initMutex]].
+;;  
+;;  This function blocks until the mutex is locked.
+;;  
+;;  Interrupts will be enabled to do a context switch (if needed) and will be
+;;  restored to their original state afterwards.
 mutexLock:
     push af
         ; There is not a set-and-check instruction on z80,
@@ -28,13 +31,14 @@ _:  pop af
     ret
 
 ;; mutexUnlock [Concurrency]
-;;  Atomically unlocks a mutex byte.  If the mutex is not
-;;  locked already by this thread, an error will be returned.
+;;  Atomically unlocks a mutex.
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
+;; Notes:
+;;  If the mutex is not locked already by this thread, an error will be returned.
 mutexUnlock:
     push af
         call getCurrentThreadID
@@ -48,8 +52,7 @@ _:  pop af
     ; jr mutexInit
 
 ;; mutexInit [Concurrency]
-;;  Initializes a byte at (HL) to be used with lockMutex
-;;  and unlockMutex.
+;;  Initializes a mutex byte at (HL).
 ;; Inputs:
 ;;  HL: Pointer to mutex byte
 mutexInit:
@@ -58,13 +61,14 @@ mutexInit:
 
 
 ;; condInit [Concurrency]
-;;  Returns a pointer to a newly allocated condition variable.
-;;  The application must [[free]] this variable when no threads
-;;  are using it any longer.
+;;  Returns a pointer to a new condition variable.
 ;; Outputs:
 ;;  Z: Set on success, reset on failure
 ;;  A: Error code (on failure)
 ;;  IX: Pointer to condition variable (on success)
+;; Notes:
+;;  This allocates memory for the condition variable. You should deallocate it
+;;  with [[free]] when you're done.
 condInit:
     push af
     push bc
@@ -84,16 +88,17 @@ condInit:
     ret
 
 ;; condWait [Concurrency]
-;;  Blocks execution of the current thread until another thread
-;;  notifies the condition variable.  A thread that intends to
-;;  wait on a condition variable must first acquire a mutex and
-;;  pass it to this routine.  The wait operation will atomically
-;;  release the mutex and suspend the thread.  When the condition
-;;  variable is notified, the thread is reawakened and the mutex
-;;  is reacquired.  Interrupts will be enabled by this routine.
+;;  Blocks until another thread notifies the condition variable. 
 ;; Inputs:
 ;;  HL: Pointer to locked mutex
 ;;  IX: Pointer to condition variable
+;; Notes:
+;;  This function will enable interrupts.
+;;  
+;;  You must provide a pre-initialized mutex and condition variable to this
+;;  function. This function will release the mutex and suspend the thread,
+;;  then awaken it when the condition variable is notified. The mutex will
+;;  then be reacquired.
 condWait:
     push af
     push ix
@@ -114,13 +119,14 @@ _:  pop ix
 
 ;; condNotifyAll [Concurrency]
 ;;  Awakens all threads waiting on a condition variable.
-;;  The threads should check to see if the condition that they were
-;;  waiting for (perhaps if a queue has data) is still true!
-;;  To avoid corner-case race conditions, the calling thread must
-;;  lock the associated mutex before invoking this routine (and
-;;  release it when done).
 ;; Inputs:
 ;;  IX: Pointer to condition variable
+;; Notes:
+;;  Threads awoken by this mechanism should check to see if the condition variable
+;;  they were waiting for is still true.
+;;  
+;;  The thread calling this function must lock the associated mutex before invoking
+;;  this function, and release it afterwards.
 condNotifyAll:
     push af
     push bc
@@ -137,15 +143,15 @@ _:      inc ix
     ret
 
 ;; condNotifyOne [Concurrency]
-;;  Awakens the thread that has been waiting the longest on a
-;;  condition variable.
-;;  The threads should check to see if the condition that they were
-;;  waiting for (perhaps if a queue has data) is still true!
-;;  To avoid corner-case race conditions, the calling thread must
-;;  lock the associated mutex before invoking this routine (and
-;;  release it when done).
+;;  Awakens the thread that has been waiting the longest on a condition variable.
 ;; Inputs:
 ;;  IX: Pointer to condition variable
+;; Notes:
+;;  Threads awoken by this mechanism should check to see if the condition variable
+;;  they were waiting for is still true.
+;;  
+;;  The thread calling this function must lock the associated mutex before invoking
+;;  this function, and release it afterwards.
 condNotifyOne:
     push af
     push bc

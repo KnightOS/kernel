@@ -162,24 +162,27 @@ _:  cp 'A' ; Close gap between numbers and letter
 _:  sub '0' ; To number
     ret
 
+;; lcdDelay [Hardware]
+;;  Blocks until the LCD is ready to receive data.
 lcdDelay:
     push af
-_:    in a, (PORT_LCD_CMD)
+_:  in a, (PORT_LCD_CMD)
     rla
     jr c,-_
     pop af
     ret
 
-;; getBatteryLevel [Miscellaneous]
+;; getBatteryLevel [Hardware]
 ;;  Determines the approximate battery level.
 ;; Outputs:
 ;;  B: Battery level
 ;; Notes:
-;;  For 15MHz CPUs, B is a value from 0 to 4, where 0 is critical and 4 is full.
-;;  For 6MHz CPUs, B is either 0 or 1, where 0 is critical and 1 is good.
+;;  This returns a value from 0-255. The precision of this value varies by calculator
+;;  model. 6 MHz platforms will return a 0 or a 255. 15 MHz platforms will return a 0,
+;;  85, 170, or 255 (255 quartered). The 84+ CSE will return a higher resolution number
+;;  between 0.255.
 getBatteryLevel:
-   ; TODO
-   ld b, 4
+   ld b, 255
    ret
 
 ;; getBootCodeVersionString [Miscellaneous]
@@ -211,29 +214,6 @@ getBootCodeVersionString:
     pop af
     ret po
     ei
-    ret
-
-;; randA [Miscellaneous]
-;;  Returns a random byte in A.
-;; Inputs:
-;;  A': seed
-;; Outputs:
-;;  A: random byte
-;;  A': reseeded
-randA:
-    push bc
-        ex af, af'
-        ld b, a
-        ld a, r
-        xor b
-        rrca
-        jr nc, +_
-        xor 0b00111000
-_:
-        ld b, a
-        ex af, af'
-        ld a, b
-    pop bc
     ret
 
 #ifdef COLOR
@@ -304,7 +284,7 @@ indirect16HL:
 ;; Output:
 ;;  Flags: Same as z80 CP instruction.
 ;; Notes:
-;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
+;;  This routine is useful as the callback for the [[callbackSort]] routine.
 ;;  It allows sorting a list of 16-bit numbers.
 cpHLDE_sort:
     push hl
@@ -370,8 +350,10 @@ _:
 ;; getKernelMajorVersion [Miscellaneous]
 ;;  Returns the kernel's major version number.
 ;; Outputs:
-;;  HL: major version number
-;;  Z: set on success, reset on error
+;;  HL: Major version number
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 1.
 getKernelMajorVersion:
     push de \ push bc
         ld hl, kernelVersion
@@ -383,8 +365,10 @@ getKernelMajorVersion:
 ;; getKernelMinorVersion [Miscellaneous]
 ;;  Returns the kernel's minor version number.
 ;; Outputs:
-;;  HL: minor version number
-;;  Z: set on success, reset on error
+;;  HL: Minor version number
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 6.
 getKernelMinorVersion:
     push de \ push bc
         ld hl, kernelVersion
@@ -401,8 +385,10 @@ getKernelMinorVersion:
 ;; getKernelPatchNumber [Miscellaneous]
 ;;  Returns the kernel's patch number.
 ;; Outputs:
-;;  HL: patch number
-;;  Z: set on success, reset on error
+;;  HL: Patch number
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 2.
 getKernelPatchNumber:
     push de \ push bc
         ld hl, kernelVersion
@@ -422,8 +408,11 @@ getKernelPatchNumber:
 ;; getKernelCommitsSinceTag [Miscellaneous]
 ;;  Returns how many commits have been made since the last kernel tag.
 ;; Outputs:
-;;  HL: number of commits
-;;  Z: set on success, reset on error
+;;  HL: Number of commits
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  This will fail most of the time, as it is only included when running
+;;  on a development kernel between releases.
 getKernelCommitsSinceTag:
     push de \ push bc
         ld hl, kernelVersion
@@ -445,13 +434,16 @@ getKernelCommitsSinceTag:
     ret
     
 ;; getKernelShortHash [Miscellaneous]
-;;  Returns the kernel's short hash, copied to malloc-ed RAM.
+;;  Retreives the kernel's short hash string.
 ;; Outputs:
-;;  HL: pointer on short hash string
-;;  Z: set on success, reset on error
+;;  HL: Pointer on short hash string
+;;  Z: Set on success, reset on error
 ;; Notes:
-;;  Make sure to free HL after you're done with the string. Failure
-;;  to do so will result in memory leaks !!
+;;  This allocates memory to store the string. Deallocate it with [[free]]
+;;  when you're done.
+;;  
+;;  This will fail most of the time, as it is only included when running
+;;  on a development kernel between releases.
 getKernelShortHash:
     push de \ push bc
         ld hl, kernelVersion
@@ -493,9 +485,12 @@ getKernelShortHash:
     ret
     
 ;; isKernelDirty [Miscellaneous]
-;;  Tests if the kernel is dirty, i.e if it has uncommited changes.
+;;  Checks for a dirty kernel.
 ;; Outputs:
-;;  Z: set if dirty
+;;  Z: Set if dirty
+;; Notes:
+;;  A kernel is considered "dirty" if there were uncommitted changes when it was
+;;  compiled.
 isKernelDirty:
     push bc
         ld hl, kernelVersion
@@ -507,12 +502,12 @@ isKernelDirty:
     pop bc
     ret
     
-;; isAlphaNum [Miscellaneous]
+;; isAlphaNum [Strings]
 ;;  Tests if a character is a letter or a number.
 ;; Inputs:
-;;  A: character to test
+;;  A: Character to test
 ;; Outputs:
-;;  C: set if the character is alphanumeric
+;;  C: Set if the character is alphanumeric
 isAlphaNum:
     cp '9' + 1
     jr nc, .notNum

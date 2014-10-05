@@ -3,17 +3,19 @@ runIndicator .equ 0x9B
 
 ;; rleCompress [Miscellaneous]
 ;;  Compresses data using a simple Run-Length-Encoding scheme.
-;;  All bytes in a compressed block are treated as literal,
-;;  except the two following a sentinel byte (selected because of
-;;  its low occurance in z80 code), which specify the length of
-;;  the run and the byte to run with, respectively.
 ;; Inputs:
 ;;  HL: Data to compress
 ;;  DE: Destination, cannot (yet) be the same location as original data
 ;;  BC: Size of uncompressed data
 ;; Outputs:
-;;  AF: Destroyed
+;;  AF: Garbage
 ;;  BC: Size of compressed data
+;; Notes:
+;;  All bytes are considered literal, but 0x9B indicates a run. It is
+;;  followed by the length of the run and the byte it consists of,
+;;  respectively.
+;;  
+;;  For example, you may compress `01 02 02 02 02 02` as `01 9B 05 02`.
 rleCompress:
     push hl
     push de
@@ -88,13 +90,13 @@ _:      inc hl
     ret
 
 ;; rleCalculateCompressedLength [Miscellaneous]
-;;  Calculates the size of data resulting from a compression, but
-;;  does not actually compress anything.
+;;  Calculates the size of some data after compression, but does not
+;;  compress it.
 ;; Inputs:
 ;;  HL: Data to compress
 ;;  BC: Size of decompressed data
 ;; Outputs:
-;;  AF: Destroyed
+;;  AF: Garbage
 ;;  BC: Size of compressed data
 rleCalculateCompressedLength:
     push hl
@@ -155,14 +157,13 @@ _:      inc hl
     ret
 
 ;; rleDecompress [Miscellaneous]
-;;  Decompresses data compressed with the algorithm used by the kernel
-;;  routine rleCompress.  See its documentation for algorithm details.
+;;  Decompresses data compressed with [[rleCompress]] or a compatible algorithm.
 ;; Inputs:
 ;;  HL: Data to decompress
 ;;  DE: Destination, cannot be the same location as original data
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  AF: Destroyed
+;;  AF: Garbage
 ;;  BC: Size of decompressed data
 rleDecompress:
     push hl
@@ -211,13 +212,13 @@ _:      pop bc
     ret
 
 ;; rleCalculateDecompressedLength [Miscellaneous]
-;;  Calculates the size of data resulting from a decompression, but
-;;  does not actually decompress anything.
+;;  Calculates the decompressed size of some compressed data, but does
+;;  not decompress it.
 ;; Inputs:
 ;;  HL: Data to decompress
 ;;  BC: Size of compressed data
 ;; Outputs:
-;;  AF: Destroyed
+;;  AF: Garbage
 ;;  BC: Size of decompressed data
 rleCalculateDecompressedLength:
     push hl

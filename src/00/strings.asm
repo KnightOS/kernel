@@ -43,8 +43,8 @@ strcmp:
     ret
     
 ;; strcmp_sort [Strings]
-;;  Compares strings at ((HL)) and ((DE)).  That is, calls indirect16HLDE,
-;;  then calls strcmp.
+;;  Compares strings at ((HL)) and ((DE)).  That is, calls [[indirect16HLDE]],
+;;  then calls [[strcmp]].
 ;; Inputs:
 ;;  HL: Pointer to string pointer
 ;;  DE: Pointer to string pointer
@@ -52,8 +52,8 @@ strcmp:
 ;;  Z: Set if equal, reset if not equal
 ;;  C: Set if string (HL) is alphabetically earlier than string (DE)
 ;; Notes:
-;;  This routine is extremely useful as the callback for the [[callbackSort]] routine.
-;;  It allows sorting a list of pointers to strings by the strings' sort order.
+;;  This routine is useful as the callback for the [[callbackSort]] routine.
+;;  It allows sorting a list of pointers to strings in alphabetical order.
 strcmp_sort:
     push hl
     push de
@@ -68,6 +68,9 @@ _:  pop de
 ;; Inputs:
 ;;  HL: String pointer
 ;;  DE: Destination
+;; Notes:
+;;  This will trample into undefined territory if you try to copy a string into some
+;;  allocated memory it won't fit in.
 strcpy:
     push de
     push hl
@@ -85,13 +88,12 @@ _:  pop de
 ;; strchr [Strings]
 ;;  Returns a pointer on the first occurence of a character in a string.
 ;; Inputs:
-;;  HL: string pointer
-;;  B: character to search
+;;  HL: Haystack
+;;  B: Needle
 ;; Outputs:
-;;  HL: pointer on first occurence of character in string in case of success
-;;  Z: set if character found
-;; Notes:
-;;  Destroys A
+;;  HL: Pointer to first occurence of character
+;;  Z: Set if character found
+;;  A: Destroyed
 strchr:
 .loop:
     ld a, (hl)
@@ -106,21 +108,18 @@ strchr:
     ret
     
 ;; strtoi [Strings]
-;;  Converts an ASCII-encoded signed decimal into a word of variable size.
+;;  Converts an ASCII-encoded signed decimal into a number.
 ;; Inputs:
-;;  HL: pointer on ASCII-encoded decimal
-;;  B: maximum number of digits to convert
+;;  HL: Pointer on ASCII-encoded decimal
+;;  B: Maximum number of digits to convert
 ;; Outputs:
-;;  DEHL: converted word
-;;  Z: set on success, reset on error
+;;  DEHL: Converted word
+;;  Z: Set on success, reset on error
 ;; Notes:
-;;  The routine will ignore leading zeroes to produce a number composed by a 
-;;  maximum of 10 digits, the maximal value being 4,294,967,295. If a 10-digits
-;;  number with a greater value is encountered, no error will be thrown but the
-;;  number won't be converted as expected.
-;;  Besides, the routine supports negative numbers that starts with the character '-'.
-;;  This character has no effect on the number of digits parsed.
-;;  Destroys BC', DE' and HL'.
+;;  This will ignore leading zeros and has an unsigned range of 0 to 4,294,967,295.
+;;  Signed numbers may be prefixed with '-' and have a range of -2,147,483,648 to
+;;  2,147,483,647. Strings whose numbers fall outside that range produce undefined
+;;  behavior.
 strtoi:
     push bc
         ld a, (hl)
@@ -255,9 +254,9 @@ strtoi:
 ;; toLower [Strings]
 ;;  Converts every alpha character of a string to lowercase.
 ;; Inputs:
-;;  HL: pointer to string
-;; Outputs:
-;;  HL: string modified
+;;  HL: Pointer to string
+;; Notes:
+;;  This modifies the string in-place.
 toLower:
     push af \ push hl
         ld a, (hl)
@@ -279,9 +278,9 @@ toLower:
 ;; toUpper [Strings]
 ;;  Converts every alpha character of a string to uppercase.
 ;; Inputs:
-;;  HL: pointer to string
-;; Outputs:
-;;  HL: string modified
+;;  HL: Pointer to string
+;; Notes:
+;;  This modifies the string in-place.
 toUpper:
     push af \ push hl
         ld a, (hl)
