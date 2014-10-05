@@ -871,7 +871,7 @@ flush_updatePreviousSection:
         ld e, a
         ld d, 0x40
         ; We'll do a quick check to make sure we really really have to erase flash
-        ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
+        ; Perform A | B ^ B for both octets and if Z is set, we don't need to erase
         ex de, hl
         ld a, (hl)
         or e
