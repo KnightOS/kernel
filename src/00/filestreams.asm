@@ -634,6 +634,7 @@ _:              ld a, h
                 setBankA
                 ld a, l
                 rlca \ rlca
+                and 0b11111100
                 ld l, a
                 ld h, 0x40
                 ld e, (hl)
@@ -797,7 +798,7 @@ _flush_withStream:
                     ld a, h
                     setBankA
                     ld a, l
-                    rlca \ rlca \ inc a \ inc a
+                    rlca \ rlca \ and 0b11111100 \ inc a \ inc a
                     ld l, a
                     ld h, 0x40
                     ld c, (hl)
@@ -852,6 +853,7 @@ _:  pop af
     cp a
     ret
 _flush_fail:
+        call lockFlash
     pop af
     jp po, _
     ei
@@ -886,13 +888,13 @@ flush_updateNextSection:
         ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
         ex de, hl
         ld a, (hl)
-        and d
-        xor d
+        or e
+        xor e
         jr nz, .mustErase + 1
         inc hl
         ld a, (hl)
-        and e
-        xor e
+        or d
+        xor d
         jr nz, .mustErase
         ; Woo we can do it without an erasure
         ex de, hl
