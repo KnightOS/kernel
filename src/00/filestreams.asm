@@ -821,19 +821,12 @@ _:              ld (kernelGarbage + 2), bc
                 ld bc, 0xFFFF
                 call cpHLBC
                 jr z, _ ; "if needed"
-                ld a, h
-                setBankA
-                ld a, l
-                rlca \ rlca \ inc a \ inc a
-                ld l, a
-                ld h, 0x40
-                ex de, hl
+                ; HL is previous section ID (needs updating)
+                ld c, l \ ld b, h
             pop hl \ push hl
-                ld (kernelGarbage), hl
-                ld hl, kernelGarbage
-                ld bc, 2
-                call writeFlashBuffer
+                call flush_updatePreviousSection
 _:          pop hl
+            ; End wrong
             ; Load current section ID into file handle
             ld (ix + FILE_SECTION_ID), l
             ld (ix + FILE_SECTION_ID + 1), h
@@ -869,6 +862,39 @@ flush_withStream:
     push af
         jp _flush_withStream
 
+flush_updatePreviousSection:
+    push de ; Can destroy all others
+        ld a, b
+        setBankA
+        ld a, c
+        rlca \ rlca \ inc a \ inc a
+        ld e, a
+        ld d, 0x40
+        ; We'll do a quick check to make sure we really really have to erase flash
+        ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
+        ex de, hl
+        ld a, (hl)
+        or e
+        xor e
+        jr nz, .mustErase + 1
+        inc hl
+        ld a, (hl)
+        or d
+        xor d
+        jr nz, .mustErase
+        ; Woo we can do it without an erasure
+        ex de, hl
+        ld (kernelGarbage), hl
+        dec de
+        ld bc, 2
+        ld hl, kernelGarbage
+        call writeFlashBuffer
+    pop de
+    ret
+.mustErase:
+        dec hl
+        ex de, hl
+        jr flush_update_mustErase
 ; We have to do a flash erasure for this procedure
 ; HL is the new section ID
 ; BC is the section to update
@@ -908,6 +934,7 @@ flush_updateNextSection:
 .mustErase:
         dec hl
         ex de, hl
+flush_update_mustErase:
         ; DE points to the address that needs fixing up
         ; HL is the value to fix it up to
         getBankA
