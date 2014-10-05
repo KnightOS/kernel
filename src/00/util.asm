@@ -291,7 +291,9 @@ cpHLDE_sort:
     push de
         call indirect16HLDE
         call cpHLDE
-        jr -_
+    pop de
+    pop hl
+    ret
 
 ;; sleep [Miscellaneous]
 ;;  Delays a number of milliseconds.

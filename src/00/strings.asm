@@ -59,7 +59,7 @@ strcmp_sort:
     push de
         call indirect16HLDE
         call strcmp
-_:  pop de
+    pop de
     pop hl
     ret
     
