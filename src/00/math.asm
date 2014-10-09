@@ -226,12 +226,12 @@ div32By16:
     djnz .loop
     ret
 
-;; div8by8 [Maths]
+;; div8By8 [Maths]
 ;;  Performs `D = D / E`
 ;; Outputs:
 ;;  D: D / E
 ;;  A: Remainder
-div8by8:
+div8By8:
     xor a
     ; Unrolled 8 times
     sla d

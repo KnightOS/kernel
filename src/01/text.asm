@@ -445,7 +445,7 @@ drawDecA:
             push de
                 ld e, 100
                 ld d, a
-                call div8by8
+                call div8By8
                 ld a, d
             pop de
             or a
@@ -471,7 +471,7 @@ drawDecA:
             push de
                 ld e, 10
                 ld d, a
-                call div8by8
+                call div8By8
                 ld a, d
             pop de
             ld b, a
