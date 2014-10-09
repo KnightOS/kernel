@@ -4,13 +4,13 @@ initRandom:
         setBankA(0x04) ; filesystem, probably pretty unpredictable
         ld hl, 0x4000
         ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
-        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 1), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 2), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 3), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 4), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 5), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 6), a
+        ld a, r \ rrca \ xor (hl) \ inc hl \ ld (random_seed + 7), a
     pop af
     pop hl
     ret
