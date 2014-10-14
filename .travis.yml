@@ -1,7 +1,0 @@
-language: c
-install:
-- sudo apt-get install mono-complete
-script:
-- make
-- make test
-# TODO: Run unit tests
