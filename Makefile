@@ -4,13 +4,6 @@ ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
 OUTDIR=bin/
-ifeq ($(OS),Windows_NT)
-ASPREFIX=
-EMPREFIX=
-else
-ASPREFIX=mono 
-EMPREFIX=wine 
-endif
 
 # Platforms:
 # Variables (all in hex):
@@ -77,6 +70,9 @@ INCLUDE=include/;$(BINDIR)
 
 .PHONY: clean kernel baserom \
 	TI73 TI83p TI83pSE TI84p TI84pSE TI84pCSE
+
+run: TI84pSE
+	$(EMU) $(BINDIR)kernel.rom
 
 kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR)$(PLATFORM)/02.bin $(OUTDIR)$(PLATFORM)/privileged.bin $(OUTDIR)$(PLATFORM)/boot.bin
 	mkrom $(BINDIR)kernel.rom $(LENGTH) \
