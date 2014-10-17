@@ -177,10 +177,10 @@ memcheck:
         ld hl, userMemory
 .loop:
         push hl
-            inc hl \ ld c, (hl)
+            inc hl \ ld c, (hl) ; Size of this block into BC
             inc hl \ ld b, (hl)
             inc hl
-            add hl, bc
+            add hl, bc ; Move HL to block footer
         pop bc
         ld e, (hl) \ inc hl
         ld d, (hl) \ inc hl
@@ -225,6 +225,18 @@ _:  pop af
 ;;  A: Error code (on failure)
 ;;  IX: First byte of allocated memory (on success)
 malloc:
+    ; KnightOS uses a simple linked list for memory allocation. Memory starts of as one complete
+    ; block of memory allocated to thread 0xFF (i.e. free), and each allocation divides this into
+    ; more and more blocks. A block looks something like this:
+    ;
+    ; OO SSSS .... AAAA
+    ; Where OO is the owner of this block, SSSS is the size of the block, and AAAA is the address
+    ; of the header (starting at OO).
+    ;
+    ; When allocating, the worst fit is found and divided into two parts. The worst fit is used in
+    ; order to maximize the amount of memory left over after the split so that it's more likely to
+    ; be useful for future allocations. Though worst fit is the usual route, an exact fit will be
+    ; used instead if one can be found.
     push af
     ld a, i
     push af
@@ -232,150 +244,104 @@ malloc:
     push hl
     push de
     push bc
+        ld d, b \ ld e, c ; Save desired size in DE
         ld hl, userMemory
-.searchLoop:
-        ld a, (hl)
-        inc hl
-        ld e, (hl)
-        inc hl
-        ld d, (hl)
-        inc hl ; Load owner thread into A, size into DE, HL points to first byte of allocated section
-        
-        cp nullThread ; Free memory is owned by the null thread ($FF)
-        jr z, .handleFree
-        inc de
-        inc de
-.insufficientFree:
-        add hl, de ; Skip non-free section
-        jp c, .outOfMem ; If overflow
-        
-        jr .searchLoop
-        
-.handleFree:
-        ; BC = amount to allocate
-        ; DE = size of current section
-        ; HL = pointer to section start
-        ; The overhead of splitting a section is 5 bytes, for the new header/footer combo
-        ; If the amount to allocate is within 5 bytes of the avaiable space, it is padded to
-        ; fill the entire space.
-        
-        ex de, hl
-        or a
-        push hl
-        sbc hl, bc
-        pop hl
-        ex de, hl
-        jr nc, _
-        ; Return to loop
-        add hl, de
-        inc hl \ inc hl
-        jr .searchLoop
-        
-_:      ; Check for dead pockets
-        push de
-            ex de, hl
-            or a
-            sbc hl, bc
-            xor a
-            cp h
-            jr nz, _
-            ld a, 5
-            cp l
-            jr c, _
-            ; Fill up pocket
-            push bc \ push hl \ pop bc \ pop hl ; ex hl, bc
-            add hl, bc
-            push hl \ pop bc ; ld bc, hl
-_:          ex de, hl
-        pop de
-        
+.identify_loop: ; Identify a block to use
+        ld a, (hl) \ inc hl
+        ld c, (hl) \ inc hl
+        ld b, (hl) \ inc hl
+        ;   A: Block owner
+        ;  BC: Block length
+        ; *HL: First byte of block
+        ; ..
+        ; Check if free
+        cp 0xFF
+        jr nz, .continue_loop
+        ; Check if acceptable size
         call cpBCDE
-        jr z, .skipNewMeta
-        
-.doAllocNormal: ; Not accounting for dead pockets
-    ; Update existing metadata (allocated header)
-    push de
+        jr z, .allocate_this ; If exactly the right size
+        jr c, .continue_loop ; If too small
+.allocate_this:
+        dec hl \ dec hl \ dec hl
+        jr .do_allocate
+.continue_loop:
+        ; Continue to next block
+        add hl, bc
+        inc hl \ inc hl
+        ; Check to see if HL rolled over
+        xor a \ cp h
+        jr nz, .identify_loop
+        jp .out_of_memory
+.do_allocate:
+        ; *HL: Header of block to use
+        ;  DE: Size of block to allocate
+        call getCurrentThreadID
+        ld (hl), a \ inc hl ; Set new owner
+        ; Get the old size and write the new size
+        ld c, (hl) \ ld (hl), e \ inc hl
+        ld b, (hl) \ ld (hl), d \ inc hl
+        call .pad_if_needed
+        push hl \ pop ix ; IX to malloc return value
         push hl
-            push hl \ pop ix ; Set IX for the return value
-            dec hl
-            ld (hl), b
-            dec hl
-            ld (hl), c
-            dec hl
-            call getCurrentThreadID
-            ld (hl), a
-            push hl \ pop de
+        push de
+            push de \ push bc \ pop hl \ pop bc
+            or a ; Reset carry
+            sbc hl, bc
+            ld bc, 5 ; Overhead
+            sbc hl, bc
+            jr z, .exact_fit
+            ld b, h \ ld c, l
+            ; BC: Size of new free block
+        pop de
         pop hl
-        
-        add hl, bc ; HL points to footer of new section
-        ld (hl), e
-        inc hl
-        ld (hl), d ; Add footer
+        add hl, de ; HL to footer of new block
+        push ix \ pop de
+        dec de \ dec de \ dec de ; DE to header
+        ld (hl), e \ inc hl
+        ld (hl), d \ inc hl ; Fill in pointer to previous block
+        push hl
+            ld a, 0xFF
+            ld (hl), a \ inc hl ; Mark next one as free
+            ld (hl), c \ inc hl
+            ld (hl), b \ inc hl ; Size of block
+            add hl, bc ; Move to footer
+        pop de
+        ld (hl), e \ inc hl
+        ld (hl), d ; Pointer to footer
+.finish:
+    pop bc
     pop de
-    
-    inc hl
-    ld (hl), nullThread ; Add header (thread id)
-    inc hl
-    
-    ex de, hl
-    or a
-    sbc hl, bc
-    dec hl \ dec hl \ dec hl \ dec hl \ dec hl ; Account for meta overhead
-    ex de, hl
-    push hl ; Save location of header
-        ld (hl), e ; Add header (size)
-        inc hl
-        ld (hl), d
-        inc hl
-    
-        ; Update existing metadata (old header)
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    cp a
+    ret
+.exact_fit:
+        ; No need to write a new free header, just set the footer for the new block
+        pop de
+        pop hl
         add hl, de
-    pop de
-    dec de
-    ld (hl), e
-    inc hl
-    ld (hl), d
-    
+        push ix \ pop de
+        ld (hl), e \ inc hl
+        ld (hl), d
+        jr .finish
+.pad_if_needed:
+        ; TODO: Subtract BC from DE and see if the result is <= 5.
+        ; If so, add the remainder to the original DE and write it back to the block header
+        ; Which is at HL-3
+        ; Must leave all relevant registers intact
+        ret
+.out_of_memory:
     pop bc
     pop de
     pop hl
-    
     pop af
     jp po, _
     ei
 _:  pop af
-    cp a
-    ret
-        
-.skipNewMeta:
-    ; Update existing metadata (allocated header)
-    push hl \ pop ix ; Set IX for the return value
-    dec hl \ dec hl \ dec hl
-    call getCurrentThreadID
-    ld (hl), a
-    
-    pop bc
-    pop de
-    pop hl
-    
-    pop af
-    jp po, _
-    ei
-_:  pop af
-    cp a
-    ret
-        
-.outOfMem:
-    pop bc
-    pop de
-    pop hl
-    
-    pop af
-    jp po, _
-    ei
-_:  pop af
-
-    or 1 ; Set NZ for failure
+    or 1
     ld a, errOutOfMem
     ret
     
@@ -384,6 +350,10 @@ _:  pop af
 ;; Inputs:
 ;;  IX: Pointer to first byte of section
 free:
+    ; Procedure:
+    ;  1. Assign block to 0xFF
+    ;  2. Check if next block is free - if so, merge
+    ;  3. Check if previous block is free - if so, merge
     push af
     ld a, i
     push af
@@ -392,102 +362,83 @@ free:
     push hl
     push de
     push ix
-        push ix \ pop hl  ; LD HL, IX
-        ; Unallocate the referenced block
-        dec hl
-        ld b, (hl)
-        dec hl
-        ld c, (hl) ; Size of the freed section
-        dec hl
-        ld (hl), nullThread
-        
-        ; Attempt a backward merge
-        dec hl
-        ld d, (hl)
-        dec hl
-        ld e, (hl)
-        ld h, d
-        ld l, e ; LD HL, DE
-        
-        ld a, (hl)
-        cp nullThread
-        jr nz, .tryMergeForward
-        
-        ; Possible to merge backward
-        inc bc \ inc bc \ inc bc \ inc bc \ inc bc ; BC += 5
-        inc hl ; Update location pointer to size of leading block
-        ld e, (hl)
-        inc hl
-        ld d, (hl)
-        ex de, hl
-        ; DE is pointer, HL is size
-        add hl, bc ; Change size to leading+freed+5 [overhead of 5 comes from the merging of the two headers and footers]
-        ex de, hl
-        ; HL is pointer, DE is new size
-        ld (hl), d
-        dec hl
-        ld (hl), e
-        dec hl
-        ld b, d
-        ld c, e ; New size of merged block in BC [allows for forward merging]
-        ld d, h
-        ld e, l ; New header at (de)
-        inc hl \ inc hl \ inc hl
-        add hl, bc ; Pointing to new footer (needs to be updated)
-        ld (hl), e
-        inc hl
-        ld (hl), d ; Update footer
-        ld h, d
-        ld l, e ; Prepare for forward merge
-        inc hl \ inc hl \ inc hl
-        push hl
-        pop ix
-        jr _ ; Skip part of the forward merge code
-.tryMergeForward:
-        push ix \ pop hl
-_:
-        ; HL is the first byte of this block, BC is the size
-        add hl, bc ; HL points to the first byte of the trailing footer
-        inc hl \ inc hl
-        ld a, (hl)
-        cp nullThread
-        inc hl
-        ld e, (hl)
-        inc hl
-        ld d, (hl) ; DE == size of leading block
-        jr nz, .done
-        
-        ; Merge forward
-        ;inc hl?
-        add hl, de ; HL points to footer of leading block
-        ex de, hl
-        ; DE points to footer of leading block
-        ; HL is size of leading block
-        inc hl \ inc hl \ inc hl \ inc hl \ inc hl
+.free_block:
+        ld a, 0xFF
+        ld (ix + -3), a ; Free block
+        ld c, (ix + -2)
+        ld b, (ix + -1) ; Size of block in BC
+.check_next_block:
+    pop hl \ push hl ; IX into HL
         add hl, bc
-        ex de, hl ; DE now has combined size of two blocks
-        push de
-            push ix \ pop de
-            dec de \ dec de \ dec de
-            ld (hl), e
-            inc hl
-            ld (hl), d
-        pop de
-        push ix \ pop hl
-        dec hl
+        ; Note: We can check if HL == -2 here and if so, we can't merge forward (last block)
+        inc hl \ inc hl ; HL to next block
+        ld a, 0xFF
+        cp (hl)
+        jp z, .merge_forward_block
+.check_previous_block:
+    pop hl \ push hl ; IX into HL
+        dec hl \ dec hl \ dec hl ; Move to header
+        ld bc, userMemory
+        call cpHLBC
+        ; If this is the first block, we can't merge backwards, so don't bother
+        jr z, .cannot_merge_previous
+        dec hl \ ld d, (hl)
+        dec hl \ ld e, (hl)
+        ex de, hl
+        ld a, 0xFF
+        cp (hl)
+        jr nz, .cannot_merge_previous
+.merge_previous_block:
+        ld c, (ix + -2)
+        ld b, (ix + -1) ; Size of current block in BC
+        inc hl \ ld e, (hl)
+        inc hl \ ld d, (hl)
+        ex de, hl
+        add hl, bc
+        ld bc, 5
+        add hl, bc
+        ex de, hl
+        ; Size of combined blocks in DE
+        ld (hl), d \ dec hl
+        ld (hl), e \ dec hl ; Update header
+        ; Skip to footer
+        ld b, h \ ld c, l
+        ex de, hl
+        add hl, bc
+        inc hl \ inc hl \ inc hl
+        ld (hl), e \ inc hl ; Write header address here
         ld (hl), d
-        dec hl
-        ld (hl), e ; Update header
-        
-.done:
+.cannot_merge_previous:
     pop ix
     pop de
     pop hl
     pop bc
-    
     pop af
     jp po, _
     ei
 _:  pop af
     ret
-    
+.merge_forward_block:
+        ; Assumes IX is address of freed block
+        ; Assumes HL points to forward block header
+        ; Assumes BC is size of freed block
+        inc hl \ ld e, (hl)
+        inc hl \ ld d, (hl)
+        ; DE is size of this block
+        ex de, hl
+        add hl, bc
+        ld bc, 5
+        add hl, bc
+        ex de, hl
+        ; DE is combined size, update freed block
+        ld (ix + -1), d
+        ld (ix + -2), e
+    pop hl \ push hl
+        add hl, de
+        ; Update footer to point to new header
+    pop de \ push de ; Grab IX
+        dec de \ dec de \ dec de
+        ld (hl), e \ inc hl
+        ld (hl), d
+        ; Forward merge complete!
+        jr .check_previous_block
