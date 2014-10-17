@@ -232,11 +232,6 @@ malloc:
     ; OO SSSS .... AAAA
     ; Where OO is the owner of this block, SSSS is the size of the block, and AAAA is the address
     ; of the header (starting at OO).
-    ;
-    ; When allocating, the worst fit is found and divided into two parts. The worst fit is used in
-    ; order to maximize the amount of memory left over after the split so that it's more likely to
-    ; be useful for future allocations. Though worst fit is the usual route, an exact fit will be
-    ; used instead if one can be found.
     push af
     ld a, i
     push af
