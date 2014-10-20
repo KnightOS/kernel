@@ -1,0 +1,114 @@
+                           KnightOS Kernel Changelog
+
+                              === Kernel 0.7.0 ===
+
+Kernel 0.7.0 is largely focused on adding a writable filesystem but also adds a
+number of other useful changes. The full changes are:
+
+- Complete driver for KFS 1.0.0
+    - Reading from and writing to files is supported
+    - Tree manipulation such as deleting files and renaming nodes is supported
+    - Symbolic links are supported both by the kernel and by genkfs 1.2.1
+- Flash driver improved and supported on all calculators except for the CSE
+- Improved random number generation
+- Decimal number printing functions added
+- More standard string manipulation implemented (strtoi, strstr, etc)
+- Better integer math support (faster, more complete)
+
+In addition to changes in the kernel, there have also been improvements in the
+rest of the KnightOS world. Interesting ones include:
+
+- Initial release of several tools:
+    - The KnightOS SDK, for userspace development: http://www.knightos.org/sdk
+    - kpack: A tool for packaging KnightOS software, and manipulating packages
+    - packages.knightos.org (KPO) for distributing packages
+    - z80e, a portable calculator emulator with a powerful debugger
+- Improvements to many tools:
+    - genkfs 1.2.1 now supports symlinks, to support new kernel features
+    - mktiupgrade with minor bug fixes
+- KnightOS userland updates:
+    - Now bootstrapped from PKO with all software on seperate release schedules
+    - New file management application (fileman)
+    - Package management support via the new libkpm
+    - Configuration management via the new configlib
+    - applib renamed to corelib, with support for new features:
+        - corelib(open) supports opening programs and files with their editors
+        - Graphical scrollbar support
+    - Ported software:
+        - Phoenix, the popular game by Patrick Davidson
+        - Periodic, originally by Ahmed El-Helw, plus our own improvements
+        - Pixel Madness, the demoscene program from Ben Ryves
+
+This kernel is the culmination of effort by an even larger number of people than
+before. Thank you to those who helped out with this release:
+
+- Drew DeVault
+- Mattias "matrefeytontias" Refeyton
+- "puckipedia"
+- Sijmen "Vijfhoek" Schoon
+- Dan "Streetwalrus" Elkouby
+- "minus"
+- Jose Diez
+- "aeTIos"
+- Tyler "unlimitedbacon" Anderson
+- "dragontux"
+- "Alkoou"
+
+Looking forward to kernel 0.8.0, we plan to have support for communicating with
+PCs both over USB (via MTP) and I/O (via libticables). We also hope to have
+support for userspace programs written in C for kernel 0.8.0. If you want to
+help out, come get involved at http://www.knightos.org/contribute.
+
+                              === Kernel 0.6.0 ===
+
+Kernel 0.6.0 fleshes out filesystem support, adds partial date/time support, and
+adds support for the TI-84+ Color Silver Edition.
+
+Major breaking change: executables now use the new KEXC file format. See
+documentation at <http://www.knightos.org/documentation/kexc>.
+
+Detailed changes are:
+
+- New KEXC executable format offers a lot of improvements:
+    - Allows users to specify any entry point
+    - Allows users to require a minimum kernel version
+    - Includes arbitrary user-specified fields
+- TI-84+ Color Silver Edition support
+    - Includes legacy monochrome LCD emulation
+    - Basic graphical functions provided
+- Filesystem traversal support via listDirectory
+- Adds support for deconstructing timestamps and reading the system clock
+- Additional program-level math support (sine, cosine, more operations)
+- All registers set to 0 for new threads (except when explicitly changed)
+
+Thanks to the following folks who helped with this release:
+
+- Drew DeVault
+- Mattias "matrefeytontias" Refeyton
+- "dragontux"
+
+                              === Kernel 0.5.0 ===
+
+This kernel adds support for cryptographic hashing and moves the filesystem
+driver to use in-memory stream buffers, as well as adding sorting
+implementations and improvement filesystem inspection support.
+
+Major breaking change: the new `pcall` mechanic is used for calling kernel
+routines, rather than directly `call`ing them. This allows the kernel to extend
+beyond page 0.
+
+- Hashing algorithms supported now include SHA-1 and CRC-16
+- Run-length encoding compression/decompression supported
+- Filesystem modified to use buffers in RAM during reads
+- quicksort and radix sort implemented. The former supports callbacks for
+  sorting arbitrary data
+- Support for creating and finding directories and ftell
+- Add "reassignMemory" function to allow you to assign allocated memory to other
+  threads
+- Fix kcall to support 0xED-prefixed instructions
+
+Thanks to these great contributors for making it happen:
+
+- Drew DeVault
+- Mattias "matrefeytontias" Refeyton
+- "thirtythreeforty"
