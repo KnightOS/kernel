@@ -282,9 +282,9 @@ malloc:
             push de \ push bc \ pop hl \ pop bc
             or a ; Reset carry
             sbc hl, bc
+            jr z, .exact_fit
             ld bc, 5 ; Overhead
             sbc hl, bc
-            jr z, .exact_fit
             ld b, h \ ld c, l
             ; BC: Size of new free block
         pop de
@@ -304,6 +304,8 @@ malloc:
         ld (hl), e \ inc hl
         ld (hl), d ; Pointer to footer
 .finish:
+        call memcheck
+        jr nz, $
     pop bc
     pop de
     pop hl
@@ -314,13 +316,9 @@ _:  pop af
     cp a
     ret
 .exact_fit:
-        ; No need to write a new free header, just set the footer for the new block
+        ; We don't need to do anything else
         pop de
         pop hl
-        add hl, de
-        push ix \ pop de
-        ld (hl), e \ inc hl
-        ld (hl), d
         jr .finish
 .pad_if_needed:
         ; TODO: Subtract BC from DE and see if the result is <= 5.
@@ -404,6 +402,8 @@ free:
         ld (hl), e \ inc hl ; Write header address here
         ld (hl), d
 .cannot_merge_previous:
+        call memcheck
+        jr nz, $
     pop ix
     pop de
     pop hl
