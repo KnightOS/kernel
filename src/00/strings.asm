@@ -27,19 +27,24 @@ strlen:
 ;;  Z: Set if equal, reset if not equal
 ;;  C: Set if string HL is alphabetically earlier than string DE
 strcmp:
-    ld a, (de)
-    or a
-    jr z, .end
-    cp (hl)
-    jr nz, .exit
-    inc hl
-    inc de
-    jr strcmp
+    push hl
+    push de
+.loop:
+        ld a, (de)
+        or a
+        jr z, .end
+        cp (hl)
+        jr nz, .exit
+        inc hl
+        inc de
+        jr .loop
 .end:
-    ld a, (hl)
-    or a
+        ld a, (hl)
+        or a
 .exit:
-    ccf
+        ccf
+    pop de
+    pop hl
     ret
     
 ;; strcmp_sort [Strings]
@@ -245,10 +250,10 @@ strtoi:
     .dw 100, 0
     .dw 1000, 0
     .dw 10000, 0
-    .dw 0x86a0, 0x0001    ; 100,000
-    .dw 0x4240, 0x000f    ; 1,000,000
-    .dw 0x9680, 0x0098    ; 10,000,000
-    .dw 0xe100, 0x05f5    ; 100,000,000
+    .dw 0x86a0, 0x0001    ;       100,000
+    .dw 0x4240, 0x000f    ;     1,000,000
+    .dw 0x9680, 0x0098    ;    10,000,000
+    .dw 0xe100, 0x05f5    ;   100,000,000
     .dw 0xca00, 0x3b9a    ; 1,000,000,000
     
 ;; toLower [Strings]
@@ -298,4 +303,3 @@ toUpper:
 .exit:
     pop hl \ pop af
     ret
-    
