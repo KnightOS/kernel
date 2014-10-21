@@ -316,15 +316,32 @@ _:  pop af
     cp a
     ret
 .exact_fit:
-        ; We don't need to do anything else
+        ; We don't need to do anything else in this case
         pop de
         pop hl
         jr .finish
 .pad_if_needed:
-        ; TODO: Subtract BC from DE and see if the result is <= 5.
-        ; If so, add the remainder to the original DE and write it back to the block header
-        ; Which is at HL-3
-        ; Must leave all relevant registers intact
+        push bc
+        push de
+            ex de, hl
+            push bc \ push hl \ pop bc \ pop hl
+            sbc hl, bc
+            jr z, .no_pad_exact
+            ld bc, 5
+            sbc hl, bc
+            jr z, .do_pad
+            jr c, .do_pad
+.no_pad_exact:
+            ex de, hl
+        pop de
+        pop bc
+        ret
+.do_pad:
+            ex de, hl
+        pop de
+        pop bc \ ld d, b \ ld e, c
+        dec hl \ ld (hl), d \ dec hl \ ld (hl), e
+        inc hl \ inc hl
         ret
 .out_of_memory:
     pop bc
