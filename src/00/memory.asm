@@ -216,6 +216,61 @@ _:  pop af
     or 1
     ret
 
+;; memoryAvailable [System]
+;;  Finds the amount of memory available for use.
+;; Outputs:
+;;  BC: Total memory availble
+;;  DE: Largest allocatable sum
+memoryAvailable:
+#define total_mem kernelGarbage
+#define max_alloc kernelGarbage + 2
+    push hl
+    push af
+    ld a, i
+    push af
+        di
+        ld hl, 0
+        ld (total_mem), hl
+        ld (max_alloc), hl
+        ld hl, userMemory
+.loop:
+            ld a, (hl) \ inc hl ; Owner ID to A
+            ld c, (hl) \ inc hl
+            ld b, (hl) \ inc hl ; Size to BC
+            add hl, bc
+            inc hl \ inc hl ; Move to next block
+            cp 0xFF
+            jr nz, .loop
+            ; Free block
+            push hl
+                ld hl, (total_mem)
+                add hl, bc
+                ld (total_mem), hl
+
+                ld hl, (max_alloc)
+                or a ; reset c
+                sbc hl, bc
+                jr nc, _
+                ld h, b \ ld l, c
+                ld (max_alloc), hl
+_:          pop hl
+            xor a
+            cp h
+            jr nz, .loop
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    
+    ld hl, (total_mem)
+    ld b, h \ ld c, l
+    ld hl, (max_alloc)
+    ex de, hl
+    pop hl
+    ret
+#undefine total_mem
+#undefine max_alloc
+
 ;; malloc [System]
 ;;  Allocates the specified amount of memory.
 ;; Inputs:
