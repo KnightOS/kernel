@@ -304,8 +304,6 @@ malloc:
         ld (hl), e \ inc hl
         ld (hl), d ; Pointer to footer
 .finish:
-        call memcheck
-        jr nz, $
     pop bc
     pop de
     pop hl
@@ -419,8 +417,6 @@ free:
         ld (hl), e \ inc hl ; Write header address here
         ld (hl), d
 .cannot_merge_previous:
-        call memcheck
-        jr nz, $
     pop ix
     pop de
     pop hl
