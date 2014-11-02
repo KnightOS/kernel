@@ -359,6 +359,7 @@ malloc:
         ld (hl), e \ inc hl
         ld (hl), d ; Pointer to footer
 .finish:
+    ; Note: Don't change this unless you also change realloc
     pop bc
     pop de
     pop hl
@@ -505,3 +506,180 @@ _:  pop af
         ld (hl), d
         ; Forward merge complete!
         jr .check_previous_block
+
+;; realloc [System]
+;;  Reallocates a block of memory at a different size and returns a new pointer.
+;; Inputs:
+;;  IX: Block to resize
+;;  BC: New size
+;; Outputs:
+;;  IX: New memory
+;;  Z: Reset on failure, set on success
+;;  A: Preserved if success, error code if failure
+;; Notes:
+;;  This function may have to move the memory that you've allocated. Consider the old pointer invalid and use
+;;  the one returned from realloc instead.
+realloc:
+    push af
+    ld a, i
+    push af
+    di
+    push hl
+    push de
+    push bc
+        xor a \ cp b \ jr nz, _
+        cp c \ jp z, .just_free_it ; Free if zero
+_:      ld l, (ix + -2)
+        ld h, (ix + -1)
+        ; Check for what case we're handling
+        or a
+        sbc hl, bc
+        jr z, .dont_resize
+        jr c, .resize_grow
+.resize_shrink:
+        ; BC is the leftover amount after we make it smaller
+        ; If it's less than 5, don't bother because we'll get a dead spot
+        xor a \ cp b
+        jr nz, _
+        ld a, 5 \ cp c
+        jr z, .dont_resize
+        ; Okay, we're fine. Continue.
+        push ix
+            add ix, bc
+        pop hl \ push hl
+            dec hl \ dec hl \ dec hl
+            ld (ix), l
+            ld (ix + 1), h
+            ld a, 0xFE
+            ld (ix + 2), a ; Create to-be-freed block
+            dec bc \ dec bc \ dec bc \ dec bc \ dec bc
+            ld (ix + 3), c ; Size of free block
+            ld (ix + 4), b
+            ; Write free block footer
+            push ix \ pop hl
+            inc hl \ inc hl
+            add ix, bc
+            ; IX is now at footer-5
+            ld (ix + 5), l
+            ld (ix + 6), h
+            push hl \ pop ix
+            ld bc, 3 \ add ix, bc
+            ; Join newly created free block with adjacent blocks if possible
+            ; NOTE: This calls free while the state of memory is _invalid_!
+            call free
+        pop ix
+    pop bc
+    ld (ix + -2), c
+    ld (ix + -1), b ; Write new size of original block
+    jr _
+.dont_resize:
+    ; Note: Don't change this unless you also change malloc
+    pop bc
+_:  pop de
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ret
+.just_free_it:
+    pop bc
+    pop de
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    jp free
+.resize_grow:
+#define prev_block_ptr kernelGarbage
+#define next_block_ptr kernelGarbage + 2
+        ; First, we check to see if we can fit it by expanding into a free block
+        ; to the left of this one, and potentially including the block to the right
+        ; If so, we do just that. If not, we just malloc it elsewhere and copy it
+        ; over, then free the original block.
+
+        ld (prev_block_ptr), ix
+        ld (next_block_ptr), ix ; In case can can't use them
+        ld c, (ix + -2)
+        ld b, (ix + -1) ; Set BC to current size
+        call .add_next_block
+        call .add_prev_block
+    pop de \ push de
+        ; BC is now the maximum potential size, DE is the desired size, see if it'll fit
+        call cpBCDE
+        jr c, .manual_realloc
+        ; We can expand!
+        ; The procedure is to use the previous block as the new one
+        ; We'll change its size to the desired one, and move the contents of memory over
+        ; But we'll leave it marked as "free" and then hand it over to malloc, and that's it!
+        ld c, (ix + -2)
+        ld b, (ix + -1) ; Set BC to current size
+        push de
+            ld hl, (prev_block_ptr)
+            ex de, hl
+            push ix \ pop hl
+            call cpHLDE
+            jr z, _ ; Skip memory move if we can't move backwards
+            ldir
+            jr ++_
+_:      pop de
+_:      ld hl, (prev_block_ptr)
+        jp do_allocate@malloc ; Hand it over to malloc to finish the job
+.manual_realloc:
+        ; We can't expand into neighboring sections so we have to do a manual realloc/copy/free
+        push ix \ pop hl
+        ld c, (ix + -2)
+        ld b, (ix + -1) ; Set BC to current size
+        push ix
+            push bc
+                ld b, d \ ld c, e
+                call malloc
+            pop bc
+            ldir
+            push ix \ pop de
+        pop ix
+        call free
+        push de \ pop ix
+        jp .dont_resize ; (we're done)
+.add_next_block:
+    push ix \ pop hl
+    add hl, bc
+    inc hl \ inc hl
+    ld a, 0x80
+    cp h
+    ret nc ; We went past the end of memory
+    ld (next_block_ptr), hl
+    ld a, (hl)
+    cp 0xFF
+    ret nz ; Not free
+    inc hl
+    ; HL points to size of next block
+    ld e, (hl) \ inc hl
+    ld d, (hl) \ ex de, hl
+    add hl, bc
+    ld b, h \ ld c, l
+    inc bc \ inc bc \ inc bc \ inc bc \ inc bc ; Factor in removed headers
+    ret
+.add_prev_block:
+    push ix \ pop hl
+    dec hl \ ld d, (hl)
+    dec hl \ ld e, (hl)
+    ; DE points to header of previous block
+    ld a, 0x80
+    cp d
+    ret nc ; We went past the start of memory
+    ex de, hl
+    ld (prev_block_ptr), hl
+    ld a, (hl)
+    cp 0xFF
+    ret nz ; Not free
+    inc hl
+    ld e, (hl) \ inc hl
+    ld d, (hl) \ ex de, hl
+    add hl, de
+    ld c, h \ ld b, l
+    inc bc \ inc bc \ inc bc \ inc bc \ inc bc ; Factor in removed headers
+    ret
+#undefine prev_block_ptr
+#undefine next_block_ptr
