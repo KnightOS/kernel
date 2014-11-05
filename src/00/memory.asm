@@ -219,7 +219,7 @@ _:  pop af
 ;; memoryAvailable [System]
 ;;  Finds the amount of memory available for use.
 ;; Outputs:
-;;  BC: Total memory availble
+;;  BC: Total memory available
 ;;  DE: Largest allocatable sum
 memoryAvailable:
 #define total_mem kernelGarbage
