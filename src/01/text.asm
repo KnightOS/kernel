@@ -526,6 +526,8 @@ drawHexHL:
 ;;  HL: Value
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
+;; Notes:
+;;  This is unimplemented.
 drawDecHL:
     ; TODO
     ret
