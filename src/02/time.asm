@@ -275,6 +275,8 @@ _:
 ;; Outputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
+;; Notes:
+;;  This is unimplemented.
 convertTimeToTicks:
     ; TODO
     ret
