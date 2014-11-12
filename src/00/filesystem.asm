@@ -716,6 +716,7 @@ findFileEntry:
     ld a, i
     push af
     di
+.startOver:
         ; Skip initial / if present
         ; TODO: Allow for relative paths somehow
         ld a, (de)
@@ -733,7 +734,7 @@ _:          ld a, (hl)
             dec hl \ ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
             cp fsDirectory
             jr z, .handleDirectory
-            cp fsSymLink ; TODO
+            cp fsSymLink ; TODO: Symlinks to directories?
             cp fsEndOfTable
             jr z, findFileEntry_handleEndOfTable
 .continueSearch:
@@ -796,13 +797,39 @@ _:          ld a, (hl)
             dec hl \ ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
             cp fsFile
             jr z, .handleFile
-            cp fsSymLink ; TODO
+            cp fsSymLink
+            jr z, .handleLink
             cp fsEndOfTable
             jr z, findFileEntry_handleEndOfTable
 .continueSearch:
             or a
             sbc hl, bc
             jr -_
+.handleLink:
+            ; Similar to handling files
+            push bc
+                push hl
+                    ; Check parent directory ID
+                    ld c, (hl) \ dec hl \ ld b, (hl)
+                    ld hl, (kernelGarbage)
+                    call cpHLBC
+                    jr z, .compareLinkNames
+                    ; Not correct parent
+                pop hl
+            pop bc
+            jr .continueSearch
+.compareLinkNames:
+                pop hl \ push hl
+                    ld bc, 3
+                    or a
+                    sbc hl, bc
+                    push de
+                        call compareFileStrings
+                    pop de
+                pop hl
+            pop bc
+            jr z, .linkFound
+            jr .continueSearch
 .handleFile:
             push bc
                 push hl
@@ -840,6 +867,26 @@ _:  pop af
     pop de
     cp a
     ret
+.linkFound:
+            ; We need to replace the current path with this link and then start over
+            ; TODO: Consider the implications of using kernelGarbage to store this
+            ; string, what if it's too long?
+            ld c, (hl)
+            dec hl
+            ld b, (hl)
+            dec hl
+            or a
+            sbc hl, bc
+            ld de, kernelGarbage + 2
+.loadLinkLoop:
+            ld a, (hl)
+            ld (de), a
+            inc de \ dec hl
+            or a
+            jr nz, .loadLinkLoop
+        pop af
+        ld de, kernelGarbage + 2
+        jp startOver@findFileEntry
 
 ;; findDirectoryEntry [Filesystem]
 ;;  Finds a directory entry in the FAT.
