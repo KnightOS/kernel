@@ -85,7 +85,7 @@ kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR
 	patchrom src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.inc
 	patchrom src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.inc
 	patchrom src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.inc
-	cat include/kernel.inc include/kernelmem.inc include/defines.inc include/constants.asm $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)../include/kernel.inc
+	cat include/kernel.inc include/kernelmem.inc $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)../include/kernel.inc
 	# Generate C headers
 	patchrom -c src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.h
 	patchrom -c src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.h
@@ -95,7 +95,7 @@ kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR
 	# Generate kernel upgrade file
 	mktiupgrade -p -k keys/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
-kernel-headers-$(TAG).pkg:
+kernel-headers-$(TAG).pkg: headers/* include/*
 	rm -rf temp
 	mkdir -p temp/root/include
 	cp headers/package.config temp/
