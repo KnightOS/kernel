@@ -1,0 +1,11 @@
+#ifndef __JUMPTABLE_H
+#define __JUMPTABLE_H
+
+#define PCALL(ADDRESS) \
+		.if ADDRESS & 0xFF \ \
+		rst 0x20 \ \
+		.dw ADDRESS \ \
+	.else \ \
+		call 0x4000 - (((ADDRESS >> 8) + 1) * 3) \ \
+	.endif
+

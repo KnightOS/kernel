@@ -3,6 +3,7 @@ AS=sass
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
+TAG:=$(shell git describe --abbrev=0)
 OUTDIR=bin/
 
 # Platforms:
@@ -68,7 +69,7 @@ DEFINES=--define $(PLATFORM)
 BINDIR=$(OUTDIR)$(PLATFORM)/
 INCLUDE=include/;$(BINDIR)
 
-.PHONY: clean kernel baserom \
+.PHONY: clean kernel baserom kernel-headers \
 	TI73 TI83p TI83pSE TI84p TI84pSE TI84pCSE
 
 run: TI84pSE
@@ -79,11 +80,31 @@ kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR
 		$(BINDIR)00.bin:0x00 $(BINDIR)01.bin:0x4000 \
 		$(BINDIR)02.bin:0x8000 $(BINDIR)boot.bin:0x$(BOOT) \
 		$(BINDIR)privileged.bin:0x$(PRIVILEGED)
+	# Generate assembly headers
+	mkdir -p $(BINDIR)../include/
 	patchrom src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.inc
 	patchrom src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.inc
 	patchrom src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.inc
-	cat include/kernel.inc include/kernelmem.inc include/defines.inc include/constants.asm $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)../kernel.inc
+	cat include/kernel.inc include/kernelmem.inc include/defines.inc include/constants.asm $(BINDIR)00.inc $(BINDIR)01.inc $(BINDIR)02.inc > $(BINDIR)../include/kernel.inc
+	# Generate C headers
+	patchrom -c src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.h
+	patchrom -c src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.h
+	patchrom -c src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.h
+	cat headers/kernel.h.start $(BINDIR)00.h $(BINDIR)01.h $(BINDIR)02.h headers/kernel.h.end > $(BINDIR)../include/kernel.h
+	cp headers/*.h $(BINDIR)../include/
+	# Generate kernel upgrade file
 	mktiupgrade -p -k keys/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
+
+kernel-headers-$(TAG).pkg:
+	rm -rf temp
+	mkdir -p temp/root/include
+	cp headers/package.config temp/
+	cp -r bin/include temp/root/
+	echo "version=$$(git describe --abbrev=0)" >> temp/package.config
+	kpack -c temp/package.config kernel-headers-$(TAG).pkg temp/root/
+	rm -rf temp
+
+kernel-headers: kernel-headers-$(TAG).pkg
 
 baserom:
 	mkdir -p $(BINDIR)
