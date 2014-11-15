@@ -13,7 +13,7 @@ inline void get_lcd_lock() __naked {
 	__endasm;
 }
 
-SCREEN *create_screen() __naked {
+SCREEN *screen_allocate() __naked {
 	__asm
 	PCALL(ALLOCSCREENBUFFER)
 	PUSH IY
@@ -22,7 +22,7 @@ SCREEN *create_screen() __naked {
 	__endasm;
 }
 
-void clear_buffer(SCREEN *screen) {
+void screen_clear(SCREEN *screen) {
 	__asm
 	POP IX
 	POP IY
@@ -33,7 +33,7 @@ void clear_buffer(SCREEN *screen) {
 	screen;
 }
 
-void fast_copy(SCREEN *screen) {
+void screen_draw(SCREEN *screen) {
 	__asm
 	POP IX
 	POP IY
@@ -48,7 +48,7 @@ inline void set_left_margin(unsigned char margin) {
 	left_margin = margin;
 }
 
-void draw_str(SCREEN *screen, unsigned char x, unsigned char y, const char *string) {
+void draw_string(SCREEN *screen, unsigned char x, unsigned char y, const char *string) {
 	__asm
 	POP IX
 	POP IY
