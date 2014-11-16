@@ -91,7 +91,7 @@ kernel: baserom $(OUTDIR)$(PLATFORM)/00.bin $(OUTDIR)$(PLATFORM)/01.bin $(OUTDIR
 	patchrom -c src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.h
 	patchrom -c src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.h
 	cat headers/kernel.h.start $(BINDIR)00.h $(BINDIR)01.h $(BINDIR)02.h headers/kernel.h.end > $(BINDIR)../include/kernel.h
-	#cp headers/*.h $(BINDIR)../include/ # There are currently no additional headers
+	cp headers/*.h $(BINDIR)../include/
 	# Generate kernel upgrade file
 	mktiupgrade -p -k keys/$(KEY).key -d $(DEVICE) $(BINDIR)kernel.rom $(BINDIR)kernel.$(UPGRADEEXT) 00 01 02 03
 
