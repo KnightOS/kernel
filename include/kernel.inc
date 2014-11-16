@@ -6,81 +6,81 @@ rlcall .equ 0x10
 rpcall .equ 0x20
 
 .macro kcall(addr)
-    rst rkcall
+    rst 0x08
     call addr
 .endmacro
 .macro kcall(cc, addr)
-    rst rkcall
+    rst 0x08
     call cc, addr
 .endmacro
 .macro kjp(addr)
-    rst rkcall
+    rst 0x08
     jp addr
 .endmacro
 .macro kjp(cc, addr)
-    rst rkcall
+    rst 0x08
     jp cc, addr
 .endmacro
 .macro kld(to, from)
-    rst rkcall
+    rst 0x08
     ld to, from
 .endmacro
 
 .macro lcall(id, addr)
-    rst rlcall
+    rst 0x10
     .db id
     call addr
 .endmacro
 .macro lcall(id, cc, addr)
-    rst rlcall
+    rst 0x10
     .db id
     call cc, addr
 .endmacro
 .macro ljp(id, addr)
-    rst rlcall
+    rst 0x10
     .db id
     jp addr
 .endmacro
 .macro ljp(id, cc, addr)
-    rst rlcall
+    rst 0x10
     .db id
     jp cc, addr
 .endmacro
 .macro lld(id, to, from)
-    rst rlcall
+    rst 0x10
     .db id
     ld to, from
 .endmacro
 
 .macro icall(addr)
-    rst rlcall
+    rst 0x10
     .db libId
     call addr
 .endmacro
 .macro icall(cc, addr)
-    rst rlcall
+    rst 0x10
     .db libId
     call cc, addr
 .endmacro
 .macro ijp(addr)
-    rst rlcall
+    rst 0x10
     .db libId
     jp addr
 .endmacro
 .macro ijp(cc, addr)
-    rst rlcall
+    rst 0x10
     .db libId
     jp cc, addr
 .endmacro
 .macro ild(to, from)
-    rst rlcall
+    rst 0x10
     .db libId
     ld to, from
 .endmacro
 
 .macro pcall(function)
     .if function & 0xFF
-        rst rpcall
+        rst 0x20
         .dw function
     .else
         call 0x4000 - (((function >> 8) + 1) * 3)
@@ -90,7 +90,7 @@ rpcall .equ 0x20
     .if function & 0xFF
         jr flags, $+4
         jr $+5
-        rst rpcall
+        rst 0x20
         .dw function
     .else
         call flags, 0x4000 - (((function >> 8) + 1) * 3)
