@@ -5,6 +5,16 @@
 .endmacro
 
 ; Port numbers and outputs
+    PORT_LINKPORT       .equ 0
+        define_mask(LINKPORT_TIP, 0)
+        define_mask(LINKPORT_RING, 1)
+        define_mask(LINKPORT_CACHEDTIP, 4)
+        define_mask(LINKPORT_CACHEDRING, 5)
+        ; 73/83+ BE only
+        define_mask(LINKPORT_ASSIST_ACTIVE, 2)
+        define_mask(LINKPORT_ASSIST_COMPLETE, 3)
+        define_mask(LINKPORT_ASSIST_BUSY, 6)
+        
     PORT_KEYPAD         .equ 1
     
     PORT_CALC_STATUS    .equ 2
