@@ -98,6 +98,3 @@ reboot:
 
 init:
     .db "/bin/init", 0
-
-testFile:
-    .db "/var/test", 0
