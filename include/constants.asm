@@ -68,6 +68,13 @@
         ; 83+ SE/84+ only
         define_mask(BANKB_ISRAM_CPU15, 7)
     
+    ; 83+ SE/84+ only
+    PORT_LINKASSIST_ENABLE .equ 8
+        define_mask(LINKASSIST_INT_ONRECV, 0)
+        define_mask(LINKASSIST_INT_ONREADY, 1)
+        define_mask(LINKASSIST_INT_ONERROR, 2)
+        define_mask(LINKASSIST_DISABLE, 7)
+    
     PORT_MEMA_HIGH      .equ 0x0E
     
     PORT_MEMB_HIGH      .equ 0x0F
