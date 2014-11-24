@@ -1055,9 +1055,28 @@ _:      pop bc
     pop ix
     cp a
     ret
-.advanceBlock:
-            ; Flushes and moves to the next block
-            ret
+
+;; streamWriteWord [Filestreams]
+;;  Writes a 16-bit word to a file stream and advances the stream.
+;; Inputs:
+;;  D: Stream ID
+;;  HL: Value
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+streamWriteWord:
+    push af
+        ld a, l
+        call streamWriteByte
+        jr nz, .error
+        ld a, h
+        call streamWriteByte
+        jr nz, .error
+    pop af
+    ret
+.error:
+    inc sp \ inc sp
+    ret
 
 ;; streamReadByte [Filestreams]
 ;;  Reads a single byte from a file stream and advances the stream.
