@@ -86,21 +86,6 @@ reboot:
     call initMultitasking
     call initDisplay
 
-test:
-    ld de, testFile
-    call openFileWrite
-    ld a, 'H'
-    call streamWriteByte
-    ld a, 'e'
-    call streamWriteByte
-    ld a, 'l'
-    call streamWriteByte
-    ld a, 'l'
-    call streamWriteByte
-    ld a, 'o'
-    call streamWriteByte
-    call closeStream
-
     ld de, init
     call fileExists
     ld a, panic_init_not_found
