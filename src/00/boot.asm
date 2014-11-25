@@ -7,17 +7,23 @@ boot:
 shutdown:
     ; TODO: Crash detection
 _:  di
-
-    ; set both lines and disable link 73/83+ BE link assist in the process
-    xor a
-    out (PORT_LINKPORT), a
     
-#ifdef LINK_ASSIST
-    ; disable link assist but enable all interrupt generation for future use
-    ld a, LINKASSIST_DISABLE | LINKASSIST_INT_ONRECV | LINKASSIST_INT_ONREADY | LINKASSIST_INT_ONERROR
+#ifdef CPU15
+    ; enable R/W link assist and all interrupt triggering
+    ld a, LINKASSIST_INT_ONRECV | LINKASSIST_INT_ONREADY | LINKASSIST_INT_ONERROR
     out (PORT_LINKASSIST_ENABLE), a
+#else
+    ; enable R link assist as the 73/83+ BE only has read support
+    ld a, LINKPORT_ASSIST_ACTIVE
+    out (PORT_LINKPORT), a
 #endif
-
+    
+    ld a, IO_STATE_IDLE
+    ld (IOstate), a
+    ld hl, 0
+    ld (currentIOFrame), hl ; set currentIODataByte at the same time
+    
+    
     ld a, 3 << MEM_TIMER_SPEED
     out (PORT_MEM_TIMER), a ; Memory mode 0
 

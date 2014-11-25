@@ -7,6 +7,7 @@ maxThreads              .equ 32
 maxLibraries            .equ 16
 maxSignals              .equ 16
 maxFileStreams          .equ 8
+maxIOFrames             .equ 8
 kernelGarbageSize       .equ 0x200
 flashFunctionSize       .equ 0x100
 stateMemorySize         .equ 0x100
@@ -56,5 +57,12 @@ random_seed             .equ color_mode + 1             ; 8 bytes
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize
 
-userMemory              .equ kernelGarbage + kernelGarbageSize
+IOFramesQueue           .equ kernelGarbage + kernelGarbageSize
+IOFramesQueueSize       .equ 6 * maxIOFrames            ; 6 bytes per entry
+IOstate                 .equ IOFramesQueue + IOFramesQueueSize ; 1 byte
+currentIOFrame          .equ IOstate + 1 ; 1 byte
+busyIOFrame             .equ currentIOFrame + 1 ; 1 byte
+currentIODataByte       .equ busyIOFrame + 1 ; 1 byte
+
+userMemory              .equ currentIODataByte + 1
 userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF

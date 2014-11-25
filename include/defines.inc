@@ -17,6 +17,8 @@ errNoHeader             .equ 15
 errNoEntryPoint         .equ 15
 errKernelMismatch       .equ 15
 errMutexNotLocked       .equ 16
+errIOFrameNotReady      .equ 17
+errIOUnassignedPort     .equ 18
 
 threadRangeMask         .equ 0b11111
 
@@ -35,6 +37,12 @@ panic_init_not_found    .equ 0
 panic_no_threads        .equ 1
 panic_no_active_threads .equ 2
 panic_library_not_found .equ 3
+
+; IO stuff
+IOinactive              .equ 0
+IOinFrame               .equ 1
+IOoutFrame              .equ 2
+IOFrameBusy             .equ 4
 
 ; KEXC headers
 ; 0x00-0x7F reserved for kernel use
