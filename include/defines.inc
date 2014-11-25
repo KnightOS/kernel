@@ -44,6 +44,7 @@ IOinactive              .equ 0
 IOinFrame               .equ 1
 IOoutFrame              .equ 2
 IOFrameBusy             .equ 4
+IOFrameNeedsClaiming    .equ 8
 
 ; KEXC headers
 ; 0x00-0x7F reserved for kernel use

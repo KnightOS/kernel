@@ -9,8 +9,8 @@ shutdown:
 _:  di
     
 #ifdef CPU15
-    ; enable R/W link assist and all interrupt triggering
-    ld a, LINKASSIST_INT_ONRECV | LINKASSIST_INT_ONREADY | LINKASSIST_INT_ONERROR
+    ; enable R/W link assist and on-byte-reception interrupt generation
+    ld a, LINKASSIST_INT_ONRECV
     out (PORT_LINKASSIST_ENABLE), a
 #else
     ; enable R link assist as the 73/83+ BE only has read support
@@ -21,8 +21,9 @@ _:  di
     ld a, IO_STATE_IDLE
     ld (IOstate), a
     ld hl, 0
-    ld (currentIOFrame), hl ; set currentIODataByte at the same time
-    
+    ld (IOIsSending), hl ; set currentIOFrame at the same time
+    ld (busyIOFrame), hl ; set currentIODataByte at the same time
+    ld (IOTransferErrored), hl ; set willSendNextIOFrame at the same time
     
     ld a, 3 << MEM_TIMER_SPEED
     out (PORT_MEM_TIMER), a ; Memory mode 0

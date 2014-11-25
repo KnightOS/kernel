@@ -60,9 +60,13 @@ kernelGarbage           .equ flashFunctions + flashFunctionSize
 IOFramesQueue           .equ kernelGarbage + kernelGarbageSize
 IOFramesQueueSize       .equ 6 * maxIOFrames            ; 6 bytes per entry
 IOstate                 .equ IOFramesQueue + IOFramesQueueSize ; 1 byte
-currentIOFrame          .equ IOstate + 1 ; 1 byte
+IOIsSending             .equ IOstate + 1
+currentIOFrame          .equ IOIsSending + 1 ; 1 byte
 busyIOFrame             .equ currentIOFrame + 1 ; 1 byte
 currentIODataByte       .equ busyIOFrame + 1 ; 1 byte
+IODataChecksum          .equ currentIODataByte + 1 ; 1 byte
+IOTransferErrored       .equ IODataChecksum + 1 ; 1 byte
+willSendNextIOFrame     .equ IOTransferErrored + 1 ; 1 byte
 
-userMemory              .equ currentIODataByte + 1
+userMemory              .equ willSendNextIOFrame + 1
 userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF

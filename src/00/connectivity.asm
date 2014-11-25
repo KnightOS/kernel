@@ -47,12 +47,9 @@ sendIOFrame:
 dropOldestIOFrame:
     push hl
         ld hl, IOFramesQueue
-        xor a
-        or (hl)
-        ; IOinactive
-        jr z, .exit
-        bit 0, a
-        ; not IOinFrame
+        ; check if content has already been claimed
+        ; will only be 1 if the frame's content needs clearing
+        bit 3, (hl)
         jr z, .exit
         ; free content
         push ix
@@ -120,6 +117,9 @@ getIOFrame:
         jr z, $ + 6
         ld a, errIOFrameNotReady
         jr .exit
+        ld a, (hl)
+        and ~IOFrameNeedsClaiming
+        ld (hl), a
         ld de, 4
         add hl, de
         ld a, (hl)
@@ -131,7 +131,7 @@ getIOFrame:
     pop de
     ret
 
-;; IOtransferCompleted [Connectivity]
+;; IOTransferCompleted [Connectivity]
 ;;  Returns whether or not the port has completed a successful send or reception.
 ;; Inputs:
 ;;  DE: port
@@ -141,7 +141,7 @@ getIOFrame:
 ;; Notes:
 ;;  Z being reset can mean several things, including that the port is unassigned.
 ;;  A will be an error code if Z is reset.
-IOtransferCompleted:
+IOTransferCompleted:
     push bc \ push hl
         call searchForFrame
         jr nz, .exit
