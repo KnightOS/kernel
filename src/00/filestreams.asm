@@ -171,7 +171,7 @@ openFileWrite:
         push iy
         push bc
             ld iy, fileHandleTable
-            ld bc, FILE_HANDLE_SIZE ; Length of a file handle
+            ld bc, FILE_HANDLE_SIZE
             ld l, 0
 .findEntryLoop:
             ld a, (iy + FILE_FLAGS)
@@ -197,11 +197,13 @@ _:  pop af
     ld a, errTooManyStreams
     ret
 .entryFound:
-            call findFileEntry
-            jp nz, .fileNotFound
+            push hl
+                call findFileEntry
+                jp nz, .fileNotFound
+            pop de
+            ld d, e
             ; The rest of this code path *only* covers existing files that are being overwritten
             ; The case of brand-new files is handled in .fileNotFound
-            dec d
             ; We can put the stream entry at (iy) and use d as the ID
             push de
             push ix
@@ -295,7 +297,7 @@ _:  pop af
     pop hl
     ret
 .fileNotFound:
-    push de
+    ;push hl
     push af
         ; Set up some important parts of the file entry first
         ex de, hl
@@ -352,9 +354,11 @@ _:  pop af
 
         inc a ; Stream is flushed
         ld (iy + FILE_WRITE_FLAGS), a ; TODO: Move flags around
+        ; End of stream
+        set 5, (iy + FILE_FLAGS)
     pop ix
-    pop de
-    dec d
+    pop hl
+    ld d, l
     jp .done
 .outOfMemory:
             pop ix
@@ -600,6 +604,8 @@ _:  pop af
     ret
 .overwriteFile:
         ld a, (ix + FILE_ENTRY_PAGE)
+        ld l, (ix + FILE_ENTRY_PTR)
+        ld h, (ix + FILE_ENTRY_PTR + 1)
         setBankA
         ld a, fsModifiedFile
         call unlockFlash
@@ -871,15 +877,15 @@ flush_updatePreviousSection:
         ld e, a
         ld d, 0x40
         ; We'll do a quick check to make sure we really really have to erase flash
-        ; Perform A | B ^ B for both octets and if Z is set, we don't need to erase
+        ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
         ex de, hl
         ld a, (hl)
-        or e
+        and e
         xor e
         jr nz, .mustErase + 1
         inc hl
         ld a, (hl)
-        or d
+        and d
         xor d
         jr nz, .mustErase
         ; Woo we can do it without an erasure
@@ -914,12 +920,12 @@ flush_updateNextSection:
         ; Perform A & B ^ B for both octets and if Z is set, we don't need to erase
         ex de, hl
         ld a, (hl)
-        or e
+        and e
         xor e
         jr nz, .mustErase + 1
         inc hl
         ld a, (hl)
-        or d
+        and d
         xor d
         jr nz, .mustErase
         ; Woo we can do it without an erasure
@@ -986,6 +992,90 @@ _:          or e
         ld bc, 0x200
         call writeFlashBuffer
     pop de
+    ret
+
+;; streamWriteByte [Filestreams]
+;;  Writes a single byte to a file stream and advances the stream.
+;; Inputs:
+;;  D: Stream ID
+;;  A: Value
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+streamWriteByte:
+    push ix
+    push af
+        call getStreamEntry
+        jr z, .writeByte
+.errStreamNotFound:
+    pop af
+    pop ix
+    or 1
+    ld a, errStreamNotFound
+    ret
+.errNotWritable:
+    pop af
+    pop ix
+    or 1
+    ld a, errReadOnly
+    ret
+.writeByte:
+        bit 6, (ix + FILE_FLAGS)
+        jr z, .errNotWritable
+        push hl
+        push bc
+            ld l, (ix + FILE_BUFFER)
+            ld h, (ix + FILE_BUFFER + 1)
+            ld b, 0
+            ld c, (ix + FILE_STREAM)
+            add hl, bc
+            ld (hl), a ; Write actual value
+            ; Mark stream as not flushed
+            res 0, (ix + FILE_WRITE_FLAGS)
+            ; Advance stream
+            inc c
+            ld (ix + FILE_STREAM), c
+            xor a
+            cp c
+            call z, advanceBlock
+            ; Bump file size if at end of stream
+            bit 5, (ix + FILE_FLAGS)
+            jr z, _
+            ld a, (ix + FILE_WORKING_SIZE + 2)
+            ld c, (ix + FILE_WORKING_SIZE)
+            ld b, (ix + FILE_WORKING_SIZE + 1)
+            inc bc
+            jr nc, $+3 \ inc a
+            ld (ix + FILE_WORKING_SIZE + 2), a
+            ld (ix + FILE_WORKING_SIZE), c
+            ld (ix + FILE_WORKING_SIZE + 1), b
+_:      pop bc
+        pop hl
+    pop af
+    pop ix
+    cp a
+    ret
+
+;; streamWriteWord [Filestreams]
+;;  Writes a 16-bit word to a file stream and advances the stream.
+;; Inputs:
+;;  D: Stream ID
+;;  HL: Value
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+streamWriteWord:
+    push af
+        ld a, l
+        call streamWriteByte
+        jr nz, .error
+        ld a, h
+        call streamWriteByte
+        jr nz, .error
+    pop af
+    ret
+.error:
+    inc sp \ inc sp
     ret
 
 ;; streamReadByte [Filestreams]

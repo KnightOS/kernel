@@ -17,8 +17,9 @@ errNoHeader             .equ 15
 errNoEntryPoint         .equ 15
 errKernelMismatch       .equ 15
 errMutexNotLocked       .equ 16
-errIOFrameNotReady      .equ 17
-errIOUnassignedPort     .equ 18
+errReadOnly             .equ 17
+errIOFrameNotReady      .equ 18
+errIOUnassignedPort     .equ 19
 
 threadRangeMask         .equ 0b11111
 
