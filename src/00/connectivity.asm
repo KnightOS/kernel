@@ -1,3 +1,21 @@
+initNetwork:
+#ifdef CPU15
+    ; enable R/W link assist and on-byte-reception interrupt generation
+    ld a, LINKASSIST_INT_ONRECV | LINKASSIST_DISABLE
+    out (PORT_LINKASSIST_ENABLE), a
+#else
+    ; enable R link assist as the 73/83+ BE only has read support
+    ld a, LINKPORT_ASSIST_ACTIVE
+    out (PORT_LINKPORT), a
+#endif
+    ld a, IO_STATE_IDLE
+    ld (IOstate), a
+    ld hl, 0
+    ld (IOIsSending), hl ; set currentIOFrame at the same time
+    ld (busyIOFrame), hl ; set currentIODataByte at the same time
+    ld (IOTransferErrored), hl ; set willSendNextIOFrame at the same time
+    ret
+
 ;; sendIOFrame [Connectivity]
 ;;  Pushes a frame to the IO queue for sending.
 ;; Inputs:

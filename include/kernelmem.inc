@@ -46,6 +46,15 @@ hwLockUSB               .equ hwLockKeypad + 1           ; 1 byte
 currentContrast         .equ hwLockUSB + 1              ; 1 byte
 bcallHook               .equ currentContrast + 1        ; 2 bytes
 
+IOstate                 .equ bcallHook + 2              ; 1 byte
+IOIsSending             .equ IOstate + 1                ; 1 byte
+currentIOFrame          .equ IOIsSending + 1            ; 1 byte
+busyIOFrame             .equ currentIOFrame + 1         ; 1 byte
+currentIODataByte       .equ busyIOFrame + 1            ; 1 byte
+IODataChecksum          .equ currentIODataByte + 1      ; 1 byte
+IOTransferErrored       .equ IODataChecksum + 1         ; 1 byte
+willSendNextIOFrame     .equ IOTransferErrored + 1      ; 1 byte
+
 ; Used for line drawing
 ; TODO: Phase this out
 clip_mask               .equ currentContrast + 2        ; 1 byte
@@ -59,14 +68,6 @@ kernelGarbage           .equ flashFunctions + flashFunctionSize
 
 IOFramesQueue           .equ kernelGarbage + kernelGarbageSize
 IOFramesQueueSize       .equ 6 * maxIOFrames            ; 6 bytes per entry
-IOstate                 .equ IOFramesQueue + IOFramesQueueSize ; 1 byte
-IOIsSending             .equ IOstate + 1
-currentIOFrame          .equ IOIsSending + 1 ; 1 byte
-busyIOFrame             .equ currentIOFrame + 1 ; 1 byte
-currentIODataByte       .equ busyIOFrame + 1 ; 1 byte
-IODataChecksum          .equ currentIODataByte + 1 ; 1 byte
-IOTransferErrored       .equ IODataChecksum + 1 ; 1 byte
-willSendNextIOFrame     .equ IOTransferErrored + 1 ; 1 byte
 
-userMemory              .equ willSendNextIOFrame + 1
+userMemory              .equ IOFramesQueue + IOFramesQueueSize
 userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF

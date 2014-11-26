@@ -43,9 +43,22 @@ interruptResume:
     bit BIT_INT_TRIG_TIMER1, a
     jr nz, intHandleTimer1
     bit BIT_INT_TRIG_TIMER2, a
-    jr nz, intHandleTimer2
+    jp nz, intHandleTimer2
     bit BIT_INT_TRIG_LINK, a
     jp nz, intHandleLink
+#ifdef LINK_ASSIST
+    in a, (PORT_LINKASSIST_STATUS)
+    bit BIT_LINKASSIST_RECV_ONCOMPLETE, a
+    jp nz, handleNewIOByte
+    ld b, a
+    ld a, (IOState)
+    bit 5, a
+    jr z, contextSwitch
+    bit BIT_LINKASSIST_SEND_ONREADY, b
+    jp nz, sendNewIOByte
+#else
+    ; TODO
+#endif
     jr contextSwitch
 intHandleON:
     in a, (PORT_INT_MASK)
@@ -142,27 +155,11 @@ intHandleLink:
     out (PORT_INT_MASK), a
     set BIT_INT_LINK, a
     out (PORT_INT_MASK), a
-    
-    ; Link interrupt
-    ; Find what triggered it
-#ifdef LINK_ASSIST
-    in a, (PORT_LINKASSIST_STATUS)
-    bit BIT_LINKASSIST_RECV_ONCOMPLETE, a
-    jr nz, handleNewIOByte
-    ld b, a
-    ld a, (IOState)
-    bit 5, a
-    jr z, +_
-    bit BIT_LINKASSIST_SEND_ONREADY, b
-    jp nz, sendNewIOByte
-_:
-#else
-
-#endif
     jp sysInterruptDone
 
 #ifdef LINK_ASSIST
 handleNewIOByte:
+    in a, (PORT_LINKASSIST_OUTPUT) ; ACK
     ld hl, IOstate
     ld a, IO_STATE_IDLE
     cp (hl)
@@ -290,7 +287,7 @@ handleNewIOByte:
     ld a, (IOTransferErrored)
     or a
     in a, (PORT_LINKASSIST_OUTPUT) ; ACK, even if the byte is not needed
-    jr nz, abortBusyRecvFrame
+    jp nz, abortBusyRecvFrame
     ; checksums matched, carry on
     ; see which of the queue lengths is the smallest
     call getQueueLength
