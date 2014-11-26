@@ -308,11 +308,11 @@
 ; - port (2 bytes)
 ; - frame length (1 byte), only the data's length
 ; - pointer on data (2 bytes), which should be malloc'd by the kernel in case of a reception
-    IO_STATE_IDLE             .equ 0
-    IO_STATE_RECV             .equ 0b00100000
-    IO_STATE_SEND             .equ 0b01000000
-    IO_STATE_ACK              .equ 0b10000000      
-    ; Values
+    define_mask(IO_STATE_IDLE, 0)
+    define_mask(IO_STATE_RECV, 5)
+    define_mask(IO_STATE_SEND, 6)
+    define_mask(IO_STATE_ACK, 7)
+    ; Values, not bits
     IO_STATE_HEADER           .equ 0 ; only for continuation of values ; it's never actually tested
     IO_STATE_PORTL            .equ 1 ; idem
     IO_STATE_PORTH            .equ 2

@@ -40,11 +40,11 @@ panic_no_active_threads .equ 2
 panic_library_not_found .equ 3
 
 ; IO stuff
-IOinactive              .equ 0
-IOinFrame               .equ 1
-IOoutFrame              .equ 2
-IOFrameBusy             .equ 4
-IOFrameNeedsClaiming    .equ 8
+IOinactive 				.equ 0
+define_mask(IOinFrame, 0)
+define_mask(IOoutFrame, 1)
+define_mask(IOFrameBusy, 2)
+define_mask(IOFrameNeedsClaiming, 3)
 
 ; KEXC headers
 ; 0x00-0x7F reserved for kernel use

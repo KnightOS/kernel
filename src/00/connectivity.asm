@@ -65,9 +65,7 @@ sendIOFrame:
 dropOldestIOFrame:
     push hl
         ld hl, IOFramesQueue
-        ; check if content has already been claimed
-        ; will only be 1 if the frame's content needs clearing
-        bit 3, (hl)
+        bit BIT_IOFrameNeedsClaiming, (hl)
         jr z, .exit
         ; free content
         push ix
@@ -132,7 +130,7 @@ getIOFrame:
     push de
         call searchForFrame
         jr nz, .exit
-        bit 2, (hl)
+        bit BIT_IOinFrame, (hl)
         jr z, $ + 6
         ld a, errIOFrameNotReady
         jr .exit
@@ -165,7 +163,7 @@ IOTransferCompleted:
     push bc \ push hl
         call searchForFrame
         jr nz, .exit
-        bit 2, a
+        bit BIT_IOFrameBusy, a
         jr z, .exit
         ld a, errIOFrameNotReady
 .exit:
