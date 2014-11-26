@@ -1,7 +1,7 @@
 initNetwork:
 #ifdef CPU15
     ; enable R/W link assist and on-byte-reception interrupt generation
-    ld a, LINKASSIST_INT_ONRECV | LINKASSIST_DISABLE
+    ld a, LINKASSIST_INT_ONRECV
     out (PORT_LINKASSIST_ENABLE), a
 #else
     ; enable R link assist as the 73/83+ BE only has read support

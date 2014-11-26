@@ -103,12 +103,22 @@ init:
 asdlfkajserlksjer:
     push iy
     push de
+    push bc
         ld iy, 0xC000
         call clearBuffer
         ld de, 0
         rst 0x20
         .dw drawHexA
         call fastCopy_skipCheck
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+    pop bc
     pop de
     pop iy
     ret

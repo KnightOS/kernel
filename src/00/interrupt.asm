@@ -287,7 +287,6 @@ handleNewIOByte:
     ; if no, abort receiving the frame. The other calc will send it again next cycle.
     ld a, (IOTransferErrored)
     or a
-    in a, (PORT_LINKASSIST_OUTPUT) ; ACK, even if the byte is not needed
     jp nz, abortBusyRecvFrame
     ; checksums matched, carry on
     ; see which of the queue lengths is the smallest
@@ -319,7 +318,7 @@ _:
 .handleRecvChecksum:
     ; We got the checksum byte.
     ; See if it matches our own.
-    in a, (PORT_LINKASSIST_OUTPUT) ; ACK
+    ld a, (temp_io_var)
     ld hl, IODataChecksum
     cp (hl)
     jr z, +_                       ; transfer contains errors !
