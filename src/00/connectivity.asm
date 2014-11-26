@@ -118,7 +118,7 @@ getIOFrame:
         ld a, errIOFrameNotReady
         jr .exit
         ld a, (hl)
-        and ~IOFrameNeedsClaiming
+        and IOFrameNeedsClaiming ^ 0xFF
         ld (hl), a
         ld de, 4
         add hl, de
