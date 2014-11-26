@@ -123,6 +123,7 @@ searchForFrame:
 ;;  DE: port
 ;; Outputs:
 ;;  HL: pointer to data
+;;  C: frame length
 ;;  Z: set on success, reset on failure
 ;;  A: 0 on success, error code on failure
 ;; Notes:
@@ -138,8 +139,9 @@ getIOFrame:
         ld a, (hl)
         and IOFrameNeedsClaiming ^ 0xFF
         ld (hl), a
-        ld de, 4
-        add hl, de
+        inc hl \ inc hl \ inc hl
+        ld c, (hl)
+        inc hl
         ld a, (hl)
         inc hl
         ld h, (hl)
