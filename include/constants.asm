@@ -321,3 +321,4 @@
     IO_STATE_CHECKSUM         .equ 5
     IO_STATE_QUEUE            .equ 6
     
+.undefine define_mask

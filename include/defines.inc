@@ -1,3 +1,8 @@
+.macro define_mask(name, bitN)
+    BIT_name .equ bitN \
+    name .equ 1 << bitN
+.endmacro
+
 nullThread              .equ 0xFF
 errOutOfMem             .equ 1
 errTooManyThreads       .equ 2
@@ -61,3 +66,5 @@ KEXC_DESCRIPTION        .equ 0x06
 THREAD_NON_SUSPENDABLE  .equ 2
 ;THREAD_IS_SUSPENDED    .equ 4 ; Not a public flag
 THREAD_COLOR            .equ 8
+
+.undefine define_mask
