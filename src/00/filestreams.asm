@@ -1041,12 +1041,12 @@ streamWriteByte:
             ; Bump file size if at end of stream
             bit 5, (ix + FILE_FLAGS)
             jr z, _
-            ld a, (ix + FILE_WORKING_SIZE + 2)
             ld c, (ix + FILE_WORKING_SIZE)
             ld b, (ix + FILE_WORKING_SIZE + 1)
             inc bc
-            jr nc, $+3 \ inc a
-            ld (ix + FILE_WORKING_SIZE + 2), a
+            ld a, c
+            or b
+            jr nz, $+5 \ inc (ix + FILE_WORKING_SIZE + 2)
             ld (ix + FILE_WORKING_SIZE), c
             ld (ix + FILE_WORKING_SIZE + 1), b
 _:      pop bc
