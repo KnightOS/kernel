@@ -159,7 +159,8 @@ intHandleLink:
 
 #ifdef LINK_ASSIST
 handleNewIOByte:
-    in a, (PORT_LINKASSIST_OUTPUT) ; ACK
+    in a, (PORT_LINKASSIST_OUTPUT) ; ACK interrupt at the same time
+    ld (temp_io_var), a
     ld hl, IOstate
     ld a, IO_STATE_IDLE
     cp (hl)
@@ -192,7 +193,7 @@ handleNewIOByte:
     ld a, IOinFrame | IOFrameBusy
     ld (hl), a ; write header first
     inc hl
-    in a, (PORT_LINKASSIST_OUTPUT) ; ACK interrupt at the same time
+    ld a, (temp_io_var)
     ld (hl), a ; then write PORTL
     jp sysInterruptDone
 .updateIORecv:
@@ -212,7 +213,7 @@ handleNewIOByte:
     add hl, bc
     inc hl \ inc hl
     ld c, a
-    in a, (PORT_LINKASSIST_OUTPUT) ; ACK
+    ld a, (temp_io_var)
     ld e, a
     ld a, 0x1F
     and c

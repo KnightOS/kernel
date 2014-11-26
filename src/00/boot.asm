@@ -101,10 +101,14 @@ init:
     .db "/bin/init", 0
 
 asdlfkajserlksjer:
-    ld iy, 0xC000
-    call clearBuffer
-    ld de, 0
-    rst 0x20
-    .dw drawHexA
-    call fastCopy_skipCheck
-    jr $
+    push iy
+    push de
+        ld iy, 0xC000
+        call clearBuffer
+        ld de, 0
+        rst 0x20
+        .dw drawHexA
+        call fastCopy_skipCheck
+    pop de
+    pop iy
+    ret

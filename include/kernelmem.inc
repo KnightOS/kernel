@@ -54,10 +54,11 @@ currentIODataByte       .equ busyIOFrame + 1            ; 1 byte
 IODataChecksum          .equ currentIODataByte + 1      ; 1 byte
 IOTransferErrored       .equ IODataChecksum + 1         ; 1 byte
 willSendNextIOFrame     .equ IOTransferErrored + 1      ; 1 byte
+temp_io_var             .equ willSendNextIOFrame + 1    ; 1 byte
 
 ; Used for line drawing
 ; TODO: Phase this out
-clip_mask               .equ currentContrast + 2        ; 1 byte
+clip_mask               .equ temp_io_var + 1            ; 1 byte
 
 color_mode              .equ clip_mask + 1              ; 1 byte
 
