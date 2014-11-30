@@ -449,7 +449,7 @@ getStreamBuffer:
 ; Outputs:
 ;  Z: Set on success, reset on failure
 ;  A: Error code (on failure)
-;  IX: File stream entry poitner (on success)
+;  IX: File stream entry pointer (on success)
 getStreamEntry:
     push af
     push hl
@@ -1041,12 +1041,12 @@ streamWriteByte:
             ; Bump file size if at end of stream
             bit 5, (ix + FILE_FLAGS)
             jr z, _
-            ld a, (ix + FILE_WORKING_SIZE + 2)
             ld c, (ix + FILE_WORKING_SIZE)
             ld b, (ix + FILE_WORKING_SIZE + 1)
             inc bc
-            jr nc, $+3 \ inc a
-            ld (ix + FILE_WORKING_SIZE + 2), a
+            ld a, c
+            or b
+            jr nz, $+5 \ inc (ix + FILE_WORKING_SIZE + 2)
             ld (ix + FILE_WORKING_SIZE), c
             ld (ix + FILE_WORKING_SIZE + 1), b
 _:      pop bc
@@ -1214,6 +1214,106 @@ streamReadWord:
     ret
 .error:
     inc sp \ inc sp
+    ret
+
+;; streamWriteBuffer [Filestreams]
+;;  Writes a buffer of bytes to a file stream and advances the stream.
+;; Inputs:
+;;  D: Stream ID
+;;  IX: Buffer address
+;;  BC: Length
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+streamWriteBuffer:
+    push ix
+    push de
+    push hl
+    push af
+        push ix \ pop hl
+        call getStreamEntry
+        jr z, .continue
+.errStreamNotFound:
+    pop af
+    pop hl
+    pop de
+    pop ix
+    or 1
+    ld a, errStreamNotFound
+    ret
+.errNotWritable:
+    pop af
+    pop hl
+    pop de
+    pop ix
+    or 1
+    ld a, errReadOnly
+    ret
+.continue:
+        bit 6, (ix + FILE_FLAGS)
+        jr z, .errNotWritable
+.loop:
+        xor a
+        cp b \ jr nz, .write
+        cp c \ jr z, .done
+.write:
+        ; Note: 256 is represented with 0 in 8-bit registers here
+        ld a, (ix + FILE_STREAM)
+        neg ; Amount left in the buffer
+        or a
+        jr z, _
+        cp c
+        jr c, ++_
+_:      ld a, c
+        or a ; Handle A == 0 (i.e. 256)
+        jr nz, _
+        ld a, (ix + FILE_STREAM)
+        neg
+_:      ; A is the number of bytes to write this time around the loop
+        push bc
+        push af
+            push de
+                ld e, (ix + FILE_BUFFER)
+                ld d, (ix + FILE_BUFFER + 1)
+                ld b, 0
+                ld c, (ix + FILE_STREAM)
+                ex de, hl
+                add hl, bc
+                ex de, hl
+                ld c, a
+                or a \ jr nz, $+3 \ inc b ; 0 == 256
+                push bc
+                    ldir
+                pop bc
+                res 0, (ix + FILE_WRITE_FLAGS) ; Mark as not flushed
+                ld a, (ix + FILE_STREAM)
+                add a, c
+                ld (ix + FILE_STREAM), a
+                or a ; cp 0
+            pop de
+            call z, advanceBlock
+            bit 5, (ix + FILE_FLAGS)
+            jr z, .done
+            ld a, (ix + FILE_WORKING_SIZE)
+            add c
+            ld (ix + FILE_WORKING_SIZE), a
+            jr nc, _ \ inc (ix + FILE_WORKING_SIZE + 1)
+_:          jr nc, _ \ inc (ix + FILE_WORKING_SIZE + 2)
+_:      pop af
+        pop bc
+
+        neg
+        add a, c
+        ld c, a
+        jr c, .loop
+        dec b
+        jr .loop
+.done:
+    pop af
+    pop hl
+    pop de
+    pop ix
+    cp a
     ret
 
 ;; streamReadBuffer [Filestreams]

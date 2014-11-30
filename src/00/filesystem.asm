@@ -878,6 +878,11 @@ _:  pop af
             or a
             sbc hl, bc
             ld de, kernelGarbage + 2
+.skipNameLoop:
+            ld a, (hl)
+            dec hl
+            or a
+            jr nz, .skipNameLoop
 .loadLinkLoop:
             ld a, (hl)
             ld (de), a
