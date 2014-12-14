@@ -22,10 +22,7 @@ rest of this document is for you.
 
 # Reporting Bugs
 
-Bugs may be reported on GitHub at the following addresses:
-
-* Userspace: https://github.com/KnightOS/KnightOS/issues
-* Kernel:    https://github.com/KnightOS/kernel/issues
+Bugs may be reported on GitHub here: https://github.com/KnightOS/KnightOS/issues
 
 Please try to find the right place to submit your issue. If in doubt, submit it to
 the userspace repository. Please follow these guidelines when submitting bug
