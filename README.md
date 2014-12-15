@@ -112,12 +112,15 @@ You're free to ask questions about the kernel (or the userspace) in
 [#knightos](http://webchat.freenode.net/?channels=knightos&uio=d4) on irc.freenode.net. We're
 not always listening, so stick around - it may be a while before your question is answered.
 
-## Contributing
+## Help, Bugs, Feedback
 
-Contributions to the kernel should follow our
-[contribution guidelines](https://github.com/KnightOS/kernel/blob/master/CONTRIBUTING.md).
-All offers are welcome, but not all will be accepted. You might want to join #knightos (see previous
-section) to join in on development discussion before you start writing code.
+If you need help with KnightOS, want to keep up with progress, chat with
+developers, or ask any other questions about KnightOS, you can hang out in the
+IRC channel: [#knightos on irc.freenode.net](http://webchat.freenode.net/?channels=knightos).
+
+To report bugs, please create [a GitHub issue](https://github.com/KnightOS/KnightOS/issues/new) or contact us on IRC.
+
+If you'd like to contribute to the project, please see the [contribution guidelines](http://www.knightos.org/contributing).
 
 ## Licensing
 

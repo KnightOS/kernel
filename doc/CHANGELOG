@@ -9,6 +9,7 @@ number of other useful changes. The full changes are:
     - Reading from and writing to files is supported
     - Tree manipulation such as deleting files and renaming nodes is supported
     - Symbolic links are supported both by the kernel and by genkfs 1.2.1
+- Support for writing userspace programs in C
 - Flash driver improved and supported on all calculators except for the CSE
 - Improved random number generation
 - Decimal number printing functions added
@@ -20,7 +21,9 @@ rest of the KnightOS world. Interesting ones include:
 
 - Initial release of several tools:
     - The KnightOS SDK, for userspace development: http://www.knightos.org/sdk
-    - kpack: A tool for packaging KnightOS software, and manipulating packages
+    - kcc, or the "KnightOS C Compiler", a fork of SDCC
+    - scas, a z80 assembler to replace sass
+    - kpack, a tool for packaging KnightOS software, and manipulating packages
     - packages.knightos.org (KPO) for distributing packages
     - z80e, a portable calculator emulator with a powerful debugger
 - Improvements to many tools:
@@ -28,16 +31,22 @@ rest of the KnightOS world. Interesting ones include:
     - mktiupgrade with minor bug fixes
 - KnightOS userland updates:
     - Now bootstrapped from PKO with all software on seperate release schedules
-    - New file management application (fileman)
-    - Package management support via the new libkpm
-    - Configuration management via the new configlib
-    - applib renamed to corelib, with support for new features:
+    - New file management application (extra/fileman)
+    - New basic text editor (extra/bed)
+    - Package management support via the new core/libkpm
+    - Configuration management via the new core/configlib
+    - core/applib renamed to core/corelib, with support for new features:
         - corelib(open) supports opening programs and files with their editors
-        - Graphical scrollbar support
+        - corelib(promptString) can show a graphical prompt for the user to
+          enter a string
+        - corelib(showMessage) has been given a new visual style
+        - corelib(showMenu) implements window gutter menu bars
+        - corelib(drawScrollBar) gives you a consistent look+feel for scroll
+          bars in KnightOS applications
     - Ported software:
-        - Phoenix, the popular game by Patrick Davidson
-        - Periodic, originally by Ahmed El-Helw, plus our own improvements
-        - Pixel Madness, the demoscene program from Ben Ryves
+        - ports/phoenix, the popular game by Patrick Davidson
+        - extra/periodic, originally by Ahmed El-Helw, plus our own improvements
+        - Pixel Madness, the demoscene program from Ben Ryves, part of extra/demos
 
 This kernel is the culmination of effort by an even larger number of people than
 before. Thank you to those who helped out with this release:
@@ -53,6 +62,7 @@ before. Thank you to those who helped out with this release:
 - Tyler "unlimitedbacon" Anderson
 - "dragontux"
 - "Alkoou"
+- "calcdude84se"
 
 Looking forward to kernel 0.8.0, we plan to have support for communicating with
 PCs both over USB (via MTP) and I/O (via libticables). We also hope to have
