@@ -1,6 +1,21 @@
+.macro ACKReach()
+    push bc \ push de \ push hl \ push iy
+        ld iy, 0xfc00
+        call clearBuffer
+        ld hl, 0xfc00
+        ld de, 0xfc01
+        ld bc, 0x2ff
+        ld (hl), 0xff
+        ldir
+        call fastCopy_skipCheck
+        call clearBuffer
+        call fastCopy_skipCheck
+    pop iy \ pop hl \ pop de \ pop bc
+.endmacro
+
 ;; contextSwitch [System]
 ;;  Triggers a context switch early. This will transfer control from your thread to
-;;  another and eventaully return to yours with interrupts enabled.
+;;  another and eventually return to yours with interrupts enabled.
 contextSwitch:
     di
     push af
@@ -15,7 +30,7 @@ contextSwitch:
     push bc
     push de
     push hl
-    jr doContextSwitch
+    jp doContextSwitch
 
 sysInterrupt:
     di
@@ -46,16 +61,12 @@ interruptResume:
     jp nz, intHandleTimer2
     bit BIT_INT_TRIG_LINK, a
     jp nz, intHandleLink
+    ; Handle reception here.
+    ; Sending is taken care of when timer 1 completes.
 #ifdef LINK_ASSIST
     in a, (PORT_LINKASSIST_STATUS)
     bit BIT_LINKASSIST_RECV_ONCOMPLETE, a
     jp nz, handleNewIOByte
-    ld b, a
-    ld a, (IOState)
-    bit 5, a
-    jr z, contextSwitch
-    bit BIT_LINKASSIST_SEND_ONREADY, b
-    jp nz, sendNewIOByte
 #else
     ; TODO
 #endif
@@ -76,6 +87,21 @@ intHandleTimer1:
     set BIT_INT_TIMER1, a
     out (PORT_INT_MASK), a
     ; Timer 1 interrupt
+    ; Handle IO send.
+    ld a, (IOstate)
+    bit BIT_IO_STATE_SEND, a
+    jr z, .sendDoneHandling
+    in a, (PORT_LINKASSIST_STATUS)
+    bit BIT_LINKASSIST_SEND_ISBUSY, a
+    jr nz, .sendDoneHandling
+    ; At this point, the IO state is in send mode and the link assist is not busy.
+    ld a, (IOSendConfirmed)
+    or a
+    jp z, sendNewIOByte
+    ; At this point, a send already completed
+    xor a
+    ld (IOSendConfirmed), a
+.sendDoneHandling:
 doContextSwitch:
     ld a, (currentThreadIndex)
     add a, a
@@ -166,20 +192,16 @@ handleNewIOByte:
     cp (hl)
     jr nz, .updateIORecv
     ; start a new reception
-    ; enable the link assist's ready-to-send interruption
-    ld a, LINKASSIST_INT_ONRECV | LINKASSIST_INT_ONREADY
-    out (PORT_LINKASSIST_ENABLE), a
     ld (hl), IO_STATE_RECV | IO_STATE_PORTH ; we just received PORTL
     xor a
     ld (IOIsSending), a
     ld (IODataChecksum), a
     ld (IOTransferErrored), a
+    ld (currentIODataByte), a
     ld a, (currentIOFrame)
     ld (busyIOFrame), a
     push af
-        inc a
-        cp maxIOFrames
-        call nc, dropOldestIOFrame ; in connectivity.asm
+        call dropNextIOFrame ; in connectivity.asm
         ld (currentIOFrame), a
     pop af
     add a, a
@@ -190,65 +212,63 @@ handleNewIOByte:
     ld c, a
     ld hl, IOFramesQueue
     add hl, bc
-    ld a, IOinFrame | IOFrameBusy
-    ld (hl), a ; write header first
+    ld (hl), IOinFrame | IOFrameBusy ; write header first
     inc hl
     ld a, (temp_io_var)
     ld (hl), a ; then write PORTL
     jp sysInterruptDone
 .updateIORecv:
     ld a, (IOstate)
-    bit 7, a
+    bit BIT_IO_STATE_ACK, a
     jp nz, .handleRecvACKByte
-    ld b, a
     ld a, (busyIOFrame)
     add a, a
     ld c, a
     add a, a
     add a, c
     ld c, a
-    ld a, b
     ld b, 0
     ld hl, IOFramesQueue
     add hl, bc
     inc hl \ inc hl
-    ld c, a
-    ld a, (temp_io_var)
-    ld e, a
-    ld a, 0x1F
-    and c
+    ld a, (IOstate)
+    and 0x1F
     cp IO_STATE_PORTH
-    jr z, .saveIOByte
+    jp z, .saveIOByte
     inc hl
     cp IO_STATE_LEN
-    jr z, .saveIOByte
-    ; The remaining states are up to handleACKByte, so that means we got a new data byte in E
-    ; Put frame length in C
+    jp z, .saveIOByte
+    ; The remaining states are up to handleACKByte, so that means we got a new data byte.
+    ; Put frame length in C.
     ld c, (hl)
     inc hl
     ld a, (currentIODataByte)
     or a
     jr nz, .updateIOData
-    ; create a new data pointer
+    ; Create a new data pointer.
     ld b, 0
     call malloc
     ; ####
     ; TODO : handle when this fails
     ; ####
-    push de \ push ix \ pop de
-        ld (hl), e
-        inc hl
-        ld (hl), d
-        dec hl
-    pop de
+    ld b, a
+    ld a, ixl
+    ld (hl), a
+    inc hl
+    ld a, ixh
+    ld (hl), a
+    dec hl
+    ld a, b
 .updateIOData:
     ; at this point :
     ; A: offset in data where the new byte goes
-    ; C: total length of the data - complete transfer if A + 1 = C when done writing
-    ; E: new data byte
+    ; C: total length of the data - end data reception if A + 1 = C when done writing
+    ; (temp_io_var): new data byte
     ; HL: pointer on pointer on data location
     ld b, a
     ; first, add new byte to checksum
+    ld a, (temp_io_var)
+    ld e, a
     ld a, (IODataChecksum)
     add a, e
     ld (IODataChecksum), a
@@ -261,7 +281,7 @@ handleNewIOByte:
     add a, l \ ld l, a
     ld a, 0 \ adc a, h \ ld h, a
     ld (hl), e
-    ld b, a
+    ld a, b
     inc a
     cp c
     jr z, .frameComplete
@@ -272,7 +292,8 @@ handleNewIOByte:
     ld (IOstate), a
     jp sysInterruptDone
 .saveIOByte:
-    ld (hl), e
+    ld a, (temp_io_var)
+    ld (hl), a
     ld hl, IOstate
     inc (hl)
     jp sysInterruptDone
@@ -284,16 +305,17 @@ handleNewIOByte:
     jr z, .handleRecvChecksum
     ; We got the queue length.
     ; First, see if the checksum was actually correct,
-    ; if no, abort receiving the frame. The other calc will send it again next cycle.
+    ; if no, abort receiving the frame. The other calc will send it again the next cycle.
     ld a, (IOTransferErrored)
     or a
     jp nz, abortBusyRecvFrame
     ; checksums matched, carry on
     ; see which of the queue lengths is the smallest
+    ld a, (temp_io_var)
     call getQueueLength
     cp c
-    sbc a, a
     jr z, .sameQueues
+    sbc a, a
     ld (willSendNextIOFrame), a
     jr .doneWithQueues
 .sameQueues:
@@ -304,15 +326,12 @@ handleNewIOByte:
     ; if we are, that means we did it already, so we're done for this transfer !
     ld a, (IOIsSending)
     or a
-    jr nz, +_
-    ld a, IO_STATE_ACK | IO_STATE_SEND | IO_STATE_CHECKSUM
-    jr ++_
-_:
-    ; disable the link assist's ready-to-send interruption
-    ld a, LINKASSIST_INT_ONRECV
-    out (PORT_LINKASSIST_ENABLE), a
+    jr nz, .transferComplete
+    ld a, IO_STATE_ACK | IO_STATE_SEND | IO_STATE_QUEUE
+    jr .updateIOstate1
+.transferComplete:
     ld a, IO_STATE_IDLE
-_:
+.updateIOstate1:
     ld (IOstate), a
     jp sysInterruptDone
 .handleRecvChecksum:
@@ -321,20 +340,20 @@ _:
     ld a, (temp_io_var)
     ld hl, IODataChecksum
     cp (hl)
-    jr z, +_                       ; transfer contains errors !
+    jr z, .checksumDone            ; NZ : transfer contains errors !
     ld a, 1
     ld (IOTransferErrored), a      ; this will be handled when sending or receiving queue length
-_:
+.checksumDone:
     ; if we're not the sender, send our own checksum
     ; if we are, that means we did it already, so we move to sending our queue's length
     ld a, (IOIsSending)
     or a
-    jr nz, +_
+    jr nz, .calcSends
     ld a, IO_STATE_ACK | IO_STATE_SEND | IO_STATE_CHECKSUM
-    jr ++_
-_:
+    jr .updateIOstate2
+.calcSends:
     ld a, IO_STATE_ACK | IO_STATE_SEND | IO_STATE_QUEUE
-_:
+.updateIOstate2:
     ld (IOstate), a
     jp sysInterruptDone
 #else
@@ -346,7 +365,7 @@ _:
 #ifdef LINK_ASSIST
 sendNewIOByte:
     ld a, (IOstate)
-    bit 7, a
+    bit BIT_IO_STATE_ACK, a
     jr nz, .handleSendACKByte
     ; ####
     ; TODO : send frames
@@ -359,7 +378,7 @@ sendNewIOByte:
     cp IO_STATE_CHECKSUM
     jr z, .handleSendChecksum
     ; Send queue length.
-    ; First, see if the checksum was actually correct,
+    ; First, see if the checksum was actually correct ;
     ; if no, abort receiving the frame. The other calc will send it again next cycle.
     ld a, (IOTransferErrored)
     or a
@@ -367,31 +386,15 @@ sendNewIOByte:
     call getQueueLength
     ld a, c
     out (PORT_LINKASSIST_INPUT), a
-    ; if we are the sender, receive the other's queue length
-    ; if we're not, we're done with the transfer !
+    ; If we are the sender, receive the other's queue length.
+    ; If we're not, we're done with the transfer !
     ld a, (IOIsSending)
     or a
-    jr z, +_
+    jr z, .transferComplete
     ld a, IO_STATE_ACK | IO_STATE_RECV | IO_STATE_QUEUE
-    jr ++_
-_:
-    ; disable the link assist's ready-to-send interruption
-    ld a, LINKASSIST_INT_ONRECV
-    out (PORT_LINKASSIST_ENABLE), a
-    ld a, IO_STATE_IDLE
-_:
-    ld (IOstate), a
-    jp sysInterruptDone
-.handleSendChecksum:
-    ; Send checksum. Literally.
-    ld a, (IODataChecksum)
-    out (PORT_LINKASSIST_INPUT), a
-    jp sysInterruptDone
-#else
-
-#endif
-
-abortBusyRecvFrame:
+    jr .updateIOstate3
+.transferComplete:
+    ; terminate reception
     ld a, (busyIOFrame)
     add a, a
     ld c, a
@@ -401,16 +404,47 @@ abortBusyRecvFrame:
     ld c, a
     ld b, 0
     add hl, bc
-    ld (hl), IOinactive
-    inc hl \ inc hl
-    inc hl
-    push hl \ pop ix
-    call free
-#ifdef LINK_ASSIST
-    ; disable the link assist's ready-to-send interruption
-    ld a, LINKASSIST_INT_ONRECV
-    out (PORT_LINKASSIST_ENABLE), a
+    res BIT_IOFrameBusy, (hl)
+    xor a
+    out (PORT_LINKPORT), a
+    ld a, IO_STATE_IDLE
+.updateIOstate3:
+    ld (IOstate), a
+    jp sysInterruptDone
+.handleSendChecksum:
+    ; Send checksum.
+.waitForSend:
+    in a, (PORT_LINKASSIST_STATUS)
+    bit BIT_LINKASSIST_COM_ERRORED, a
+    call nz, boot
+    bit BIT_LINKASSIST_SEND_ISREADY, a
+    jr z, .waitForSend
+    ld a, (IODataChecksum)
+    out (PORT_LINKASSIST_INPUT), a
+    ld a, 1
+    ld (IOSendConfirmed), a
+    ; If we are the sender, receive the other's checksum.
+    ; If we're not, we move to receiving the other's queue's length.
+    ld a, (IOIsSending)
+    or a
+    jr nz, .calcSends2
+    ld a, IO_STATE_ACK | IO_STATE_RECV | IO_STATE_QUEUE
+    jr .updateIOstate4
+.calcSends2:
+    ld a, IO_STATE_ACK | IO_STATE_RECV | IO_STATE_CHECKSUM
+.updateIOstate4:
+    ld (IOstate), a
+    jp sysInterruptDone
+#else
+    ; ####
+    ; TODO
+    ; ####
 #endif
+
+abortBusyRecvFrame:
+    ld a, (busyIOFrame)
+    dec a
+    call dropNextIOFrame ; in connectivity.asm
     jr sysInterruptDone
 
 ; Returns the number of ready-to-send frames in BC
@@ -479,7 +513,7 @@ handleOnPRGM:
 
 #ifdef USB
 usbInterrupt:
-    in a, (0x55) ; USB Interrupt status
+    in a, (PORT_USB_INT)
     bit BIT_USB_INT_BUS, a
     jr z, usbUnknownEvent
     bit BIT_USB_INT_LINE, a

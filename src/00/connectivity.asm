@@ -1,8 +1,13 @@
 initNetwork:
 #ifdef CPU15
+    xor a
+    out (PORT_LINKPORT), a
     ; enable R/W link assist and on-byte-reception interrupt generation
     ld a, LINKASSIST_INT_ONRECV
     out (PORT_LINKASSIST_ENABLE), a
+    ld a, (0 << BIT_LINKASSIST_SPEED_DIVISOR) + 2
+    out (PORT_LINKASSIST_SPEED0), a
+    out (PORT_LINKASSIST_SPEED1), a
 #else
     ; enable R link assist as the 73/83+ BE only has read support
     ld a, LINKPORT_ASSIST_ACTIVE
@@ -12,8 +17,16 @@ initNetwork:
     ld (IOstate), a
     ld hl, 0
     ld (IOIsSending), hl ; set currentIOFrame at the same time
+    ld (IODataChecksum), hl ; set IOTransferErrored at the same time
+    ld (willSendNextIOFrame), hl ; set temp_io_var at the same time
     ld (busyIOFrame), hl ; set currentIODataByte at the same time
-    ld (IOTransferErrored), hl ; set willSendNextIOFrame at the same time
+    ld hl, IOFramesQueue
+    ld b, 8
+    ld de, 6
+_:
+    ld (hl), IOinactive
+    add hl, de
+    djnz -_
     ret
 
 ;; sendIOFrame [Connectivity]
@@ -26,8 +39,7 @@ sendIOFrame:
     push bc \ push de \ push hl
         push hl
             ld a, (currentIOFrame)
-            cp maxIOFrames
-            call nc, dropOldestIOFrame
+            call dropNextIOFrame
             ld hl, IOFramesQueue
             ; an IO frame is 6 bytes
             push bc
@@ -62,22 +74,38 @@ sendIOFrame:
     pop hl \ pop de \ pop bc
     ret
 
-dropOldestIOFrame:
-    push hl
+; Returns usable frame ID in A
+dropNextIOFrame:
+    push bc \ push hl
+        inc a
+        cp maxIOFrames
+        jr c, +_
+        xor a
+_:
+        ld b, a
+        add a, a
+        ld c, a
+        add a, a
+        add a, c
+        ld c, a
+        ld a, b
+        ld b, 0
         ld hl, IOFramesQueue
+        add hl, bc    
         bit BIT_IOFrameNeedsClaiming, (hl)
         jr z, .exit
+        ld (hl), IOinactive
         ; free content
         push ix
-            inc hl \ inc hl \ inc hl \ inc hl
+            ld bc, 4
+            add hl, bc
             ld ixl, (hl)
             inc hl
             ld ixh, (hl)
             call free
         pop ix
 .exit:
-        xor a
-    pop hl
+    pop hl \ pop bc
     ret
     
 ; Inputs:
@@ -91,16 +119,20 @@ searchForFrame:
         ld hl, IOFramesQueue
         ld b, 8
 .nextFrame:
+        ld a, IOinactive
+        cp (hl)
+        jr z, .skip
         push bc
             ; get port
             inc hl
             ld c, (hl)
             inc hl
             ld b, (hl)
+            dec hl \ dec hl
             call cpBCDE
         pop bc
-        dec hl \ dec hl
         jr z, .found
+.skip:
         push de
             ld de, 6
             add hl, de
@@ -130,13 +162,12 @@ getIOFrame:
     push de
         call searchForFrame
         jr nz, .exit
-        bit BIT_IOinFrame, (hl)
-        jr z, $ + 6
+        bit BIT_IOFrameBusy, a
+        jr z, +_
         ld a, errIOFrameNotReady
         jr .exit
-        ld a, (hl)
-        and IOFrameNeedsClaiming ^ 0xFF
-        ld (hl), a
+_:
+        ld (hl), IOinactive
         inc hl \ inc hl \ inc hl
         ld c, (hl)
         inc hl

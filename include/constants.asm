@@ -78,6 +78,7 @@
         define_mask(LINKASSIST_DISABLE, 7)
         
     ; 83+ SE/84+ only
+    ; read
     PORT_LINKASSIST_STATUS .equ 9
         define_mask(LINKASSIST_RECV_ONCOMPLETE, 0)
         define_mask(LINKASSIST_SEND_ONREADY, 1)
@@ -87,9 +88,18 @@
         define_mask(LINKASSIST_SEND_ISREADY, 5)
         define_mask(LINKASSIST_COM_ERRORED, 6)
         define_mask(LINKASSIST_SEND_ISBUSY, 7)
+    ;write
+    PORT_LINKASSIST_SPEED0 .equ 9
+        define_mask(LINKASSIST_SPEED_DELAY, 0)
+        define_mask(LINKASSIST_SPEED_DIVISOR, 5)
     
     ; 83+ SE/84+ only
+    ; write
     PORT_LINKASSIST_OUTPUT  .equ 0x0A
+    ; read
+    ; identical to port 9
+    PORT_LINKASSIST_SPEED1 .equ 0x0A
+
     
     ; 83+ SE/84+ only
     PORT_LINKASSIST_INPUT   .equ 0x0D
@@ -303,7 +313,7 @@
     FILE_PREV_SECTION   .equ 14
 
 ; IO stuff
-; IO header is, in this order :
+; IO frame is, in this order :
 ; - header (1 byte), not included in transfer
 ; - port (2 bytes)
 ; - frame length (1 byte), only the data's length
