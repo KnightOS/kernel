@@ -869,20 +869,13 @@ _:  pop af
     ret
 .linkFound:
             ; We need to replace the current path with this link and then start over
-            ; TODO: Consider the implications of using kernelGarbage to store this
-            ; string, what if it's too long?
+            dec hl \ dec hl
             ld c, (hl)
-            dec hl
-            ld b, (hl)
+            ld b, 0
             dec hl
             or a
             sbc hl, bc
             ld de, kernelGarbage + 2
-.skipNameLoop:
-            ld a, (hl)
-            dec hl
-            or a
-            jr nz, .skipNameLoop
 .loadLinkLoop:
             ld a, (hl)
             ld (de), a
