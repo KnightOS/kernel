@@ -61,6 +61,11 @@ reboot:
     out (PORT_BANKB), a
 #endif
 
+#ifdef CLOCK
+    ld a, 1
+    out (PORT_CLOCKCONTROL), a
+#endif
+
     ld hl, 0x8000
     ld (hl), 0
     ld de, 0x8001
