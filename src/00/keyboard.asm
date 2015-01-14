@@ -68,10 +68,17 @@ getKey_skipCheck:
 
     ld a, 0xFF
     out (PORT_KEYPAD), a
+    #ifdef COLOR
+    nop \ nop \ nop \ nop
+    nop \ nop \ nop \ nop
+    nop \ nop \ nop \ nop
+    #endif
     ld a, c
     out (PORT_KEYPAD), a
     nop \ nop \ nop \ nop
     #ifdef COLOR
+    nop \ nop \ nop \ nop
+    nop \ nop \ nop \ nop
     nop \ nop \ nop \ nop
     #endif
     in a, (PORT_KEYPAD)
