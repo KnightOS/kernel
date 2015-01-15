@@ -45,8 +45,8 @@ The following headers are defined in kernel.inc:
     KEXC_NAME           Pointer to program name.
     KEXC_DESCRIPTION    Pointer to program description.
 
-Headers keys are numbered from 0x00-0xFF, inclusive. The 0x00-0x7F range is
-reserved for kernel use, and 0x80-0xFF is available for arbiturary use.
+Header keys are numbered from 0x00-0xFF, inclusive. The 0x00-0x7F range is
+reserved for kernel use, and 0x80-0xFF is available for arbitrary use.
 
                               Executable Programs
 
