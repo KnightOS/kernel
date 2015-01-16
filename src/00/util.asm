@@ -185,6 +185,14 @@ getBatteryLevel:
    ld b, 255
    ret
 
+;; getBootPage [Miscellaneous]
+;;  Gets the boot page for this calculator.
+;; Outputs:
+;;  A: Boot page
+getBootPage:
+   ld a, bootPage
+   ret
+
 ;; getBootCodeVersionString [Miscellaneous]
 ;;  Gets the version string from the device's boot code.
 ;; Outputs:
