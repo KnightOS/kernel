@@ -1,3 +1,17 @@
+;; clockSupported [Time]
+;;   Returns whether the clock is supported.
+;; Outputs:
+;;   A: preserved on success; error code on failure
+;;   Z: set when the clock is supported; reset otherwise
+clockSupported:
+#ifdef CLOCK
+    cp a ; set Z
+#else
+    ld a, errUnsupported
+    or 1 ; reset Z
+#endif
+    ret
+
 ;; setClock [Time]
 ;;   Sets the internal clock.
 ;; Inputs:
