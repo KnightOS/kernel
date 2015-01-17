@@ -1618,11 +1618,11 @@ seek_zero:
 ;; seek [Filestreams]
 ;;  Moves the current position in a file stream.
 ;; Inputs:
-;;  D: stream ID
-;;  EBC: offset to start of file in bytes
+;;  D: Stream ID
+;;  EBC: Offset to start of file in bytes
 ;; Outputs:
-;;  Z: set on success, reset on failure
-;;  A: error code (on failure)
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
 seek:
     call flush
     ret nz ; This nicely covers "stream not found"
@@ -1704,4 +1704,68 @@ _:  pop af
     pop ix
     or 1
     ld a, errEndOfStream
+    ret
+
+;; getStreamPos [Filestreams]
+;;  Returns the current position in a file stream.
+;; Inputs:
+;;  D: Stream ID
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+;;  EBC: Offset to start of file in bytes
+; * Get section ID from File Stream Table
+; * Using DAT linked list, count the number of sections until the beginning of the file
+; * Add 256 bytes for each section and stream pointer from File Stream Table
+getStreamPos:
+    push ix
+        call getStreamEntry
+        jr z, .streamFound
+    pop ix
+    ret
+.streamFound:
+        push af
+        push hl
+        push de
+            ; Initialize counter (EBC)
+            ; ld de, 0 ; E must be zero but we need to use it first
+            ld b, 0
+            ld c, (ix + FILE_STREAM)
+            ; Set pointer to first section ID
+            ld de, FILE_SECTION_ID
+            add ix, de
+            ld de, 0
+.loop:
+            ; Set flash page
+            ld a, (ix + 1)
+            setBankA
+            ; Get pointer to entry in linked list
+            ; 0x4000 + 4*index
+            ld hl, 0x4000
+            ld l, (ix)
+            rlc l
+            rlc l
+            push hl \ pop ix
+            ; If entry is 0x7FFF, this is the beginning of the file
+            ld a, (ix + 1)
+            cp 0x7F
+            jr nz, _
+            ld a, (ix)
+            cp 0xFF
+            jr nz, _
+            jr .exit
+            ; Add section length to counter and loop
+_:          ld hl, KFS_BLOCK_SIZE
+            add hl, bc
+            jr nc, _
+            inc e
+_:          push hl \ pop bc
+            jr .loop
+.exit:
+            ex de, hl
+        pop de
+        ld e, l
+        pop hl
+        pop af
+    pop ix
     ret
