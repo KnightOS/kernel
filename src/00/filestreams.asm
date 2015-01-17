@@ -1618,11 +1618,11 @@ seek_zero:
 ;; seek [Filestreams]
 ;;  Moves the current position in a file stream.
 ;; Inputs:
-;;  D: stream ID
-;;  EBC: offset to start of file in bytes
+;;  D: Stream ID
+;;  EBC: Offset to start of file in bytes
 ;; Outputs:
-;;  Z: set on success, reset on failure
-;;  A: error code (on failure)
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
 seek:
     call flush
     ret nz ; This nicely covers "stream not found"
@@ -1709,16 +1709,14 @@ _:  pop af
 ;; getStreamPos [Filestreams]
 ;;  Returns the current position in a file stream.
 ;; Inputs:
-;;  D: stream ID
+;;  D: Stream ID
 ;; Outputs:
-;;  Z: set on success, reset on failure
-;;  A: error code (on failure)
-;;  EBC: offset to start of file in bytes
-
+;;  Z: Set on success, reset on failure
+;;  A: Error code (on failure)
+;;  EBC: Offset to start of file in bytes
 ; * Get section ID from File Stream Table
 ; * Using DAT linked list, count the number of sections until the beginning of the file
 ; * Add 256 bytes for each section and stream pointer from File Stream Table
-
 getStreamPos:
     push ix
         call getStreamEntry
