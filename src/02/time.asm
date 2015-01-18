@@ -7,8 +7,8 @@ clockSupported:
 #ifdef CLOCK
     cp a ; set Z
 #else
-    ld a, errUnsupported
     or 1 ; reset Z
+    ld a, errUnsupported
 #endif
     ret
 
