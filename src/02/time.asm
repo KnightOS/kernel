@@ -71,12 +71,103 @@ getTimeInTicks:
     ret
 #endif
 
-; The number of days before a given month
-daysPerMonth:
-    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ; Normal
 
-daysPerMonthLeap:
-    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 ; Leap year
+;; monthLength [Time]
+;;   Computes the amount of days in a given month.
+;; Inputs:
+;;   HL: the year
+;;    E: the month (0-11)
+;; Outputs:
+;;    A: the amount of days in this month
+monthLength:
+    ld a, e
+    cp 1
+    jr nz, +_ ; if not February, avoid the costly leap year computation
+    call isLeapYear
+_:  push hl \ push bc
+        cp 1
+        jr z, +_ ; if a = 1, so we have a leap year
+        ld hl, .monthLengthNonLeap
+        jr ++_
+_:      ld hl, .monthLengthLeap
+_:      ld b, 0
+        ld c, e
+        add hl, bc
+        ld a, (hl)
+    pop bc \ pop hl
+    
+    ret
+
+; The number of days in a given month
+.monthLengthNonLeap:
+    .db 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+.monthLengthLeap:
+    .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+
+
+;; isLeapYear
+;;   Determines whether the given year is a leap year.
+;; Inputs:
+;;   HL: the year
+;; Outputs:
+;;    A: 1 if it is a leap year; 0 if it is not
+isLeapYear:
+    
+    push bc \ push de
+        
+        ; divisible by 400?
+        ld a, h
+        ld c, l
+        ld de, 400
+        call divACByDE ; remainder in hl
+        
+        ld a, h
+        cp 0
+        jr nz, .notDivisibleBy400
+        ld a, l
+        cp 0
+        jr nz, .notDivisibleBy400
+    pop de \ pop bc
+    
+    ld a, 1
+    ret
+    
+.notDivisibleBy400:
+        
+        ; divisible by 100?
+        ld c, 100
+        push hl
+            call divHLByC ; remainder in a
+            cp 0
+            jr nz, .notDivisibleBy100
+        pop hl
+    pop de \ pop bc
+    
+    ld a, 0
+    ret
+    
+.notDivisibleBy100:
+        pop hl
+        
+        ; divisible by 4?
+        ld c, 4
+        push hl
+            call divHLByC ; remainder in a
+            cp 0
+            jr nz, .notDivisibleBy4
+        pop hl
+    pop de \ pop bc
+    
+    ld a, 1
+    ret
+    
+.notDivisibleBy4:
+        pop hl
+    pop de \ pop bc
+    
+    ld a, 0
+    ret
+
 
 ;; convertTimeFromTicks [Time]
 ;;   Convert from ticks in seconds to time.
@@ -93,188 +184,11 @@ daysPerMonthLeap:
 ;;   IX: Current year
 ;;    A: Day of the week, from 0-6 with 0 being sunday
 ;;    E: Garbage
+;; Notes:
+;;  This is unimplemented.
 convertTimeFromTicks:
-    ld a, d
-    ld c, e
-    push hl \ pop ix
-
-    ld de, 60
-    call div32by16
-    ;seconds on stack
-    push hl                         
-        ld de, 60
-        call div32by16
-        ; minutes on stack
-        push hl                     
-            ld de, 24
-            ; hours on stack
-            call div32by16
-            push hl
-                push ix \ pop hl
-                inc hl \ inc hl \ inc hl
-                ld c, 7
-                call divHLbyC
-                ; day of the week on stack
-                push af             
-                    push ix \ pop hl
-                    push ix \ pop bc
-                    call .getYearFromDays
-                    call .getLeapsToDate
-                    push bc \ pop hl
-                    sbc hl, de
-                    inc hl \ inc hl
-                    push hl \ pop bc
-                    call .getYearFromDays
-                    ; Years on stack
-                    push hl          
-                        ex hl, de
-                        push bc \ pop hl
-                        call .getMonth
-                        ld h, b
-                        ld l, a
-                    ; Years
-                    pop ix          
-                ; Day of the week
-                pop de
-                ld a, d
-            ; Hours
-            pop de
-            ld b, e
-        ; Minutes
-        pop de
-        ld c, e
-    ; Seconds
-    pop de
-    ld d, e
-
     ret
 
-; Inputs:
-;   HL: The year
-; Outputs: 
-;   DE: The number of leap years (and thus days) since 1997
-; 
-; Does (a - 1)/4 - 3(a - 1)/400 - 484
-.getLeapsToDate:
-    push hl \ push af \ push bc 
-        dec hl
-        push hl 
-            push hl \ pop de
-            ld a, 3
-            call mul16By8
-
-            ld a, h
-            ld c, l
-            ld de, 400
-            call divACByDE
-            ld d, a
-            ld e, c
-        pop hl
-
-        push de
-            ld a, h
-            ld c, l
-            ld de, 4
-            call divACByDE
-            ld h, a
-            ld l, c
-        pop de
-
-        sbc hl, de
-        ld de, 484
-        sbc hl, de
-        ex hl, de
-        
-    pop bc \ pop af \ pop hl
-    ret
-
-; Inputs:
-;   HL: The year
-; Outsputs:
-;    A: 1 if it is a leap year, 0 otherwise
-; 
-; Does getLeapsToDate( hl + 1 ) - getLeapsToDate( hl )
-.isLeapYear:
-    push hl \ push bc \ push de
-        call .getLeapsToDate
-        push de \ pop bc
-
-        inc hl
-        call .getLeapsToDate
-        ex de, hl
-        sbc hl, bc
-
-        ld a, l
-    pop de \ pop bc \ pop hl
-    ret
-
-; Inputs: HL, number of days
-; Outputs: HL, the current year
-;
-; Does hl / 365
-.getYearFromDays:
-    push af \ push bc \ push de
-        ld a, h
-        ld c, l
-        ld de, 365
-        call divACByDE
-        ld h, a
-        ld l, c
-
-        ld de, 1997
-        add hl, de
-
-    pop de \ pop bc \ pop af
-    ret
-
-; Inputs:
-;   HL: the number of days
-;   DE: the year
-; Outputs:
-;    A: The current month
-;    B: The day of the month
-.getMonth:
-    push ix \ push hl \ push de
-        push af \ push bc 
-            ld a, h
-            ld c, l
-            ld de, 365
-            call divACByDE
-        pop bc \ pop af
-        pop de \ push de
-
-        ld ix, daysPerMonth
-
-        ex hl, de
-        call .isLeapYear
-        cp 1
-        jr nz, _  
-        ld ix, daysPerMonthLeap
-_:
-        ld b, 11
-        push bc
-            ld bc, 22
-            add ix, bc
-        pop bc
-_:
-        ld h, (ix+1)
-        ld l, (ix)
-        ld a, b
-        cp 0
-        jr z, _
-        call cpHLDE
-        jr c, _
-        dec ix \ dec ix
-        dec b
-        jr -_ 
-_:
-        ex hl, de
-        sbc hl, de
-        ld a, b
-        ld b, l
-    pop de \ pop hl \ pop ix
-
-    ret
 
 ;; convertTimeToTicks [Time]
 ;;  Converts a time structure to seconds since epoch.
@@ -294,7 +208,8 @@ _:
 convertTimeToTicks:
     ; TODO
     ret
-    
+
+
 ;; getTime [Time]
 ;;   Gets the current time.
 ;; Outputs:
