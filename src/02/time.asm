@@ -153,6 +153,43 @@ isLeapYear:
     ld a, 0
     ret
 
+; leapYearsSince1997
+;   Computes the number of leap days between 1 January of the given year and
+;   1 January 1997.
+; Inputs:
+;   HL: The year
+; Outputs:
+;    A: The number of leap days between the given year and 1997
+leapYearsSince1997:
+    push hl \ push bc \ push de
+        dec hl
+        
+        ld c, 4
+        call divHLByC
+        ld d, h
+        ld e, l
+        
+        ld c, 25
+        call divHLByC
+        ex de, hl
+        or a ; reset C flag
+        sbc hl, de
+        ex de, hl
+        
+        ld c, 4
+        call divHLByC
+        ex de, hl
+        add hl, de
+        
+        ld de, 484
+        or a ; reset C flag
+        sbc hl, de
+        
+        ld a, l
+    pop de \ pop bc \ pop hl
+    
+    ret
+
 ;; convertTimeFromTicks [Time]
 ;;   Convert from ticks in seconds to time.
 ;;   The epoch is January 1st, 1997 (a Wednesday).
