@@ -1,8 +1,8 @@
 ;; clockSupported [Time]
 ;;   Returns whether the clock is supported.
 ;; Outputs:
-;;   A: preserved on success; error code on failure
-;;   Z: set when the clock is supported; reset otherwise
+;;    A: Preserved on success; error code on failure
+;;    Z: Set when the clock is supported; reset otherwise
 clockSupported:
 #ifdef CLOCK
     cp a ; set Z
@@ -18,8 +18,8 @@ clockSupported:
 ;;   HL: Lower word of a 32-bit tick value
 ;;   DE: Upper word of a 32-bit tick value
 ;; Outputs:
-;;   A: Preserved on success, error code on failure
-;;   Z: Set on success, reset on failure
+;;    A: Preserved on success, error code on failure
+;;    Z: Set on success, reset on failure
 setClock:
 #ifndef CLOCK
     ld a, errUnsupported
@@ -43,14 +43,14 @@ setClock:
     cp a
     ret
 #endif
-    
+
 ;; getClock [Time]
 ;;   Gets the internal clock.
 ;; Outputs:
 ;;   HL: Lower word of the 32-bit tick value
 ;;   DE: Upper word of the 32-bit tick value
-;;   A: Preserved on success, error code on failure
-;;   Z: Set on success, reset on failure
+;;    A: Preserved on success, error code on failure
+;;    Z: Set on success, reset on failure
 getTimeInTicks:
 #ifndef CLOCK
     ld a, errUnsupported
@@ -71,14 +71,13 @@ getTimeInTicks:
     ret
 #endif
 
-
 ;; monthLength [Time]
 ;;   Computes the amount of days in a given month.
 ;; Inputs:
-;;   HL: the year
-;;    E: the month (0-11)
+;;   HL: The year
+;;    E: The month (0-11)
 ;; Outputs:
-;;    A: the amount of days in this month
+;;    A: The amount of days in this month
 monthLength:
     ld a, e
     cp 1
@@ -95,7 +94,6 @@ _:      ld b, 0
         add hl, bc
         ld a, (hl)
     pop bc \ pop hl
-    
     ret
 
 ; The number of days in a given month
@@ -104,23 +102,19 @@ _:      ld b, 0
 .monthLengthLeap:
     .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 
-
-;; isLeapYear
+;; isLeapYear [Time]
 ;;   Determines whether the given year is a leap year.
 ;; Inputs:
-;;   HL: the year
+;;   HL: The year
 ;; Outputs:
 ;;    A: 1 if it is a leap year; 0 if it is not
 isLeapYear:
-    
     push bc \ push de
-        
         ; divisible by 400?
         ld a, h
         ld c, l
         ld de, 400
         call divACByDE ; remainder in hl
-        
         ld a, h
         cp 0
         jr nz, .notDivisibleBy400
@@ -128,12 +122,9 @@ isLeapYear:
         cp 0
         jr nz, .notDivisibleBy400
     pop de \ pop bc
-    
     ld a, 1
     ret
-    
 .notDivisibleBy400:
-        
         ; divisible by 100?
         ld c, 100
         push hl
@@ -142,13 +133,10 @@ isLeapYear:
             jr nz, .notDivisibleBy100
         pop hl
     pop de \ pop bc
-    
     ld a, 0
     ret
-    
 .notDivisibleBy100:
         pop hl
-        
         ; divisible by 4?
         ld c, 4
         push hl
@@ -157,49 +145,44 @@ isLeapYear:
             jr nz, .notDivisibleBy4
         pop hl
     pop de \ pop bc
-    
     ld a, 1
     ret
-    
 .notDivisibleBy4:
         pop hl
     pop de \ pop bc
-    
     ld a, 0
     ret
 
-
 ;; convertTimeFromTicks [Time]
 ;;   Convert from ticks in seconds to time.
-;;   The epoch is January 1st, 1997 (a Wednesday)
+;;   The epoch is January 1st, 1997 (a Wednesday).
 ;; Inputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
 ;; Outputs:
-;;    D: Current second, from 0-59
-;;    C: Current minute, from 0-59
+;;    D: Current second (0-59)
+;;    C: Current minute (0-59)
 ;;    B: Current hour, from 0-23
 ;;    H: Current day, from 0-30
 ;;    L: Current month, from 0-11
 ;;   IX: Current year
-;;    A: Day of the week, from 0-6 with 0 being sunday
+;;    A: Day of the week, from 0-6 with 0 being Sunday
 ;;    E: Garbage
 ;; Notes:
 ;;  This is unimplemented.
 convertTimeFromTicks:
+    ; TODO
     ret
 
-
 ;; convertTimeToTicks [Time]
-;;  Converts a time structure to seconds since epoch.
+;;   Converts a time structure to seconds since epoch.
 ;; Inputs:
-;;  D: Current second, from 0-59
-;;  C: Current minute, from 0-59
-;;  B: Current hour, from 0-23
-;;  H: Current day, from 0-30
-;;  L: Current month, from 0-11
-;;  IX: Current year
-;;  A: Day of the week, from 0-6 with 0 being sunday
+;;    D: Current second (0-59)
+;;    C: Current minute (0-59)
+;;    B: Current hour (0-23)
+;;    H: Current day (0-30)
+;;    L: Current month (0-11)
+;;   IX: Current year
 ;; Outputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
@@ -209,18 +192,16 @@ convertTimeToTicks:
     ; TODO
     ret
 
-
 ;; getTime [Time]
 ;;   Gets the current time.
 ;; Outputs:
-;;    D: Current second, from 0-59
-;;    C: Current minute, from 0-59
-;;    B: Current hour, from 0-23
-;;    H: Current day, from 0-30
-;;    L: Current month, from 0-11
+;;    D: Current second (0-59)
+;;    C: Current minute (0-59)
+;;    B: Current hour (0-23)
+;;    H: Current day (0-30)
+;;    L: Current month (0-11)
 ;;   IX: Current year
-;;    A: Day of the week, from 0-6 with 0 being sunday
-;;    E: Garbage
+;;    A: Day of the week, from 0-6 with 0 being Sunday
 getTime:
 #ifndef CLOCK
     ld a, errUnsupported
