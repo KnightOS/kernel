@@ -1,0 +1,116 @@
+                             KnightOS Memory Layout
+
+Note that this describes the default settings, and that the actual layout of
+memory is subject to change depending on how the kernel is configured. Userspace
+programs mucking around in memory manually is very strongly frowned upon.
+
+                                 Overall Layout
+
+    Address Length  Description
+
+    0x0000  0x4000  Kernel page 0x00
+    0x4000  0x4000  Volatile Flash access
+                    - Reading and writing to the filesystem
+                    - Swapping in the kernel for pcalls
+                    - Managing Flash swap space
+    0x8000  0x8000  RAM
+
+Kernel page 0x00 is fixed, and provides all of the high importance kernel
+functions, including boot, filesystem access, context switching, etc.
+
+Volatile Flash access is generally only used with interrupts disabled to prevent
+other processes from ruining your day.
+
+                                   RAM Layout
+
+Right now, KnightOS only uses 0x8000 (32K) of RAM, even on devices that may have
+additional RAM available. Nothing of value is kept in RAM, and it may be safely
+wiped during a reboot (and in fact, the kernel does so).
+
+Note that RAM data structures are scheduled to change dramatically for kernel
+0.7.0.
+
+    Address Length  Description
+
+    0x8000  0x100   Thread table
+    0x8100  0x40    Library table
+    0x8140  0x40    Signal table
+    0x8180  0x40    File handle table
+    0x8200  0x100   Misc kernel state
+    0x8300  0x100   Kernel flash functions
+    0x8400  0x200   Volatile kernel garbage
+    0x8600  0x7A00  Userspace memory
+
+Userspace memory is where `malloc` allocates memory. Volatile kernel garbage is
+used throughout the kernel whenever it just needs a little space to work, and is
+accessed with interrupts disabled. Kernel flash functions are where the Flash
+driver loads executable code to perform Flash manipulation from RAM. Misc kernel
+state is used for various things like the currently executing thread.
+
+                                Data Structures
+
+Each of the tables is a fixed-length array that holds several of the following
+data structures.
+
+                                    Threads
+
+    Address Length  Description
+
+    0x0000  0x01    Thread ID
+    0x0001  0x02    Executable address
+    0x0003  0x02    Stack pointer
+    0x0005  0x01    Flags (bitfield)
+                    1: May be suspended
+                    2: Is suspended
+                    3: Color enabled
+    0x0006  0x02    Reserved for future use
+
+                                   Libraries
+
+    Address Length  Description
+
+    0x0000  0x01    Library ID
+    0x0001  0x02    Library address
+    0x0003  0x01    Dependent threads
+
+                                    Signals
+
+    Address Length  Description
+
+    0x0000  0x01    Target thread ID
+    0x0001  0x01    Message type
+    0x0002  0x02    Payload
+
+                                  File Handles
+
+    Address Length  Description
+
+    0x0000  0x01    Flags/Owner
+    0x0001  0x02    Buffer address
+    0x0003  0x01    Stream pointer
+    0x0004  0x02    Section ID
+    0x0006  0x01    Length of final block
+    0x0007  0x01    File entry page
+    0x0008  0x02    File entry address
+    0x000A  0x03    File working size
+    0x000D  0x01    Writable stream flags
+    0x000E  0x02    Reserved for future use
+
+Flags/Owner is the thread ID of the file handle's owner. It takes the format of
+FTExxxxx, where xxxxx is the thread ID. F is set to indicate that the stream is
+pointing at the final block of the file. T is set if the thread is writable. E
+is set if the file handle is set to EOF.
+
+Writable stream flags are set to xxxxxxF, where F is set if the stream has been
+flushed, and x is reserved for future use.
+
+The buffer address refers to the address of the 256-byte stream buffer, which
+contains the contents of the current DAT block the stream points to. The stream
+pointer refers to a byte within this buffer. When it over- or underflows, the
+stream advances a block.
+
+The section ID refers to the current DAT block in Flash, in the format described
+in the KFS docs.
+
+The length of the final block is used to determine when EOF has been reached on
+the final block.
