@@ -224,9 +224,36 @@ convertTimeFromTicks:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
 ;; Notes:
-;;  This is unimplemented.
+;;   As of now, only uses the year (IX) and ignores the other inputs.
 convertTimeToTicks:
-    ; TODO
+    push ix \ pop hl
+    ; bc = amount of leap days since epoch
+    call leapYearsSince1997
+    ld b, 0
+    ld c, a
+    push bc
+        ; hl = amount of years since epoch
+        ld de, 1997
+        or a ; reset C flag
+        sbc hl, de
+        ; hl = amount of days since epoch
+        ex hl, de
+        ld bc, 365
+        call mul16By16 ; result in dehl
+        ; note: we are going to multiply with 86400 later, so we can assume
+        ; the result fits in hl only (otherwise the ticks value will be
+        ; incorrect anyway)
+    pop bc
+    ; add the leap days
+    add hl, bc
+    
+    ; multiply by 86400 = 3600 * 24
+    ex hl, de
+    ld bc, 3600
+    call mul16By16 ; result in dehl
+    ld a, 24
+    call mul32By8 ; result in dehl
+    
     ret
 
 ;; getTime [Time]
