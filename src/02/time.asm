@@ -102,6 +102,37 @@ _:      ld b, 0
 .monthLengthLeap:
     .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 
+;; daysBeforeMonth [Time]
+;;   Computes the amount of days before the first day of the given month since
+;;   1 January.
+;; Inputs:
+;;   HL: The year
+;;    E: The month (0-11)
+;; Outputs:
+;;    A: The amount of days between 1 January and the first day of the given
+;;       month
+daysBeforeMonth:
+    call isLeapYear
+_:  push hl \ push bc
+        cp 1
+        jr z, +_ ; if a = 1, so we have a leap year
+        ld hl, .daysBeforeMonthNonLeap
+        jr ++_
+_:      ld hl, .daysBeforeMonthLeap
+_:      ld b, 0
+        ld c, e
+        add hl, bc
+        add hl, bc
+        ld a, (hl)
+    pop bc \ pop hl
+    ret
+
+; The number of days before a given month
+.daysBeforeMonthNonLeap:
+    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+.daysBeforeMonthLeap:
+    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335
+
 ;; isLeapYear [Time]
 ;;   Determines whether the given year is a leap year.
 ;; Inputs:
@@ -226,26 +257,52 @@ convertTimeFromTicks:
 ;; Notes:
 ;;   As of now, only uses the year (IX) and ignores the other inputs.
 convertTimeToTicks:
-    push ix \ pop hl
-    ; bc = amount of leap days since epoch
-    call leapYearsSince1997
-    ld b, 0
-    ld c, a
-    push bc
-        ; hl = amount of years since epoch
-        ld de, 1997
-        or a ; reset C flag
-        sbc hl, de
-        ; hl = amount of days since epoch
-        ex hl, de
-        ld bc, 365
-        call mul16By16 ; result in dehl
-        ; note: we are going to multiply with 86400 later, so we can assume
-        ; the result fits in hl only (otherwise the ticks value will be
-        ; incorrect anyway)
+    ; second
+    push de
+        ; hour / minute
+        push bc
+            ; day / month
+            push hl
+                ; year
+                push ix \ pop hl
+                ; bc = amount of leap days since epoch
+                call leapYearsSince1997
+                ld b, 0
+                ld c, a
+                push bc
+                    ; hl = amount of years since epoch
+                    ld de, 1997
+                    or a ; reset C flag
+                    sbc hl, de
+                    ; hl = amount of days since epoch
+                    ex hl, de
+                    ld bc, 365
+                    call mul16By16 ; result in dehl
+                    ; note: we are going to multiply with 86400 later, so we can assume
+                    ; the result fits in hl only (otherwise the ticks value will be
+                    ; incorrect anyway)
+                pop bc
+                ; add the leap days
+                add hl, bc
+            ; day / month
+            pop bc
+            ld e, c
+            push hl
+                push ix \ pop hl
+                call daysBeforeMonth
+            pop hl
+            push bc
+                ld b, 0
+                ld c, a
+                add hl, bc
+            pop bc
+            ld c, b
+            ld b, 0
+            add hl, bc
+        ; hour / minute
+        pop bc
+    ; second
     pop bc
-    ; add the leap days
-    add hl, bc
     
     ; multiply by 86400 = 3600 * 24
     ex hl, de
