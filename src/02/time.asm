@@ -299,18 +299,45 @@ convertTimeToTicks:
             ld c, b
             ld b, 0
             add hl, bc
+            ld de, 0
+            ; multiply by 24
+            ld a, 24
+            call mul32By8 ; result in dehl
         ; hour / minute
         pop bc
+        ; add hours
+        push bc
+            ld c, b
+            ld b, 0
+            add hl, bc
+            jr nc, +_
+            ex de, hl
+            inc hl
+            ex de, hl
+_:      pop bc
+        ; multiply by 60
+        ld a, 60
+        call mul32By8 ; result in dehl
+        ; add minutes
+        ld b, 0
+        add hl, bc
+        jr nc, +_
+        ex de, hl
+        inc hl
+        ex de, hl
+_:      ; multiply by 60
+        ld a, 60
+        call mul32By8 ; result in dehl
     ; second
     pop bc
-    
-    ; multiply by 86400 = 3600 * 24
-    ex hl, de
-    ld bc, 3600
-    call mul16By16 ; result in dehl
-    ld a, 24
-    call mul32By8 ; result in dehl
-    
+    ld c, b
+    ld b, 0
+    add hl, bc
+    jr nc, +_
+    ex de, hl
+    inc hl
+    ex de, hl
+_:  
     ret
 
 ;; getTime [Time]
