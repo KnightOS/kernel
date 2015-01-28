@@ -102,15 +102,15 @@ _:      ld b, 0
 .monthLengthLeap:
     .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 
-;; daysBeforeMonth [Time]
-;;   Computes the amount of days before the first day of the given month since
-;;   1 January.
-;; Inputs:
-;;   HL: The year
-;;    E: The month (0-11)
-;; Outputs:
-;;    A: The amount of days between 1 January and the first day of the given
-;;       month
+; daysBeforeMonth
+;   Computes the amount of days before the first day of the given month since
+;   1 January.
+; Inputs:
+;   HL: The year
+;    E: The month (0-11)
+; Outputs:
+;    A: The amount of days between 1 January and the first day of the given
+;       month
 daysBeforeMonth:
     call isLeapYear
 _:  push hl \ push bc
