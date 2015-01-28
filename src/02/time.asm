@@ -109,11 +109,11 @@ _:      ld b, 0
 ;   HL: The year
 ;    E: The month (0-11)
 ; Outputs:
-;    A: The amount of days between 1 January and the first day of the given
+;   BC: The amount of days between 1 January and the first day of the given
 ;       month
 daysBeforeMonth:
     call isLeapYear
-_:  push hl \ push bc
+_:  push hl
         cp 1
         jr z, +_ ; if a = 1, so we have a leap year
         ld hl, .daysBeforeMonthNonLeap
@@ -124,7 +124,11 @@ _:      ld b, 0
         add hl, bc
         add hl, bc
         ld a, (hl)
-    pop bc \ pop hl
+        ld c, a
+        inc hl
+        ld a, (hl)
+        ld b, a
+    pop hl
     ret
 
 ; The number of days before a given month
@@ -287,13 +291,11 @@ convertTimeToTicks:
             ; day / month
             pop bc
             ld e, c
-            push hl
-                push ix \ pop hl
-                call daysBeforeMonth
-            pop hl
             push bc
-                ld b, 0
-                ld c, a
+                push hl
+                    push ix \ pop hl
+                    call daysBeforeMonth
+                pop hl
                 add hl, bc
             pop bc
             ld c, b
