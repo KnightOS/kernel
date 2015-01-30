@@ -241,9 +241,34 @@ leapYearsSince1997:
 ;;    A: Day of the week, from 0-6 with 0 being Sunday
 ;;    E: Garbage
 ;; Notes:
-;;  This is unimplemented.
+;;   As of now, only the time is output correctly.
 convertTimeFromTicks:
-    ; TODO
+    ld a, d
+    ld c, e
+    push hl \ pop ix
+    ld de, 60
+    call div32By16
+    ; seconds
+    push hl
+        ld de, 60
+        call div32By16
+        ; minutes
+        push hl
+            ld de, 24
+            call div32By16
+            ; hours
+            push hl
+                ; TODO compute the date
+            ; hours
+            pop de
+            ld b, e
+        ; minutes
+        pop de
+        ld c, e
+    ; seconds
+    pop de
+    ld d, e
+    
     ret
 
 ;; convertTimeToTicks [Time]
@@ -258,8 +283,6 @@ convertTimeFromTicks:
 ;; Outputs:
 ;;   HL: Lower word of tick value
 ;;   DE: Upper word of tick value
-;; Notes:
-;;   As of now, only uses the year (IX) and ignores the other inputs.
 convertTimeToTicks:
     ; second
     push de
