@@ -288,45 +288,10 @@ convertTimeToTicks:
     push de
         ; hour / minute
         push bc
-            ; day / month
-            push hl
-                ; year
-                push ix \ pop hl
-                ; bc = amount of leap days since epoch
-                call leapYearsSince1997
-                ld b, 0
-                ld c, a
-                push bc
-                    ; hl = amount of years since epoch
-                    ld de, 1997
-                    or a ; reset C flag
-                    sbc hl, de
-                    ; hl = amount of days since epoch
-                    ex hl, de
-                    ld bc, 365
-                    call mul16By16 ; result in dehl
-                    ; note: we are going to multiply with 86400 later, so we can assume
-                    ; the result fits in hl only (otherwise the ticks value will be
-                    ; incorrect anyway)
-                pop bc
-                ; add the leap days
-                add hl, bc
-            ; day / month
-            pop bc
-            ld e, c
-            push bc
-                push hl
-                    push ix \ pop hl
-                    call daysBeforeMonth
-                pop hl
-                add hl, bc
-            pop bc
-            ld c, b
-            ld b, 0
-            add hl, bc
-            ld de, 0
+            call daysSinceEpoch
             ; multiply by 24
             ld a, 24
+            ld de, 0
             call mul32By8 ; result in dehl
         ; hour / minute
         pop bc
@@ -363,6 +328,54 @@ _:      ; multiply by 60
     inc hl
     ex de, hl
 _:  
+    ret
+
+; daysSinceEpoch
+;   Computes how many days lie between the given date (exclusive) and
+;   1 January 1997 (inclusive).
+; Inputs:
+;    H: Current day (0-30)
+;    L: Current month (0-11)
+;   IX: Current year
+; Outputs:
+;   HL: The number of days between the given date and 1 January 1997.
+daysSinceEpoch:
+    ; day / month
+    push hl
+        ; year
+        push ix \ pop hl
+        ; bc = amount of leap days since epoch
+        call leapYearsSince1997
+        ld b, 0
+        ld c, a
+        push bc
+            ; hl = amount of years since epoch
+            ld de, 1997
+            or a ; reset C flag
+            sbc hl, de
+            ; hl = amount of days since epoch
+            ex hl, de
+            ld bc, 365
+            call mul16By16 ; result in dehl
+            ; note: we are going to multiply with 86400 later, so we can assume
+            ; the result fits in hl only (otherwise the ticks value will be
+            ; incorrect anyway)
+        pop bc
+        ; add the leap days
+        add hl, bc
+    ; day / month
+    pop bc
+    ld e, c
+    push bc
+        push hl
+            push ix \ pop hl
+            call daysBeforeMonth
+        pop hl
+        add hl, bc
+    pop bc
+    ld c, b
+    ld b, 0
+    add hl, bc
     ret
 
 ;; getTime [Time]
