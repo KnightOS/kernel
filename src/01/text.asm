@@ -526,12 +526,110 @@ drawHexHL:
 ;;  HL: Value
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
-;; Notes:
-;;  This is unimplemented.
 drawDecHL:
-    ; TODO
+    push hl
+    push bc
+    push af
+        ld b, 0           ;Our digit counter
+.loop:
+        push de
+            ld de, 0
+            call cpHLDE
+        pop de
+        jr z, _           ;If HL is down to zero, exit loop
+        ld c, 10
+        call divHLByC     ;Divide HL by 10...
+        push af           ;Push the remainder to the stack
+        inc b             ;Inc our digit counter
+        jr .loop
+_:
+        ld a, b
+        cp 0
+        call z, drawDecA  ;Draw a Zero if HL is Zero
+.draw:
+        ld a, b
+        cp 0
+        jr z, _           ;if our digit counter is zero, exit loop
+        pop af            ;pop our digit from the stack
+        call drawDecA     ;draw the digit
+        dec b             ;dec our digit counter
+        jr .draw
+_:
+    pop af
+    pop bc
+    pop hl
     ret
-   
+
+;; drawDecACIX [Text]
+;;  Draws the contents of ACIX in decimal to the screen buffer using OR logic (turns pixels ON).
+;; Inputs:
+;;  IY: Screen buffer
+;;  D, E: X, Y
+;;  ACIX: Value
+;; Outputs:
+;;  D, E: Advanced to position of next character
+drawDecACIX:
+    push af
+    push ix
+    push bc
+    push hl
+        ld b, 0           ;Our digit counter
+.loop:
+        ;Check if ACIX is zero
+        push bc
+            cp 0
+            jp nz, .notZero     ;If a is not zero
+
+            ld b, a
+            ld a, c
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If c is not zero
+
+            ld b, a
+            ld a, ixh
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If ixh is not zero
+
+            ld b, a
+            ld a, ixl
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If ixl is not zero
+.notZero:
+        pop bc
+        jr z, _           ;If ACIX is down to zero, exit loop
+        push de
+        push iy
+            ld iyh, b
+            ld de, 10
+            call div32By16     ;Divide ACIX by 10...
+            ld b, iyh
+        pop iy
+        pop de
+        push hl           ;Push the remainder to the stack
+        inc b             ;Inc our digit counter
+        jr .loop
+_:
+        ld a, b
+        cp 0
+        call z, drawDecA  ;Draw a Zero if ACIX is Zero
+.draw:
+        ld a, b
+        cp 0
+        jr z, _           ;if our digit counter is zero, exit loop
+        pop hl            ;pop our digit from the stack
+        call drawDecHL    ;draw the digit
+        dec b             ;dec our digit counter
+        jr .draw
+_:
+    pop hl
+    pop bc
+    pop ix
+    pop af
+    ret
+
 ;; measureChar [Text]
 ;;  Measures the width of a character in pixels.
 ;; Inputs:
