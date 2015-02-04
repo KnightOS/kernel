@@ -526,10 +526,36 @@ drawHexHL:
 ;;  HL: Value
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
-;; Notes:
-;;  This is unimplemented.
 drawDecHL:
-    ; TODO
+    push hl
+    push bc
+        ld b, 0           ;Our digit counter
+.loop:
+        push de
+            ld de, 0
+            call cpHLDE
+        pop de
+        jr z, _           ;If HL is down to zero, exit loop
+        ld c, 10
+        call divHLByC     ;Divide HL by 10...
+        push af           ;Push the remainder to the stack
+        inc b             ;Inc our digit counter
+        jr .loop
+_:
+        ld a, b
+        cp 0
+        call z, drawDecA  ;Draw a Zero if HL is Zero
+.draw:
+        ld a, b
+        cp 0
+        jr z, _           ;if our digit counter is zero, exit loop
+        pop af            ;pop our digit from the stack
+        call drawDecA     ;draw the digit
+        dec b             ;dec our digit counter
+        jr .draw
+_:
+    pop bc
+    pop hl
     ret
    
 ;; measureChar [Text]
