@@ -529,6 +529,7 @@ drawHexHL:
 drawDecHL:
     push hl
     push bc
+    push af
         ld b, 0           ;Our digit counter
 .loop:
         push de
@@ -554,6 +555,7 @@ _:
         dec b             ;dec our digit counter
         jr .draw
 _:
+    pop af
     pop bc
     pop hl
     ret
