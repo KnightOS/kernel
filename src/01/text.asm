@@ -559,6 +559,7 @@ _:
     pop bc
     pop hl
     ret
+
 ;; drawDecACIX [Text]
 ;;  Draws the contents of ACIX in decimal to the screen buffer using OR logic (turns pixels ON).
 ;; Inputs:
@@ -574,8 +575,31 @@ drawDecACIX:
     push hl
         ld b, 0           ;Our digit counter
 .loop:
-        call isZeroACIX
-        jr z, _           ;If HL is down to zero, exit loop
+        ;Check if ACIX is zero
+        push bc
+            cp 0
+            jp nz, .notZero     ;If a is not zero
+
+            ld b, a
+            ld a, c
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If c is not zero
+
+            ld b, a
+            ld a, ixh
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If ixh is not zero
+
+            ld b, a
+            ld a, ixl
+            cp 0
+            ld a, b
+            jp nz, .notZero     ;If ixl is not zero
+.notZero:
+        pop bc
+        jr z, _           ;If ACIX is down to zero, exit loop
         push de
         push iy
             ld iyh, b
@@ -604,32 +628,6 @@ _:
     pop bc
     pop ix
     pop af
-    ret
-
-isZeroACIX:
-    push bc
-        cp 0
-        jp nz, .notZero     ;If a is not zero
-
-        ld b, a
-        ld a, c
-        cp 0
-        ld a, b
-        jp nz, .notZero     ;If c is not zero
-
-        ld b, a
-        ld a, ixh
-        cp 0
-        ld a, b
-        jp nz, .notZero     ;If ixh is not zero
-
-        ld b, a
-        ld a, ixl
-        cp 0
-        ld a, b
-        jp nz, .notZero     ;If ixl is not zero
-.notZero:
-    pop bc
     ret
 
 ;; measureChar [Text]
