@@ -178,12 +178,66 @@ _:  in a, (PORT_LCD_CMD)
 ;;  B: Battery level
 ;; Notes:
 ;;  This returns a value from 0-255. The precision of this value varies by calculator
-;;  model. 6 MHz platforms will return a 0 or a 255. 15 MHz platforms will return a 0,
-;;  85, 170, or 255 (255 quartered). The 84+ CSE will return a higher resolution number
-;;  between 0.255.
+;;  model. 6 MHz platforms will return a 0 or a 255. 15 MHz platforms will return
+;;  0, 63, 127, 191, or 255 (multiples of 64), where 0 is critical.
 getBatteryLevel:
-   ld b, 255
-   ret
+#ifdef CPU15
+    in a, (0x3A)
+    or 0b10000000    ; Set bit 7 of port 3A (TI-OS does this)
+    out (0x3A), a
+
+    ld a, 0x06       ; Below threshhold 0x06 (critical)
+    out (0x04), a
+    nop \ nop \ nop \ nop \ nop \ nop
+    in a, (2) \ rra
+    ld b, 0
+    jr nc, _
+
+    ld a, 0x86       ; Below threshhold 0x86 (1 quarter)
+    out (0x04), a
+    nop \ nop \ nop \ nop \ nop \ nop
+    in a, (2) \ rra
+    ld b, 63
+    jr nc, _
+
+    ld a, 0x46       ; Below threshhold 0x46 (2 quarters)
+    out (0x04), a
+    nop \ nop \ nop \ nop \ nop \ nop
+    in a, (2) \ rra
+    ld b, 127
+    jr nc, _
+
+    ld a, 0xC6       ; Below threshold 0xC6 (3 quarters)
+    out (0x04), a
+    nop \ nop \ nop \ nop \ nop \ nop
+    in a, (2) \ rra
+    ld b, 191
+    jr nc, _
+
+    ld b, 255        ; Above all prior threshholds (4 quarters)
+
+_:  ld a, 0x06
+    out (0x04), a    ; Reset the battery threshold
+
+    in a, (0x3A)
+    and 0b01111111   ; Reset bit 7 of port 3A (TI-OS does this)
+    out (0x3A), a
+
+    in a, (0x3A)
+    or 0b00010000    ; Set bit 4 of port 3A (TI-OS does this)
+    out (0x3A), a
+    nop \ nop \ nop \ nop \ nop \ nop
+    and 0b11101111   ; Reset bit 4 of port 3A (TI-OS does this)
+    out (0x3A), a
+
+    ret
+#else
+    in a, (2) \ rra
+    ld b, 0    ; Below critical threshold
+    jr c, _
+    ld b, 255  ; Above critical threshold
+_:  ret
+#endif
 
 ;; getBootPage [Miscellaneous]
 ;;  Gets the boot page for this calculator.
