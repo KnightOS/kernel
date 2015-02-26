@@ -437,7 +437,9 @@ dispdh:
 ;; Outputs:
 ;;  D, E: Advanced to position of next character
 drawDecA:
-    push bc \ push hl
+    push af
+    push bc
+    push hl
         ; use C to keep track of leading zeroes
         ld c, 0
         ; display hundreds
@@ -498,7 +500,9 @@ drawDecA:
         ; draw units
         add a, '0'
         call drawChar
-    pop hl \ pop bc
+    pop hl
+    pop bc
+    pop af
     ret
     
 ;; drawHexHL [Text]
