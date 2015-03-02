@@ -258,25 +258,27 @@ convertTimeFromTicks:
             call div32By16
             ; hours
             push hl
-                ; do a guess in which year the date is and put it in de;
-                ; our guess may be wrong: we may overestimate the year by 1
-                ; but we will fix that later
-                ld de, 365
-                call div32By16
-                push ix \ pop hl
-                ld bc, 1997
-                add hl, bc
-                ld d, h
-                ld e, l
+                ; days (since epoch)
+                push ix
+                    ; do a guess in which year the date is and put it in de;
+                    ; our guess may be wrong: we may overestimate the year by 1
+                    ; but we will fix that later
+                    ld de, 365
+                    call div32By16
+                    push ix \ pop hl
+                    ld bc, 1997
+                    add hl, bc
+                    ld d, h
+                    ld e, l
+                    
+                    ; compute the amount of days between the epoch and the
+                    ; guessed year, and put it in hl
+                    push hl \ pop ix
+                    ld hl, 0
+                    call daysSinceEpoch
+                pop ix
                 
-                ; compute the amount of days between the epoch and the
-                ; guessed year, and put it in hl
-                push hl \ pop ix
-                ld h, 0
-                ld l, 0
-                call daysSinceEpoch
-                
-                ; subtract hl (days between epoch and guessed year) from de
+                ; subtract hl (days between epoch and guessed year) from ix
                 ; (amount of days from the original timestamp value) to get
                 ; the amount of days between 1 Jan of the guessed year and
                 ; the requested date; put it in hl
@@ -310,8 +312,7 @@ _:              ex de, hl
                 ; now we have the year number in de and the number of days
                 ; since 1 Jan of that year in hl
                 
-                ; TODO compute the date
-                ld ix, 1997
+                push de \ pop ix
                 ld l, 0
                 ld h, 0
             ; hours
@@ -395,42 +396,44 @@ _:
 ; Outputs:
 ;   HL: The number of days between the given date and 1 January 1997.
 daysSinceEpoch:
-    ; day / month
-    push hl
-        ; year
-        push ix \ pop hl
-        ; bc = amount of leap days since epoch
-        call leapYearsSince1997
-        ld b, 0
-        ld c, a
-        push bc
-            ; hl = amount of years since epoch
-            ld de, 1997
-            or a ; reset C flag
-            sbc hl, de
-            ; hl = amount of days since epoch
-            ex hl, de
-            ld bc, 365
-            call mul16By16 ; result in dehl
-            ; note: we are going to multiply with 86400 later, so we can assume
-            ; the result fits in hl only (otherwise the ticks value will be
-            ; incorrect anyway)
-        pop bc
-        ; add the leap days
-        add hl, bc
-    ; day / month
-    pop bc
-    ld e, c
-    push bc
+    push de \ push bc
+        ; day / month
         push hl
+            ; year
             push ix \ pop hl
-            call daysBeforeMonth
-        pop hl
+            ; bc = amount of leap days since epoch
+            call leapYearsSince1997
+            ld b, 0
+            ld c, a
+            push bc
+                ; hl = amount of years since epoch
+                ld de, 1997
+                or a ; reset C flag
+                sbc hl, de
+                ; hl = amount of days since epoch
+                ex hl, de
+                ld bc, 365
+                call mul16By16 ; result in dehl
+                ; note: we are going to multiply with 86400 later, so we can assume
+                ; the result fits in hl only (otherwise the ticks value will be
+                ; incorrect anyway)
+            pop bc
+            ; add the leap days
+            add hl, bc
+        ; day / month
+        pop bc
+        ld e, c
+        push bc
+            push hl
+                push ix \ pop hl
+                call daysBeforeMonth
+            pop hl
+            add hl, bc
+        pop bc
+        ld c, b
+        ld b, 0
         add hl, bc
-    pop bc
-    ld c, b
-    ld b, 0
-    add hl, bc
+    pop bc \ pop de
     ret
 
 ;; getTime [Time]
