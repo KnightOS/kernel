@@ -258,7 +258,62 @@ convertTimeFromTicks:
             call div32By16
             ; hours
             push hl
+                ; do a guess in which year the date is and put it in de;
+                ; our guess may be wrong: we may overestimate the year by 1
+                ; but we will fix that later
+                ld de, 365
+                call div32By16
+                push ix \ pop hl
+                ld bc, 1997
+                add hl, bc
+                ld d, h
+                ld e, l
+                
+                ; compute the amount of days between the epoch and the
+                ; guessed year, and put it in hl
+                push hl \ pop ix
+                ld h, 0
+                ld l, 0
+                call daysSinceEpoch
+                
+                ; subtract hl (days between epoch and guessed year) from de
+                ; (amount of days from the original timestamp value) to get
+                ; the amount of days between 1 Jan of the guessed year and
+                ; the requested date; put it in hl
+                ld b, h
+                ld c, l
+                push ix \ pop hl
+                or a ; reset carry
+                sbc hl, bc
+                
+                ; if this overflowed, our guess for the year was wrong...
+                jr nc, .guessedCorrect
+                ; ... in that case decrease the year (in de) by 1...
+                ex de, hl
+                dec hl
+                ; ... and increase the amount of days since 1 Jan (in de)
+                ; by the length of the year (366 if it is a leap year, 366
+                ; otherwise)
+                call isLeapYear
+                cp 1
+                jr nz, .noLeapYear
+                ex de, hl
+                ld bc, 366
+                add hl, bc
+                jr +_
+.noLeapYear:
+                ex de, hl
+                ld bc, 365
+                add hl, bc
+_:              ex de, hl
+.guessedCorrect:
+                ; now we have the year number in de and the number of days
+                ; since 1 Jan of that year in hl
+                
                 ; TODO compute the date
+                ld ix, 1997
+                ld l, 0
+                ld h, 0
             ; hours
             pop de
             ld b, e
