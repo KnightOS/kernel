@@ -225,6 +225,20 @@ leapYearsSince1997:
     
     ret
 
+; yearDayToDate
+;   Returns the day and month corresponding to a given number of days since
+;   1 January.
+; Inputs:
+;   HL: The number of days since 1 January
+;   DE: The year (this is needed because the function needs to know whether the
+;       date is in a leap year)
+; Outputs:
+;    L: The month (0-11)
+;    H: The day (0-30)
+yearDayToDate:
+    ; TODO
+    ret
+
 ;; convertTimeFromTicks [Time]
 ;;   Convert from ticks in seconds to time.
 ;;   The epoch is January 1st, 1997 (a Wednesday).
@@ -313,8 +327,7 @@ _:              ex de, hl
                 ; since 1 Jan of that year in hl
                 
                 push de \ pop ix
-                ld l, 0
-                ld h, 0
+                call yearDayToDate
             ; hours
             pop de
             ld b, e
