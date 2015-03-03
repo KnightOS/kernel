@@ -513,88 +513,96 @@ _:  pop af
     pop ix
     ret
 .closeWritableStream:
-        call flush_withStream
-
-        xor a
-        ld l, (ix + FILE_ENTRY_PTR)
-        ld h, (ix + FILE_ENTRY_PTR + 1)
-        cp (ix + FILE_ENTRY_PAGE)
-        jp nz, .overwriteFile
-        ; Find the parent directory and extract the file name alone
-        call strlen
-        inc bc
-        ld de, kernelGarbage + 0x100
         push bc
-             ldir
-        pop bc
-        ld hl, kernelGarbage + 0x100
-        add hl, bc
-        ld a, '/'
-        cpdr
-        inc hl
-        xor a
-        ld (hl), a
+        push de
         push hl
+        push iy
+            call flush_withStream
+
+            xor a
+            ld l, (ix + FILE_ENTRY_PTR)
+            ld h, (ix + FILE_ENTRY_PTR + 1)
+            cp (ix + FILE_ENTRY_PAGE)
+            jp nz, .overwriteFile
+            ; Find the parent directory and extract the file name alone
+            call strlen
+            inc bc
             ld de, kernelGarbage + 0x100
-            call findDirectoryEntry
-            jp nz, .wtf
-            setBankA
-        pop de
-        ex de, hl
-        ld a, '/'
-        ld (hl), a
-        inc hl
-        push hl
-            ex de, hl
-            dec hl \ dec hl \ dec hl
-            dec hl \ dec hl
-            ld e, (hl) \ dec hl \ ld d, (hl) ; Parent dir
-
-            ld a, (ix + FILE_WORKING_SIZE + 2)
-            ld c, (ix + FILE_WORKING_SIZE)
-            ld b, (ix + FILE_WORKING_SIZE + 1)
-            ld l, (ix + FILE_SECTION_ID)
-            ld h, (ix + FILE_SECTION_ID + 1)
-            ; Traverse the sections to find the first
-            ; TODO: We can skip one iteration by pulling the PREV_SECTION_ID
-            ; from the file handle
-            push af
-            push de
+            push bc
+                 ldir
+            pop bc
+            ld hl, kernelGarbage + 0x100
+            add hl, bc
+            ld a, '/'
+            cpdr
+            inc hl
+            xor a
+            ld (hl), a
             push hl
-_:              ld a, h
+                ld de, kernelGarbage + 0x100
+                call findDirectoryEntry
+                jp nz, .wtf
                 setBankA
-                ld a, l
-                rlca \ rlca
-                ld l, a
-                ld h, 0x40
-                ld e, (hl)
-                inc hl
-                ld d, (hl)
-                ex de, hl
-                ld de, 0x7FFF
-                call cpHLDE
-                jr z, _
-                inc sp \ inc sp \ push hl
-            jr -_
-_:          pop hl
             pop de
-            pop af
-            push hl \ pop iy
-        pop hl
-.resumeWrite:
-        call createFileEntry
-        jp nz, .wtf + 2
+            ex de, hl
+            ld a, '/'
+            ld (hl), a
+            inc hl
+            push hl
+                ex de, hl
+                dec hl \ dec hl \ dec hl
+                dec hl \ dec hl
+                ld e, (hl) \ dec hl \ ld d, (hl) ; Parent dir
 
-        ; Clear away file handle
-        push hl
-            ld (ix), 0xFF
-            ld l, (ix + FILE_BUFFER)
-            ld h, (ix + FILE_BUFFER + 1)
-            push hl \ pop ix
-            call free
-            ld hl, activeFileStreams
-            dec (hl)
+                ld a, (ix + FILE_WORKING_SIZE + 2)
+                ld c, (ix + FILE_WORKING_SIZE)
+                ld b, (ix + FILE_WORKING_SIZE + 1)
+                ld l, (ix + FILE_SECTION_ID)
+                ld h, (ix + FILE_SECTION_ID + 1)
+                ; Traverse the sections to find the first
+                ; TODO: We can skip one iteration by pulling the PREV_SECTION_ID
+                ; from the file handle
+                push af
+                push de
+                push hl
+_:                  ld a, h
+                    setBankA
+                    ld a, l
+                    rlca \ rlca
+                    ld l, a
+                    ld h, 0x40
+                    ld e, (hl)
+                    inc hl
+                    ld d, (hl)
+                    ex de, hl
+                    ld de, 0x7FFF
+                    call cpHLDE
+                    jr z, _
+                    inc sp \ inc sp \ push hl
+                jr -_
+_:              pop hl
+                pop de
+                pop af
+                push hl \ pop iy
+            pop hl
+.resumeWrite:
+            call createFileEntry
+            jp nz, .wtf + 2
+
+            ; Clear away file handle
+            push hl
+                ld (ix), 0xFF
+                ld l, (ix + FILE_BUFFER)
+                ld h, (ix + FILE_BUFFER + 1)
+                push hl \ pop ix
+                call free
+                ld hl, activeFileStreams
+                dec (hl)
+            pop hl
+        pop iy
         pop hl
+        pop de
+        pop bc
     pop af
     jp po, _
     ei
@@ -603,69 +611,73 @@ _:  pop af
     cp a
     ret
 .overwriteFile:
-        ld a, (ix + FILE_ENTRY_PAGE)
-        ld l, (ix + FILE_ENTRY_PTR)
-        ld h, (ix + FILE_ENTRY_PTR + 1)
-        setBankA
-        ld a, fsModifiedFile
-        call unlockFlash
-        call writeFlashByte ; Mark old entry as modified
-        call lockFlash
-        ; Load appropriate values for createFileEntry
-        dec hl \ dec hl \ dec hl
-        ld e, (hl)
-        dec hl
-        ld d, (hl) ; Parent ID
-        push de
-            ; Grab file name, too
-            ld bc, -7
-            add hl, bc
-
-            ld bc, 0
-            ld de, kernelGarbage + 0x100
-_:          ld a, (hl)
-            ld (de), a
+            ld a, (ix + FILE_ENTRY_PAGE)
+            ld l, (ix + FILE_ENTRY_PTR)
+            ld h, (ix + FILE_ENTRY_PTR + 1)
+            setBankA
+            ld a, fsModifiedFile
+            call unlockFlash
+            call writeFlashByte ; Mark old entry as modified
+            call lockFlash
+            ; Load appropriate values for createFileEntry
+            dec hl \ dec hl \ dec hl
+            ld e, (hl)
             dec hl
-            inc de
-            inc bc
-            or a
-            jr nz, -_
+            ld d, (hl) ; Parent ID
+            push de
+                ; Grab file name, too
+                ld bc, -7
+                add hl, bc
 
-            ld l, (ix + FILE_SECTION_ID)
-            ld h, (ix + FILE_SECTION_ID + 1)
-            ; Traverse to find first section
-            push af
-            push hl
-_:              ld a, h
-                setBankA
-                ld a, l
-                rlca \ rlca
-                and 0b11111100
-                ld l, a
-                ld h, 0x40
-                ld e, (hl)
-                inc hl
-                ld d, (hl)
+                ld bc, 0
+                ld de, kernelGarbage + 0x100
+_:              ld a, (hl)
+                ld (de), a
+                dec hl
+                inc de
+                inc bc
+                or a
+                jr nz, -_
+
+                ld l, (ix + FILE_SECTION_ID)
+                ld h, (ix + FILE_SECTION_ID + 1)
+                ; Traverse to find first section
+                push af
+                push hl
+_:                  ld a, h
+                    setBankA
+                    ld a, l
+                    rlca \ rlca
+                    and 0b11111100
+                    ld l, a
+                    ld h, 0x40
+                    ld e, (hl)
+                    inc hl
+                    ld d, (hl)
+                    ex de, hl
+                    ld de, 0x7FFF
+                    call cpHLDE
+                    jr z, _
+                    inc sp \ inc sp \ push hl
+                jr -_
+_:              pop hl
+                pop af
+                push hl \ pop iy
+
                 ex de, hl
-                ld de, 0x7FFF
-                call cpHLDE
-                jr z, _
-                inc sp \ inc sp \ push hl
-            jr -_
-_:          pop hl
-            pop af
-            push hl \ pop iy
+                ld hl, kernelGarbage + 0x100 ; File name
 
-            ex de, hl
-            ld hl, kernelGarbage + 0x100 ; File name
-
-            ld a, (ix + FILE_WORKING_SIZE + 2)
-            ld c, (ix + FILE_WORKING_SIZE)
-            ld b, (ix + FILE_WORKING_SIZE + 1)
-        pop de
-        jp .resumeWrite
+                ld a, (ix + FILE_WORKING_SIZE + 2)
+                ld c, (ix + FILE_WORKING_SIZE)
+                ld b, (ix + FILE_WORKING_SIZE + 1)
+            pop de
+            jp .resumeWrite
 .wtf:
-    pop hl
+            pop hl
+        pop iy
+        pop hl
+        pop de
+        pop bc
     pop af
     jp po, _
     ei
