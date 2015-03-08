@@ -55,6 +55,8 @@
         
         
     PORT_RAM_PAGING     .equ 5
+    ; 73/83+ BE only
+    PORT_LINKASSIST_READ .equ 5
     
     PORT_BANKA          .equ 6
         ; 73/83+ BE only
@@ -67,6 +69,40 @@
         define_mask(BANKB_ISRAM_CPU6, 6)
         ; 83+ SE/84+ only
         define_mask(BANKB_ISRAM_CPU15, 7)
+    
+    ; 83+ SE/84+ only
+    PORT_LINKASSIST_ENABLE .equ 8
+        define_mask(LINKASSIST_INT_ONRECV, 0)
+        define_mask(LINKASSIST_INT_ONREADY, 1)
+        define_mask(LINKASSIST_INT_ONERROR, 2)
+        define_mask(LINKASSIST_DISABLE, 7)
+        
+    ; 83+ SE/84+ only
+    ; read
+    PORT_LINKASSIST_STATUS .equ 9
+        define_mask(LINKASSIST_RECV_ONCOMPLETE, 0)
+        define_mask(LINKASSIST_SEND_ONREADY, 1)
+        define_mask(LINKASSIST_COM_ONERROR, 2)
+        define_mask(LINKASSIST_RECV_ISBUSY, 3)
+        define_mask(LINKASSIST_RECV_ISCOMPLETE, 4)
+        define_mask(LINKASSIST_SEND_ISREADY, 5)
+        define_mask(LINKASSIST_COM_ERRORED, 6)
+        define_mask(LINKASSIST_SEND_ISBUSY, 7)
+    ;write
+    PORT_LINKASSIST_SPEED0 .equ 9
+        define_mask(LINKASSIST_SPEED_DELAY, 0)
+        define_mask(LINKASSIST_SPEED_DIVISOR, 5)
+    
+    ; 83+ SE/84+ only
+    ; write
+    PORT_LINKASSIST_OUTPUT  .equ 0x0A
+    ; read
+    ; identical to port 9
+    PORT_LINKASSIST_SPEED1 .equ 0x0A
+
+    
+    ; 83+ SE/84+ only
+    PORT_LINKASSIST_INPUT   .equ 0x0D
     
     PORT_MEMA_HIGH      .equ 0x0E
     
@@ -275,3 +311,24 @@
     FILE_WORKING_SIZE   .equ 10
     FILE_WRITE_FLAGS    .equ 13
     FILE_PREV_SECTION   .equ 14
+
+; IO stuff
+; IO frame is, in this order :
+; - header (1 byte), not included in transfer
+; - port (2 bytes)
+; - frame length (1 byte), only the data's length
+; - pointer on data (2 bytes), which should be malloc'd by the kernel in case of a reception
+    define_mask(IO_STATE_IDLE, 0)
+    define_mask(IO_STATE_RECV, 5)
+    define_mask(IO_STATE_SEND, 6)
+    define_mask(IO_STATE_ACK, 7)
+    ; Values, not bits
+    IO_STATE_HEADER           .equ 0 ; only for continuation of values ; it's never actually tested
+    IO_STATE_PORTL            .equ 1 ; idem
+    IO_STATE_PORTH            .equ 2
+    IO_STATE_LEN              .equ 3
+    IO_STATE_DATA             .equ 4
+    IO_STATE_CHECKSUM         .equ 5
+    IO_STATE_QUEUE            .equ 6
+    
+.undefine define_mask

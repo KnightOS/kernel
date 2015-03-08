@@ -7,7 +7,7 @@ boot:
 shutdown:
     ; TODO: Crash detection
 _:  di
-
+    
     ld a, 3 << MEM_TIMER_SPEED
     out (PORT_MEM_TIMER), a ; Memory mode 0
 
@@ -90,6 +90,7 @@ reboot:
     call initFilesystem
     call initMultitasking
     call initDisplay
+    call initNetwork
 
     ld de, init
     call fileExists
@@ -103,3 +104,26 @@ reboot:
 
 init:
     .db "/bin/init", 0
+
+asdlfkajserlksjer:
+    push iy
+    push de
+    push bc
+        ld iy, 0xC000
+        call clearBuffer
+        ld de, 0
+        rst 0x20
+        .dw drawHexA
+        call fastCopy_skipCheck
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+        ld b, 0xFF
+        djnz $
+    pop bc
+    pop de
+    pop iy
+    ret
