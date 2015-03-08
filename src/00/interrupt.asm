@@ -437,7 +437,7 @@ sendNewIOByte:
     jp sysInterruptDone
 #else
     ; ####
-    ; TODO
+    ; TODO : handle 73/83+ send
     ; ####
 #endif
 

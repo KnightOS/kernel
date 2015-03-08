@@ -1,5 +1,5 @@
 initNetwork:
-#ifdef CPU15
+#ifdef LINK_ASSIST
     xor a
     out (PORT_LINKPORT), a
     ; enable R/W link assist and on-byte-reception interrupt generation
