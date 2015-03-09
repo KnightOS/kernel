@@ -1,3 +1,8 @@
+.macro define_mask(name, bitN)
+    BIT_name .equ bitN \
+    name .equ 1 << bitN
+.endmacro
+
 nullThread              .equ 0xFF
 errOutOfMem             .equ 1
 errTooManyThreads       .equ 2
@@ -18,6 +23,8 @@ errNoEntryPoint         .equ 15
 errKernelMismatch       .equ 15
 errMutexNotLocked       .equ 16
 errReadOnly             .equ 17
+errIOFrameNotReady      .equ 18
+errIOUnassignedPort     .equ 19
 
 threadRangeMask         .equ 0b11111
 
@@ -37,6 +44,13 @@ panic_no_threads        .equ 1
 panic_no_active_threads .equ 2
 panic_library_not_found .equ 3
 
+; IO stuff
+IOinactive 				.equ 0
+define_mask(IOinFrame, 0)
+define_mask(IOoutFrame, 1)
+define_mask(IOFrameBusy, 2)
+define_mask(IOFrameNeedsClaiming, 3)
+
 ; KEXC headers
 ; 0x00-0x7F reserved for kernel use
 ; 0x80-0xFF available for arbituary use
@@ -52,3 +66,5 @@ KEXC_DESCRIPTION        .equ 0x06
 THREAD_NON_SUSPENDABLE  .equ 2
 ;THREAD_IS_SUSPENDED    .equ 4 ; Not a public flag
 THREAD_COLOR            .equ 8
+
+.undefine define_mask
