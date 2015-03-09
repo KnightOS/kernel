@@ -52,8 +52,7 @@ sendIOFrame:
                 add hl, bc
             pop bc
             ; header
-            ld a, IOoutFrame
-            ld (hl), a
+            ld (hl), IOoutFrame
             inc hl
             ; port
             ld (hl), e
@@ -110,13 +109,15 @@ _:
     
 ; Inputs:
 ;  DE: port
+;  HL: where to start searching - 6
 ; Outputs:
 ;  HL: pointer to IO frame on success
 ;  Z: set on success, reset on failure
 ;  A: header on success or error code on failure
 searchForFrame:
     push bc \ push de
-        ld hl, IOFramesQueue
+        ld bc, 6
+        add hl, bc
         ld b, 8
 .nextFrame:
         ld a, IOinactive
@@ -160,8 +161,12 @@ searchForFrame:
 ;;  Remember to free HL when you're done with it.
 getIOFrame:
     push de
+        ld hl, IOFramesQueue - 6
+_:
         call searchForFrame
         jr nz, .exit
+        bit BIT_IOinFrame, a
+        jr z, -_
         bit BIT_IOFrameBusy, a
         jr z, +_
         ld a, errIOFrameNotReady
@@ -186,17 +191,16 @@ _:
 ;;  DE: port
 ;; Outputs:
 ;;  Z: set if the transfer has completed, reset in any other situation
-;;  A: garbage if the transfer has completed, error code in any other situation
 ;; Notes:
 ;;  Z being reset can mean several things, including that the port is unassigned.
-;;  A will be an error code if Z is reset.
 IOTransferCompleted:
     push bc \ push hl
+        ld hl, IOFramesQueue - 6
+_:
         call searchForFrame
         jr nz, .exit
         bit BIT_IOFrameBusy, a
-        jr z, .exit
-        ld a, errIOFrameNotReady
+        jr nz, -_
 .exit:
     pop hl \ pop bc
     ret
