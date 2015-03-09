@@ -318,7 +318,7 @@
 ; - port (2 bytes)
 ; - frame length (1 byte), only the data's length
 ; - pointer on data (2 bytes), which should be malloc'd by the kernel in case of a reception
-    define_mask(IO_STATE_IDLE, 0)
+    IO_STATE_IDLE .equ 0
     define_mask(IO_STATE_RECV, 5)
     define_mask(IO_STATE_SEND, 6)
     define_mask(IO_STATE_ACK, 7)

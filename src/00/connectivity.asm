@@ -52,7 +52,7 @@ sendIOFrame:
                 add hl, bc
             pop bc
             ; header
-            ld a, IOoutFrame | IOFrameBusy
+            ld a, IOoutFrame
             ld (hl), a
             inc hl
             ; port

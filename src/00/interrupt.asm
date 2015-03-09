@@ -89,6 +89,41 @@ intHandleTimer1:
     ; Timer 1 interrupt
     ; Handle IO send.
     ld a, (IOstate)
+    cp IO_STATE_IDLE
+    jr nz, .notIDLE
+    ; no transfer is ongoing, search for awaiting ones
+    ld hl, IOFramesQueue
+    ld b, maxIOFrames
+    ld c, 0
+    ld de, 6
+_:
+    ld a, (hl)
+    cp IOoutFrame
+    jr z, .readyOutFrame
+    add hl, de
+    inc c
+    djnz -_
+    jr .sendDoneHandling
+.readyOutFrame:
+    ; we have a transfer that is ready to send, initialize it
+    ld a, (hl)
+    or IOFrameBusy
+    ld (hl), a
+    ld a, c
+    ld (busyIOFrame), a
+    ld a, IO_STATE_SEND | IO_STATE_PORTL
+    ld (IOstate), a
+    xor a
+    ld (currentIODataByte), a
+    ld (IODataChecksum), a
+    ld (IOTransferErrored), a
+    ld (IOSendConfirmed), a
+    inc a
+    ld (IOIsSending), a
+    ; start transfer right away
+    ACKReach()
+    jp sendNewIOByte
+.notIDLE:
     bit BIT_IO_STATE_SEND, a
     jr z, .sendDoneHandling
     in a, (PORT_LINKASSIST_STATUS)
