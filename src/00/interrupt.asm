@@ -8,8 +8,6 @@
         ld (hl), 0xff
         ldir
         call fastCopy_skipCheck
-        call clearBuffer
-        call fastCopy_skipCheck
     pop iy \ pop hl \ pop de \ pop bc
 .endmacro
 
@@ -121,7 +119,6 @@ _:
     inc a
     ld (IOIsSending), a
     ; start transfer right away
-    ACKReach()
     jp sendNewIOByte
 .notIDLE:
     bit BIT_IO_STATE_SEND, a
@@ -402,9 +399,64 @@ sendNewIOByte:
     ld a, (IOstate)
     bit BIT_IO_STATE_ACK, a
     jr nz, .handleSendACKByte
-    ; ####
-    ; TODO : send frames
-    ; ####
+    ; We're not sending ACK bytes, meaning we're at the start or in the middle of an output
+    ; First, grab the correct frame
+    ld a, (busyIOFrame)
+    add a, a
+    ld c, a
+    add a, a
+    add a, c
+    ld c, a
+    ld b, 0
+    ld hl, IOFramesQueue
+    add hl, bc
+    inc hl ; skip header
+    ld a, (IOstate)
+    and 0x1f
+    ; Send bytes normally until reaching the data part
+    cp IO_STATE_PORTL
+    jr z, .sendByte
+    inc hl
+    cp IO_STATE_PORTH
+    jr z, .sendByte
+    inc hl
+    cp IO_STATE_LEN
+    jr z, .sendByte
+    ld c, (hl) ; keep the data length in C
+    inc hl
+    ; The other states are up to handleSendACKByte, so that means we're sending data bytes
+    ld a, (hl)
+    inc hl
+    ld h, (hl)
+    ld l, a
+    ; Send bytes until currentIODataByte = C, while updating the checksum
+    ld a, (currentIODataByte)
+    ld e, a
+    ld d, 0
+    add hl, de
+    ld a, (hl)
+    out (PORT_LINKASSIST_INPUT), a
+    ld hl, IODataChecksum
+    add a, (hl)
+    ld (hl), a
+    ld a, c
+    inc e
+    cp e
+    jr z, .sendDone
+    ld a, e
+    ld (currentIODataByte), a
+    jp sysInterruptDone
+.sendDone:
+    ld a, IO_STATE_ACK | IO_STATE_SEND | IO_STATE_CHECKSUM
+    ld (IOstate), a
+    xor a
+    ld (currentIODataByte), a
+    jp sysInterruptDone
+.sendByte:
+    ld a, (hl)
+    out (PORT_LINKASSIST_INPUT), a
+    ld hl, IOstate
+    inc (hl)
     jp sysInterruptDone
 .handleSendACKByte:
     ; A: IO state

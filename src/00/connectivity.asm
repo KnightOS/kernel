@@ -21,7 +21,7 @@ initNetwork:
     ld (willSendNextIOFrame), hl ; set temp_io_var at the same time
     ld (busyIOFrame), hl ; set currentIODataByte at the same time
     ld hl, IOFramesQueue
-    ld b, 8
+    ld b, maxIOFrames
     ld de, 6
 _:
     ld (hl), IOinactive
@@ -39,7 +39,10 @@ sendIOFrame:
     push bc \ push de \ push hl
         push hl
             ld a, (currentIOFrame)
-            call dropNextIOFrame
+            push af
+                call dropNextIOFrame
+                ld (currentIOFrame), a
+            pop af
             ld hl, IOFramesQueue
             ; an IO frame is 6 bytes
             push bc
@@ -67,9 +70,6 @@ sendIOFrame:
         ld (hl), e
         inc hl
         ld (hl), d
-        ld hl, currentIOFrame
-        ld a, (hl)
-        inc (hl)
     pop hl \ pop de \ pop bc
     ret
 
@@ -90,10 +90,10 @@ _:
         ld a, b
         ld b, 0
         ld hl, IOFramesQueue
-        add hl, bc    
+        add hl, bc
         bit BIT_IOFrameNeedsClaiming, (hl)
-        jr z, .exit
         ld (hl), IOinactive
+        jr z, .exit
         ; free content
         push ix
             ld bc, 4
@@ -154,7 +154,7 @@ searchForFrame:
 ;;  DE: port
 ;; Outputs:
 ;;  HL: pointer to data
-;;  C: frame length
+;;  C: data length
 ;;  Z: set on success, reset on failure
 ;;  A: 0 on success, error code on failure
 ;; Notes:
