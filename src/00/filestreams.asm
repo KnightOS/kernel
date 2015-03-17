@@ -19,7 +19,7 @@ initFilesystem:
 openFileRead:
     push hl
     push bc
-        call findFileEntry
+        call findNode ; TODO: Check if this is a file node, follow symlinks, etc
         jp nz, .fileNotFound
         ld b, a
         push af
@@ -198,7 +198,7 @@ _:  pop af
     ret
 .entryFound:
             push hl
-                call findFileEntry
+                call findNode ; TODO: Check if this is a file, follow symlinks, etc
                 jp nz, .fileNotFound
             pop de
             ld d, e
@@ -540,7 +540,7 @@ _:  pop af
             ld (hl), a
             push hl
                 ld de, kernelGarbage + 0x100
-                call findDirectoryEntry
+                call findNode ; TODO: Check that this is a directory node
                 jp nz, .wtf
                 setBankA
             pop de
