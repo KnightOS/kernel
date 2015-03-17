@@ -1,5 +1,7 @@
+; NOTE: Should we replace this with "deleteNode" and have it work on directories, too?
+
 ;; deleteFile [Filesystem]
-;;  Deletes a file.
+;;  Deletes a file or symbolic link.
 ;; Inputs:
 ;;  DE: Path to file (string pointer)
 ;; Outputs:
@@ -8,9 +10,8 @@
 deleteFile:
     push hl
     push af
-        call findNode ; TODO: Check if this node is a file first
-        jr nz, ++_
-        ; Delete file
+        call findNode
+        jr nz, .error
         push bc
             ld b, a
             ld a, i
@@ -18,8 +19,24 @@ deleteFile:
                 di
                 ld a, b
                 setBankA
-                call unlockFlash
+
+                ; Check node type
+                ld a, (hl)
+                cp fsFile
+                jr z, .file
+                cp fsSymlink
+                jr z, .symlink
+                ; TODO: Directories?
+                ld a, errNotAFile
+                jr .error
+.symlink:
+                ld a, fsDeletedSymLink
+                jr .delete
+.file:
                 ld a, fsDeletedFile
+.delete:
+                ; Perform actual deletion
+                call unlockFlash
                 call writeFlashByte
                 call lockFlash
             pop af
@@ -30,7 +47,7 @@ _:      pop bc
     pop hl
     cp a
     ret
-_:  ; File not found
+.error:
     ld h, a
     pop af
     or 1
