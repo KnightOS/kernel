@@ -8,7 +8,7 @@
 deleteFile:
     push hl
     push af
-        call findFileEntry
+        call findNode ; TODO: Check if this node is a file first
         jr nz, ++_
         ; Delete file
         push bc
@@ -47,7 +47,7 @@ _:  ; File not found
 fileExists:
     push hl
     push af
-        call findFileEntry
+        call findNode ; TODO: Check if this node is a file
         jr nz, _
     pop af
     pop hl
@@ -67,20 +67,7 @@ _:  ld h, a
 ;; Outputs:
 ;;  Z: Set if file exists, reset if not
 directoryExists:
-    push hl
-    push af
-        call findDirectoryEntry
-        jr nz, _
-    pop af
-    pop hl
-    cp a
-    ret
-_:  ld h, a
-    pop af
-    or 1
-    ld a, h
-    pop hl
-    ret
+    jr fileExists ; TODO: Check if this node is a directory
 
 ;; listDirectory [Filesystem]
 ;;  Lists the contents of a directory on the filesystem.
@@ -113,7 +100,7 @@ listDirectory:
     push bc
     push hl
     push hl
-        call findDirectoryEntry
+        call findNode ; TODO: Check if this node is a directory
         ;jr nz, .error ; TODO
         ld bc, 0
         call cpHLBC
@@ -663,7 +650,7 @@ _:      push de
             xor a
             ld (hl), a ; Remove final '/'
             push hl
-                call findDirectoryEntry
+                call findNode ; TODO: Make sure this node is a directory
                 jr nz, .error
                 ld bc, 4
                 scf
@@ -701,15 +688,18 @@ _:  pop af
     ld a, errFileNotFound
     ret
 
-;; findFileEntry [Filesystem]
-;;  Finds a file entry in the FAT.
-;; Inputs:
-;;  DE: Path to file (string pointer)
-;; Outputs:
-;;  Z: Set on success, reset on failure
-;;  A: Flash page (on success); Error code (on failure)
-;;  HL: Address relative to 0x4000 (on success)
-findFileEntry:
+; findNode
+;  Finds a node in the FAT.
+; Inputs:
+;  DE: Path to node (string pointer)
+; Outputs:
+;  Z: Set on success, reset on failure
+;  A: Flash page (on success); error code (on failure)
+;  HL: Address relative to 0x4000 (on success)
+; Notes:
+;  This works for any node - file, directory, symlink, etc. The rest of the
+;  logic is up to you.
+findNode:
     push de
     push bc
     push af
@@ -729,14 +719,14 @@ _:      setBankA(fatStart)
         ld hl, 0x7FFF
         push af
             push de \ call checkForRemainingSlashes \ pop de
-            jp z, findFileEntry_fileLoop
+            jp z, findNode_fileLoop
 _:          ld a, (hl)
             dec hl \ ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
             cp fsDirectory
             jr z, .handleDirectory
             cp fsSymLink ; TODO: Symlinks to directories?
             cp fsEndOfTable
-            jr z, findFileEntry_handleEndOfTable
+            jr z, findNode_handleEndOfTable
 .continueSearch:
             or a
             sbc hl, bc
@@ -779,8 +769,8 @@ _:          ld a, (hl)
             jr nz, .continueSearch
             or a
             sbc hl, bc
-            jr findFileEntry_fileLoop
-findFileEntry_handleEndOfTable:
+            jr findNode_fileLoop
+findNode_handleEndOfTable:
         pop af
     pop af
     jp po, _
@@ -791,226 +781,64 @@ _:  pop af
     pop bc
     pop de
     ret
-findFileEntry_fileLoop:
+findNode_fileLoop:
             ; Run once we've eliminated all slashes in the path
 _:          ld a, (hl)
             dec hl \ ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
             cp fsFile
-            jr z, .handleFile
+            jr z, .handleEntry
+            cp fsDirectory
+            jr z, .handleEntry
             cp fsSymLink
-            jr z, .handleLink
+            jr z, .handleEntry
             cp fsEndOfTable
-            jr z, findFileEntry_handleEndOfTable
+            jr z, findNode_handleEndOfTable
 .continueSearch:
             or a
             sbc hl, bc
             jr -_
-.handleLink:
-            ; Similar to handling files
+.handleEntry:
             push bc
                 push hl
-                    ; Check parent directory ID
-                    ld c, (hl) \ dec hl \ ld b, (hl)
+                    ; Check parent ID
+                    ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
                     ld hl, (kernelGarbage)
                     call cpHLBC
-                    jr z, .compareLinkNames
-                    ; Not correct parent
+                    jr z, .parentMatch
                 pop hl
             pop bc
             jr .continueSearch
-.compareLinkNames:
+; These just load BC with the number of bytes to skip to get the node name
+.fileMetadata:
+    ld bc, 8
+    ret
+.dirMetadata:
+    ld bc, 5
+    ret
+.linkMetadata:
+    ld bc, 3
+    ret
+; Back to normal now
+.parentMatch:
                 pop hl \ push hl
-                    ld bc, 3
-                    or a
+                    cp fsFile
+                    call z, .fileMetadata
+                    cp fsDirectory
+                    call z, .dirMetadata
+                    cp fsSymLink
+                    call z, .linkMetadata
+                    scf \ ccf
                     sbc hl, bc
                     push de
                         call compareFileStrings
                     pop de
                 pop hl
             pop bc
-            jr z, .linkFound
-            jr .continueSearch
-.handleFile:
-            push bc
-                push hl
-                    ; Check parent directory ID
-                    ld c, (hl) \ dec hl \ ld b, (hl)
-                    ld hl, (kernelGarbage)
-                    call cpHLBC
-                    jr z, .compareNames
-                    ; Not correct parent
-                pop hl
-            pop bc
-            jr .continueSearch
-.compareNames:
-                pop hl \ push hl
-                    ld bc, 8
-                    or a
-                    sbc hl, bc
-                    push de
-                        call compareFileStrings
-                    pop de
-                pop hl
-            pop bc
-            jr z, .fileFound
-            jr .continueSearch
-.fileFound:
+            jr nz, .continueSearch
+            ; Return this entry, all done
             ld bc, 3
             add hl, bc
-        pop bc ; pop af
-    pop af
-    jp po, _
-    ei
-_:  pop af
-    ld a, b
-    pop bc
-    pop de
-    cp a
-    ret
-.linkFound:
-            ; We need to replace the current path with this link and then start over
-            dec hl \ dec hl
-            ld c, (hl)
-            ld b, 0
-            dec hl
-            or a
-            sbc hl, bc
-            ld de, kernelGarbage + 2
-.loadLinkLoop:
-            ld a, (hl)
-            ld (de), a
-            inc de \ dec hl
-            or a
-            jr nz, .loadLinkLoop
-        pop af
-        ld de, kernelGarbage + 2
-        jp startOver@findFileEntry
-
-;; findDirectoryEntry [Filesystem]
-;;  Finds a directory entry in the FAT.
-;; Inputs:
-;;  DE: Path to directory
-;; Outputs:
-;;  Z: Set on success, reset on failure
-;;  A: Flash page (on success); Error code (on failure)
-;;  HL: Address relative to 0x4000 (on success)
-;; Notes:
-;;  This function returns HL=0 for the root directory. You should
-;;  handle this special case yourself. The root directory has ID 0
-;;  and has no parent directory.
-findDirectoryEntry:
-    push de
-    push bc
-    push af
-    ld a, i
-    push af
-    di
-        ; TODO: Relative paths
-        setBankA(fatStart)
-        ld hl, 0
-        ld (kernelGarbage), hl ; Parent ID
-        ld hl, 0x7FFF
-.search:
-        ld a, (de)
-        cp '/'
-        jr nz, _
-        inc de
-        ld a, (de)
-_:      or a ; cp 0
-        jr z, .done_root ; Root is a special case
-.traversalLoop:
-        ; Traverse the table
-        ld a, (hl)
-        dec hl
-        ld c, (hl)
-        dec hl
-        ld b, (hl)
-        dec hl
-
-        cp fsDirectory
-        jr z, .handleDirectory
-        cp fsSymLink ; TODO
-        cp fsEndOfTable
-        jr z, .endOfTable
-_:
-.seekandcontinue:
-        or a
-        sbc hl, bc
-        ; TODO: Handle swapping out next page
-        jr .traversalLoop
-.skip:
-        inc hl
-        inc hl
-        inc hl
-        inc hl
-        inc hl
-        jr -_
-.handleDirectory:
-        ; Check parent IDs
-        push bc
-        push hl
-            ld c, (hl)
-            dec hl
-            ld b, (hl)
-            dec hl
-            push hl
-                ld hl, (kernelGarbage)
-                call cpHLBC
-            pop hl
-            jr z, _
-        pop hl
-        pop bc
-        jr -_
-_:          ; Parent IDs match, check name
-            ld c, (hl)
-            dec hl
-            ld b, (hl) ; Grab new directory ID just in case
-            dec hl
-            dec hl ; Skip flags
-            push de
-                call compareDirectories
-                jr z, _
-            pop de
-        pop hl
-        pop bc
-        jr .seekandcontinue
-_:          inc sp \ inc sp ; pop de
-            ; Directories match, update kernelGarbage
-            ld (kernelGarbage), bc
-            ; We might be done here
-            ld a, (de)
-            cp '/'
-            jr nz, _
-            inc de
-            ld a, (de)
-_:          or a ; cp 0
-            jr nz, .continue
-            ; We are done!
-        pop hl
-        pop bc
-        ld bc, 3
-        add hl, bc
-        jr .done
-.continue:
-        inc sp \ inc sp ; pop hl
-        pop bc
-        dec hl
-        jr .traversalLoop
-.endOfTable:
-    pop af
-    jp po, _
-    ei
-_:  pop af
-    pop bc
-    pop de
-    or 1
-    ld a, errFileNotFound
-    ret
-.done_root:
-        ld hl, (kernelGarbage)
-.done:
-        getBankA
-        ld b, a
+        pop bc ; pop af (with current FAT page)
     pop af
     jp po, _
     ei
@@ -1113,7 +941,7 @@ renameFile:
             push af
                 push hl
                     ; Set the filetype to indicate the file's modified
-                    call findFileEntry
+                    call findNode ; TODO: Confirm that this is a file node
                     jr nz, .notFound
                     setBankA
 
