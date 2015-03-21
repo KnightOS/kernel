@@ -1,4 +1,4 @@
-# Makefile for KnightSoft kernel
+# Makefile for KnightOS kernel
 AS=sass
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
