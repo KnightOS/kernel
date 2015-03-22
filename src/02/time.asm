@@ -86,21 +86,15 @@ monthLength:
 _:  push hl \ push bc
         cp 1
         jr z, +_ ; if a = 1, so we have a leap year
-        ld hl, .monthLengthNonLeap
+        ld hl, monthLengthNonLeap
         jr ++_
-_:      ld hl, .monthLengthLeap
+_:      ld hl, monthLengthLeap
 _:      ld b, 0
         ld c, e
         add hl, bc
         ld a, (hl)
     pop bc \ pop hl
     ret
-
-; The number of days in a given month
-.monthLengthNonLeap:
-    .db 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-.monthLengthLeap:
-    .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 
 ; daysBeforeMonth
 ;   Computes the amount of days before the first day of the given month since
@@ -116,9 +110,9 @@ daysBeforeMonth:
 _:  push hl
         cp 1
         jr z, +_ ; if a = 1, so we have a leap year
-        ld hl, .daysBeforeMonthNonLeap
+        ld hl, daysBeforeMonthNonLeap
         jr ++_
-_:      ld hl, .daysBeforeMonthLeap
+_:      ld hl, daysBeforeMonthLeap
 _:      ld b, 0
         ld c, e
         add hl, bc
@@ -130,12 +124,6 @@ _:      ld b, 0
         ld b, a
     pop hl
     ret
-
-; The number of days before a given month
-.daysBeforeMonthNonLeap:
-    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
-.daysBeforeMonthLeap:
-    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335
 
 ;; isLeapYear [Time]
 ;;   Determines whether the given year is a leap year.
@@ -236,30 +224,46 @@ leapYearsSince1997:
 ;    L: The month (0-11)
 ;    H: The day (0-30)
 yearDayToDate:
-    ld de, 0
-.tooSmall:
-    push hl
-        push ix \ pop hl
-        call daysBeforeMonth
-    pop hl ; days
+    ;jr $ ; TODO debug
+    
     push de
-        push hl \ pop de
-        call cpBCDE
-    pop de
-    jr nc, .dBMfound
-    inc e
-    jr .tooSmall
-.dBMfound:
-    dec e ;The month is in e
-    push hl
+        ex hl, de
+        
         push ix \ pop hl
-        call daysBeforeMonth
-        or a
-    pop hl ;Days
-    sbc hl, bc
-
-    ld h, l ;Days
-    ld l, e ;Month
+        call isLeapYear
+        
+        cp 1
+        jr z, +_ ; if a = 1, so we have a leap year
+        ld hl, daysBeforeMonthNonLeap
+        jr ++_
+_:      ld hl, daysBeforeMonthLeap
+_:      
+        ld a, 0 ; guess for the month
+.notFoundYet:
+        inc a
+        
+        ; if (hl + 2*a) >= de, we are done
+        inc hl
+        inc hl
+        
+        push hl
+            ld c, (hl) \ inc hl \ ld b, (hl) \ push bc \ pop hl ; ld hl, (hl)
+            
+            call cpHLDE
+        pop hl
+        jr c, .notFoundYet
+        
+        dec a
+        dec hl
+        dec hl
+        ld c, (hl) \ inc hl \ ld b, (hl) \ push bc \ pop hl ; ld hl, (hl)
+        
+        sbc hl, de ; carry is always unset here
+        ; day in l
+        
+        ld h, l ; day
+        ld l, a ; month
+    pop de
     
     ret
 
@@ -495,3 +499,18 @@ getTime:
     cp a
     ret
 #endif
+
+
+; data
+
+; The number of days in a given month
+monthLengthNonLeap:
+    .db 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+monthLengthLeap:
+    .db 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+
+; The number of days before a given month
+daysBeforeMonthNonLeap:
+    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+daysBeforeMonthLeap:
+    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335
