@@ -230,13 +230,37 @@ leapYearsSince1997:
 ;   1 January.
 ; Inputs:
 ;   HL: The number of days since 1 January
-;   DE: The year (this is needed because the function needs to know whether the
+;   IX: The year (this is needed because the function needs to know whether the
 ;       date is in a leap year)
 ; Outputs:
 ;    L: The month (0-11)
 ;    H: The day (0-30)
 yearDayToDate:
-    ; TODO
+    ld de, 0
+.tooSmall:
+    push hl
+        push ix \ pop hl
+        call daysBeforeMonth
+    pop hl ; days
+    push de
+        push hl \ pop de
+        call cpBCDE
+    pop de
+    jr nc, .dBMfound
+    inc e
+    jr .tooSmall
+.dBMfound:
+    dec e ;The month is in e
+    push hl
+        push ix \ pop hl
+        call daysBeforeMonth
+        or a
+    pop hl ;Days
+    sbc hl, bc
+
+    ld h, l ;Days
+    ld l, e ;Month
+    
     ret
 
 ;; convertTimeFromTicks [Time]
@@ -326,6 +350,7 @@ _:              ex de, hl
                 ; now we have the year number in de and the number of days
                 ; since 1 Jan of that year in hl
                 
+                ; figure out day and month (in h and l)
                 push de \ pop ix
                 call yearDayToDate
             ; hours
