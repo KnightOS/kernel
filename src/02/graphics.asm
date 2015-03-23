@@ -280,6 +280,17 @@ _:  ld a, 96        ;Clip Top
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 rectAND:
+    push    af
+    push    hl
+    push    bc
+    push    de
+        call    .rectAND
+    pop de
+    pop bc
+    pop hl
+    pop af
+    ret
+.rectAND:
     ld a, 96        ;Clip Top
     sub e
     ret c
