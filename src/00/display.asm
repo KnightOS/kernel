@@ -1182,6 +1182,17 @@ drawLine: ; By James Montelongo
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 rectOR:
+    push af
+    push hl
+    push de
+    push bc
+        call    .rectOR
+    pop bc
+    pop de
+    pop hl
+    pop af
+    ret
+.rectOR:
     ld a, 96        ;Clip Top
     sub e
     ret c
