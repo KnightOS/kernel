@@ -1182,6 +1182,18 @@ drawLine: ; By James Montelongo
 ;;  E, L: X, Y
 ;;  C, B: Width, height
 rectOR:
+    push af
+    push hl
+    push bc
+    push de
+        call .rectOR
+    pop de
+    pop bc
+    pop hl
+    pop af
+    ret
+
+.rectOR:
     ld a, 96        ;Clip Top
     sub e
     ret c
@@ -1272,4 +1284,226 @@ rectOR:
     ld e, a
     ld a, 0b11111111
     jr .boxORloop1
+    ret
+    
+;; rectAND [Display]
+;;  Draws a filled rectangle on the screen buffer using AND logic.
+;; Inputs:
+;;  IY: Screen buffer
+;;  E, L: X, Y
+;;  C, B: Width, height
+rectAND:
+    push af
+    push hl
+    push bc
+    push de
+        call .rectAND
+    pop de
+    pop bc
+    pop hl
+    pop af
+    ret
+
+.rectAND:
+    ld a, 96        ;Clip Top
+    sub e
+    ret c
+    ret z
+    cp c            ;Clip Bottom
+    jr nc, $ + 3
+    ld c, a
+    ld a, 64        ;Clip Left
+    sub l
+    ret c
+    ret z
+    cp b            ;Clip Right
+    jr nc, $ + 3
+    ld b, a
+
+    xor a           ;More clipping...
+    cp b
+    ret z
+    cp c
+    ret z
+    ld h, a
+    ld d, a
+
+    push bc
+        push iy \ pop bc
+        ld a, l
+        add a, a
+        add a, l
+        ld l, a
+        add hl, hl
+        add hl, hl        ;(e,_) = (X,Y)
+        add hl, bc        ;(_,_) = (width,height)
+
+        ld a, e
+        srl e
+        srl e
+        srl e
+        add hl, de
+        and 0b00000111    ;(a,_) = (X^8,Y)
+    pop de                ;(e,d) = (width,height)
+
+    ld b, a
+    add a, e
+    sub 8
+    ld e, 0
+    jr c, .boxANDskip
+    ld e, a
+    xor a
+.boxANDskip:
+
+.boxANDshift:            ;Input:  b = Left shift
+    add a, 8            ;Input:  a = negative right shift
+    sub b               ;Output: a = mask
+    ld c, 0
+.boxANDshift1:
+    scf
+    rr c
+    dec a
+    jr nz, .boxANDshift1
+    ld a, c
+    inc b
+    rlca
+.boxANDshift2:
+    rrca
+    djnz .boxANDshift2
+
+.boxANDloop1:            ;(e,d) = (width,height)
+    push hl             ;    a = bitmask
+        ld b, d
+        ld c, a
+        push de
+            ld de, 12
+.boxANDloop2:
+            ld a, c
+            and (hl)
+            ld (hl), a
+            add hl, de
+            djnz .boxANDloop2
+        pop de
+    pop hl
+    inc hl
+    ld a,e
+    or a
+    ret z
+    sub 8
+    ld e, b
+    jr c, .boxANDshift
+    ld e, a
+    ld a, 0b11111111
+    jr .boxANDloop1
+    ret
+    
+;; rectXOR [Display]
+;;  Draws a filled rectangle on the screen buffer using XOR logic.
+;; Inputs:
+;;  IY: Screen buffer
+;;  E, L: X, Y
+;;  C, B: Width, height
+rectXOR:
+    push af
+    push hl
+    push bc
+    push de
+        call .rectXOR
+    pop de
+    pop bc
+    pop hl
+    pop af
+    ret
+
+.rectXOR:
+    ld a, 96        ;Clip Top
+    sub e
+    ret c
+    ret z
+    cp c            ;Clip Bottom
+    jr nc, $ + 3
+    ld c, a
+    ld a, 64        ;Clip Left
+    sub l
+    ret c
+    ret z
+    cp b            ;Clip Right
+    jr nc, $ + 3
+    ld b, a
+
+    xor a           ;More clipping...
+    cp b
+    ret z
+    cp c
+    ret z
+    ld h, a
+    ld d, a
+
+    push bc
+        push iy \ pop bc
+        ld a, l
+        add a, a
+        add a, l
+        ld l, a
+        add hl, hl
+        add hl, hl        ;(e,_) = (X,Y)
+        add hl, bc        ;(_,_) = (width,height)
+
+        ld a, e
+        srl e
+        srl e
+        srl e
+        add hl, de
+        and 0b00000111    ;(a,_) = (X^8,Y)
+    pop de                ;(e,d) = (width,height)
+
+    ld b, a
+    add a, e
+    sub 8
+    ld e, 0
+    jr c, .boxXORskip
+    ld e, a
+    xor a
+.boxXORskip:
+
+.boxXORshift:            ;Input:  b = Left shift
+    add a, 8            ;Input:  a = negative right shift
+    sub b               ;Output: a = mask
+    ld c, 0
+.boxXORshift1:
+    scf
+    rr c
+    dec a
+    jr nz, .boxXORshift1
+    ld a, c
+    inc b
+    rlca
+.boxXORshift2:
+    rrca
+    djnz .boxXORshift2
+
+.boxXORloop1:            ;(e,d) = (width,height)
+    push hl             ;    a = bitmask
+        ld b, d
+        ld c, a
+        push de
+            ld de, 12
+.boxXORloop2:
+            ld a, c
+            xor (hl)
+            ld (hl), a
+            add hl, de
+            djnz .boxXORloop2
+        pop de
+    pop hl
+    inc hl
+    ld a,e
+    or a
+    ret z
+    sub 8
+    ld e, b
+    jr c, .boxXORshift
+    ld e, a
+    ld a, 0b11111111
+    jr .boxXORloop1
     ret
