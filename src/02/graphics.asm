@@ -9,46 +9,50 @@
 ;; Notes:
 ;;  If the pixel is on, HL & A is nonzero.
 getPixel:
-    push de
     push bc
-        ld h, 0
-        ld d, h
-        ld e, l
+        push af
+            ld b, a
+            xor a
+            ld h, a
+            ld c, l
     
-        add hl, hl
-        add hl, de
-        add hl, hl
-        add hl, hl
-    
-        ld e, a
-        srl e
-        srl e
-        srl e
-        add hl, de
-
-        push iy \ pop de
-        push bc
-            ld bc, 0x300
-            call cpHLBC
-        pop bc
-        jr nc, .outOfBounds
-        add hl, de
+            add hl, hl
+            add hl, hl
+            and h
+            jr nz, .outOfBounds
+            ld a, b
+            ld b, h
+            rra
+            add hl, bc
+            rra
+            add hl, hl
+            rra
+            add hl, bc
+            add hl, bc
+            cp 12
+            jr nc, .outOfBounds
+            add a, l
+            ld l, a
+            jr nc, $+3
+            inc h
+            push iy \ pop bc
+            add hl, bc
+        pop af
         and 7
         ld b, a
         ld a, 0x80
         jr z, _
-
         rrca
         djnz $-1
 _:  pop bc
-    pop de
-    ret
-.outOfBounds:
-        ld hl, 0
-        xor a
+    ret      
+.ouOfBounds:
+        pop af
     pop bc
-    pop de
+    ld hl, 0
+    xor a
     ret
+
 
 ;; setPixel [Display]
 ;;  Sets (turns on) a pixel on the screen buffer.
