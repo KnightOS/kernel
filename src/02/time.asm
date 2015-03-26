@@ -225,45 +225,34 @@ leapYearsSince1997:
 ;    H: The day (0-30)
 ;   DE: Garbage
 yearDayToDate:
-    ;jr $ ; TODO debug
-    
     push de
         ex hl, de
-        
         push ix \ pop hl
         call isLeapYear
-        
         cp 1
         jr z, +_ ; if a = 1, so we have a leap year
         ld hl, daysBeforeMonthNonLeap
         jr ++_
 _:      ld hl, daysBeforeMonthLeap
-_:      
-        ld a, 0 ; guess for the month
-.notFoundYet:
+_:      ld a, 0 ; guess for the month
+.notFound:
         inc a
-        
-        ; if (hl + 2*a) >= de, we are done
         inc hl
         inc hl
-        
+        ; if (hl) > de, we are done
         push hl
             ld c, (hl) \ inc hl \ ld b, (hl) \ push bc \ pop hl ; ld hl, (hl)
-            
             call cpHLDE
         pop hl
-        jr c, .notFoundYet
-        jr z, .notFoundYet
-        
+        jr c, .notFound
+        jr z, .notFound
+.found:
         dec a
         dec hl
         dec hl
         ld c, (hl) \ inc hl \ ld b, (hl) \ push bc \ pop hl ; ld hl, (hl)
-        
         ex hl, de
         sbc hl, de ; carry is always unset here
-        ; day in l
-        
         ld h, l ; day
         ld l, a ; month
     pop de
