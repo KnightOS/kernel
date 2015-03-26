@@ -223,6 +223,7 @@ leapYearsSince1997:
 ; Outputs:
 ;    L: The month (0-11)
 ;    H: The day (0-30)
+;   DE: Garbage
 yearDayToDate:
     ;jr $ ; TODO debug
     
@@ -252,12 +253,14 @@ _:
             call cpHLDE
         pop hl
         jr c, .notFoundYet
+        jr z, .notFoundYet
         
         dec a
         dec hl
         dec hl
         ld c, (hl) \ inc hl \ ld b, (hl) \ push bc \ pop hl ; ld hl, (hl)
         
+        ex hl, de
         sbc hl, de ; carry is always unset here
         ; day in l
         
@@ -511,6 +514,6 @@ monthLengthLeap:
 
 ; The number of days before a given month
 daysBeforeMonthNonLeap:
-    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+    .dw 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 daysBeforeMonthLeap:
-    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335
+    .dw 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
