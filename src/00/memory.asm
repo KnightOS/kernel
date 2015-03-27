@@ -42,9 +42,8 @@ freeScreenBuffer:
 ;;  IX: Pointer to any location within the target block.
 ;;  A: Thread ID for new owner
 reassignMemory:
-    call checkThread
-    ret nz
     push ix
+        ; TODO: Check if thread exists
         call memSeekToStart
         ld (ix + -3), a
     pop ix
