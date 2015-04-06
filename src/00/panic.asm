@@ -2,7 +2,7 @@
 ; Set bit 7 of A if it may be possible to recover
 panic:
     di
-    ld sp, 0
+    ld sp, kernelGarbage + kernelGarbageSize
     push af
     #ifdef COLOR
         ; Set GPIO config
@@ -102,13 +102,14 @@ recover:
     jp contextSwitch_manual
 
 errorMessage:
-    .db "==Kernel Error ", 0
+    .db "::Kernel Error ", 0
 continueMessage:
-    .db "\n\nPress any key to shut down", 0
+    .db "\n\nPress a key to shut down", 0
 recoveryMessage:
-    .db "\n\nIt may be possible to recover\n"
-    .db "Press + to attempt recovery\n"
-    .db "Press - to shut down", 0
+    .db "\n\nRecovery may be possible\n"
+    .db " +: Attempt recovery\n"
+    .db " -: Shut down\n"
+    .db "Press a key", 0
 errorTable:
     .dw init_not_found_text
     .dw no_threads_text
@@ -118,8 +119,8 @@ errorTable:
 init_not_found_text:
     .db "/bin/init not found", 0
 no_threads_text:
-    .db "There are no running threads", 0
+    .db "No running threads", 0
 no_active_threads_text:
-    .db "There are no active threads", 0
+    .db "No active threads", 0
 library_not_found_text:
-    .db "The requested library is not\nloaded", 0
+    .db "Library not loaded", 0
