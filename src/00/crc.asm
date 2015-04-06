@@ -22,7 +22,6 @@ crc16_updateByte:
         ld a, h
         xor e
         add hl, hl
-        rl a
         jr nc, .noXOR
         ; HL = HL xor 0x68da
         ld a, l
@@ -48,14 +47,17 @@ crc16_updateByte:
 ;;  DE: Updated CRC16
 crc16_updateBuffer:
     push af \ push bc \ push hl
+        ld a, c
+        dec bc
+        inc b
+        ld c, b
+        ld b, a
 .loop:
         ld a, (hl)
         call crc16_updateByte
         inc hl
-        dec bc
-        ld a, b
-        or c
-        jr nz, .loop
+        djnz .loop
+        dec c
+        jp nz, .loop
     pop hl \ pop bc \ pop af
     ret
-    
