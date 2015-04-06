@@ -46,7 +46,7 @@ getPixel:
         djnz $-1
 _:  pop bc
     ret      
-.ouOfBounds:
+.outOfBounds:
         pop af
     pop bc
     ld hl, 0
