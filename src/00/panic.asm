@@ -37,9 +37,14 @@ panic:
     jr z, ++_
 _:  ld iy, 0xC000
 _:  call clearBuffer
+    ; Draw sad calculator
+    ld de, 2 << 8 | 2
+    ld b, 22
+    ld hl, sad_calc
+    call putSprite16OR
     ; Find the appropriate error message
-    ld de, 0
-    ld b, 0
+    ld de, 16 << 8 | 6
+    ld b, 16
     ld hl, errorMessage
     rst 0x20
     .dw drawStr
@@ -62,12 +67,13 @@ _:  ld e, (hl)
     inc hl
     ld d, (hl)
     ex de, hl
-    ld de, 0x0006
+    ld de, 16 << 8 | 12
     rst 0x20
     .dw drawStr
     ld a, c
     cp 1
     jr z, attemptRecovery
+    ld de, 1 << 8 | 36
     ld hl, continueMessage
     rst 0x20
     .dw drawStr
@@ -82,6 +88,8 @@ _:  call getKey_skipCheck
     call flushkeys_skipCheck
     jp boot
 attemptRecovery:
+    ld de, 1 << 8 | 29
+    ld b , 10
     ld hl, recoveryMessage
     rst 0x20
     .dw drawStr
@@ -104,12 +112,12 @@ recover:
 errorMessage:
     .db "::Kernel Error ", 0
 continueMessage:
-    .db "\n\nPress a key to shut down", 0
+    .db "Press a key to shut down", 0
 recoveryMessage:
-    .db "\n\nRecovery may be possible\n"
-    .db " +: Attempt recovery\n"
-    .db " -: Shut down\n"
-    .db "Press a key", 0
+    .db "Recovery may be possible\n"
+    .db "+: Attempt recovery\n"
+    .db "-: Shut down\n"
+    .db "\n   Press a key", 0
 errorTable:
     .dw init_not_found_text
     .dw no_threads_text
@@ -124,3 +132,27 @@ no_active_threads_text:
     .db "No active threads", 0
 library_not_found_text:
     .db "Library not loaded", 0
+
+sad_calc:
+    .db 0x7f,0xc0
+    .db 0xff,0xe0
+    .db 0xc0,0x60
+    .db 0xd1,0x60
+    .db 0xc0,0x60
+    .db 0xce,0x60
+    .db 0xd1,0x60
+    .db 0xc0,0x60
+    .db 0xff,0xe0
+    .db 0xff,0xe0
+    .db 0x80,0x20
+    .db 0xa9,0x20
+    .db 0x83,0xa0
+    .db 0xa9,0x20
+    .db 0x80,0x20
+    .db 0xaa,0xa0
+    .db 0x80,0x20
+    .db 0xaa,0xa0
+    .db 0x80,0x20
+    .db 0x80,0x20
+    .db 0x7f,0xc0
+    .db 0x00,0x00
