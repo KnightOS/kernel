@@ -1,3 +1,9 @@
+; DEPRECATED
+findFileEntry:
+findDirectoryEntry:
+    ret
+; END DEPRECATED
+
 ; NOTE: Should we replace this with "deleteNode" and have it work on directories, too?
 
 ;; deleteFile [Filesystem]
