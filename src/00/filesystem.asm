@@ -722,6 +722,9 @@ _:  pop af
 ; Notes:
 ;  This works for any node - file, directory, symlink, etc. The rest of the
 ;  logic is up to you.
+;  
+;  '/' is a special node and does not actually exist in the filesystem. If you call
+;  findNode with "/" you'll get HL=0.
 findNode:
     push de
     push bc
@@ -734,9 +737,24 @@ findNode:
         ; TODO: Allow for relative paths somehow
         ld a, (de)
         cp '/'
-        jr nz, _
+        jr nz, .proceed
         inc de
-_:      setBankA(fatStart)
+        ld a, (de)
+        or a
+        jr nz, .proceed
+    ; Special case for /
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    ld a, b
+    pop bc
+    pop de
+    cp a
+    ld hl, 0
+    ret
+.proceed:
+        setBankA(fatStart)
         ld hl, 0
         ld (kernelGarbage), hl ; Used as temporary storage of parent directory ID
         ld hl, 0x7FFF

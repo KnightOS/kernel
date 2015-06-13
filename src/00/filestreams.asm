@@ -76,6 +76,7 @@ openFileRead:
                 jp nz, .fileNotFound ; TODO: use something like errNotAFile?
 
                 call followSymLink
+                jp nz, .fileNotFound
 .validNode:
             pop de
             ld iy, fileHandleTable
