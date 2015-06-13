@@ -790,7 +790,7 @@ _:          ld a, (hl)
                     or a
                     sbc hl, bc
                     push de
-                        call compareDirectories
+                        call compareFileStrings
                         jr z, .updateDirectory
                     pop de
                 pop hl
@@ -912,6 +912,7 @@ checkKFS:
 
 ; Checks string at (DE) for '/'
 ; Z for no slashes, NZ for slashes
+; If the slash is the last character of the string, it's not considered
 checkForRemainingSlashes:
     ld a, (de)
     or a ; CP 0
@@ -922,29 +923,8 @@ checkForRemainingSlashes:
     jr checkForRemainingSlashes
 .found:
     ; Check for one last slash
-    or a
-    ret
-
-; Compare string, but also allows '/' as a delimiter.  Also compares HL in reverse.
-; Also allows for paths to have a trailing '/'
-; Z for equal, NZ for not equal
-; HL = backwards string
-; DE = fowards string
-compareDirectories:
-    ld a, (de)
-    or a
-    jr z, .return
-    cp '/'
-    jr z, .return
-    cp ' '
-    jr z, .return
-    cp (hl)
-    ret nz
-    dec hl
     inc de
-    jr compareDirectories
-.return:
-    ld a, (hl)
+    ld a, (de)
     or a
     ret
 
@@ -955,7 +935,9 @@ compareFileStrings:
     ld a, (de)
     or a
     jr z, .return
-    cp ' '
+    cp ' ' ; TODO: Why is this here? Spaces are not file name delimiters
+    jr z, .return
+    cp '/'
     jr z, .return
     cp (hl)
     ret nz
