@@ -39,6 +39,8 @@ followSymLink:
 
         cp fsSymLink
         jr z, .recurse
+
+        cp a
     pop de
     ret
 #undefine newName
