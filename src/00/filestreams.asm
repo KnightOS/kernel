@@ -32,7 +32,7 @@ followSymLink:
         
         ld de, newName
         call findNode
-        ret nz
+        jr nz, .not_found
 
         setBankA
         ld a, (hl)
@@ -41,6 +41,7 @@ followSymLink:
         jr z, .recurse
 
         cp a
+.not_found:
     pop de
     ret
 #undefine newName
