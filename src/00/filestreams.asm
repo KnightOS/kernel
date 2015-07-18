@@ -183,6 +183,7 @@ _:  pop af
 _:  pop af
     pop bc
     pop hl
+    cp a
     ret
 .fileNotFound:
             pop de
