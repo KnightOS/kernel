@@ -7,6 +7,45 @@ initFilesystem:
     ldir
     ret
 
+; If findNode turned up a symlink, this will follow it and
+; give the findNode return value for the final destination.
+followSymLink:
+#define newName kernelGarbage + 2 ; findNode uses kernelGarbage
+    push de
+        dec hl ; ID
+        dec hl \ dec hl ; Entry len
+        dec hl \ dec hl ; Parent ID
+        ld b, 0
+        ld c, (hl) \ dec hl ; Name length
+        scf \ ccf
+        sbc hl, bc
+
+.recurse:
+        ld de, newName
+.load_target_loop:
+        ld a, (hl)
+        ld (de), a
+        inc de \ dec hl
+        ; NOTE: KFS spec doesn't mention the trailing zero, this should be standardized
+        or a
+        jr nz, .load_target_loop
+        
+        ld de, newName
+        call findNode
+        jr nz, .not_found
+
+        setBankA
+        ld a, (hl)
+
+        cp fsSymLink
+        jr z, .recurse
+
+        cp a
+.not_found:
+    pop de
+    ret
+#undefine newName
+
 ;; openFileRead [Filestreams]
 ;;  Opens a file stream in read-only mode.
 ;; Inputs:
@@ -19,15 +58,30 @@ initFilesystem:
 openFileRead:
     push hl
     push bc
-        call findFileEntry
-        jp nz, .fileNotFound
-        ld b, a
         push af
         ld a, i
         push af
         di
         push iy
         push bc
+            push de
+.linkLoop:
+                call findNode
+                jp nz, .fileNotFound
+
+                ; Check if node is file or symlink or other
+                setBankA
+                ld a, (hl)
+                cp fsFile
+                jr z, .validNode
+
+                cp fsSymLink
+                jp nz, .fileNotFound ; TODO: use something like errNotAFile?
+
+                call followSymLink
+                jp nz, .fileNotFound
+.validNode:
+            pop de
             ld iy, fileHandleTable
             ld bc, FILE_HANDLE_SIZE
             ld d, 0
@@ -130,10 +184,20 @@ _:  pop af
 _:  pop af
     pop bc
     pop hl
+    cp a
     ret
 .fileNotFound:
+            pop de
+        pop bc
+        pop iy
+        pop af
+        jp po, _
+        ei
+_:      pop af
     pop bc
     pop hl
+    ld a, errFileNotFound
+    cp 0
     ret
 .outOfMemory:
             pop ix
@@ -198,7 +262,7 @@ _:  pop af
     ret
 .entryFound:
             push hl
-                call findFileEntry
+                call findNode ; TODO: Check if this is a file, follow symlinks, etc
                 jp nz, .fileNotFound
             pop de
             ld d, e
@@ -540,7 +604,7 @@ _:  pop af
             ld (hl), a
             push hl
                 ld de, kernelGarbage + 0x100
-                call findDirectoryEntry
+                call findNode ; TODO: Check that this is a directory node
                 jp nz, .wtf
                 setBankA
             pop de

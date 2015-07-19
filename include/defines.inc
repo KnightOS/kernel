@@ -18,6 +18,8 @@ errNoEntryPoint         .equ 15
 errKernelMismatch       .equ 15
 errMutexNotLocked       .equ 16
 errReadOnly             .equ 17
+errNotAFile             .equ 18
+errNotADirectory        .equ 18
 
 threadRangeMask         .equ 0b11111
 
