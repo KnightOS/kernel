@@ -624,8 +624,7 @@ _:  pop af
 ;;  A: Flash page (on success); Error code (on failure)
 ;;  HL: Address relative to 0x4000 (on success)
 createDirectory:
-    call directoryExists
-    call nz, fileExists ; TODO: Make a combined "entryExists" or something?
+    call findNode
     jr nz, _
     or 1
     ld a, errAlreadyExists
