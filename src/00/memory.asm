@@ -636,6 +636,7 @@ _:      ld hl, (prev_block_ptr)
                 ld b, d \ ld c, e
                 call malloc
             pop bc
+            push ix \ pop de
             ldir
             push ix \ pop de
         pop ix
