@@ -9,7 +9,7 @@ initMultitasking:
     ret
 
 ; Returns the ID of the thread that will launch next
-getNextThreadID:
+getNewThreadID:
     push hl ; Don't care about the data getThreadEntry provides
         push bc
             ld a, (lastThreadId)
@@ -85,7 +85,7 @@ _:      di
             ld hl, threadTable
             add a, l
             ld l, a
-            call getNextThreadID
+            call getNewThreadID
             ld (lastThreadId), a
             ; A is now a valid thread id, and hl points to the next-to-last entry
             ; DE is address of code, B is stack size / 2
@@ -356,7 +356,7 @@ launchProgram:
         ; TODO: If E > 0, then the file is too large. Error out before we ask malloc about it.
         call malloc
         jr nz, .error_pop2
-        call getNextThreadId
+        call getNewThreadId
         call reassignMemory
 
         call streamReadToEnd ; Read entire file into memory
@@ -849,3 +849,40 @@ resumeThread:
     pop hl
     ret
 
+;; getNextThreadID [Threading]
+;;  Gets the next running thread's ID.
+;; Inputs:
+;;  B: Thread index (0 for first thread)
+;; Outputs:
+;;  A: Thread ID or 0xFF if no more threads
+;;  B: Incremented
+;; Notes:
+;;  It would be silly to call this without interrupts disabled.
+;;
+;;  This will return your own thread at some point.
+getNextThreadID:
+    ld a, b
+    and threadRangeMask
+    cp b
+    jr nz, .fail
+    sla a
+    sla a
+    sla a
+    push de
+    push hl
+        ld d, 0
+        ld e, a
+        ld hl, threadTable
+        add hl, de
+        ld a, (hl)
+    pop hl
+    pop de
+    or a
+    jr z, .fail
+    inc b
+    ret
+
+.fail:
+    ld a, 0xFF
+    inc b
+    ret
