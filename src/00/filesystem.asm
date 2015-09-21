@@ -294,7 +294,7 @@ createFileEntry:
             add c
             ld c, a
             jr nc, _
-            inc c
+            inc b
 _:          call cpHLBC
         pop bc
         jp c, .endOfFilesystem
@@ -414,36 +414,45 @@ _:  pop af
 
 ; Internal function - finds the end of the FAT, swaps that page in, and leaves HL for you to use
 findFATEnd:
-    ; Find end of FAT
-    ld d, fatStart
-    ld a, d
-    setBankA
-    ld hl, 0x7FFF
+    push af
+    push bc
+    push de
+        ; Find end of FAT
+        ld d, fatStart
+        ld a, d
+        setBankA
+        ld hl, 0x7FFF
 .search:
-    ld a, (hl)
-    cp fsEndOfTable
-    jr z, .endOfTable
-    dec hl
-    ld c, (hl)
-    dec hl
-    ld b, (hl)
-    scf
-    sbc hl, bc ; Skip to next entry
-    ld a, 0x40
-    cp h
-    jr c, .search
-    ; Swap in next page of FAT
-    dec d
-    ld a, d
-    cp fatStart - 4
-    jp z, .exitError
-    setBankA
-    ld hl, 0x7FFF
-    jr .search
+        ld a, (hl)
+        cp fsEndOfTable
+        jr z, .endOfTable
+        dec hl
+        ld c, (hl)
+        dec hl
+        ld b, (hl)
+        scf
+        sbc hl, bc ; Skip to next entry
+        ld a, 0x40
+        cp h
+        jr c, .search
+        ; Swap in next page of FAT
+        dec d
+        ld a, d
+        cp fatStart - 4
+        jp z, .exitError
+        setBankA
+        ld hl, 0x7FFF
+        jr .search
 .endOfTable:
+    pop de
+    pop bc
+    pop af
     cp a
     ret
 .exitError:
+    pop de
+    pop bc
+    pop af
     or 1
     ret
 
@@ -1001,4 +1010,217 @@ _:      pop af
         ld a, h
 .done:
     pop iy \ pop de \ pop bc \ pop ix \ pop hl
+    ret
+
+;; createSymLink [Filesystem]
+;;  Creates a symbolic link.
+;; Inputs:
+;;  DE: Path to new symlink
+;;  HL: Path to target
+;; Outputs:
+;;  Z: Set on success, reset on failure
+;;  A: Flash page (on success); error code (on failure)
+;;  HL: Address relative to 0x4000 (on success)
+createSymLink:
+    ; Check if node already exists
+    ld a, 1
+    or a    ; Reset Z
+    push hl
+        call findNode
+        jr nz, _
+    inc sp \ inc sp
+    or 1
+    ld a, errAlreadyExists
+    ret
+    ; Disable interrupts
+_:  pop hl
+    push af
+    ld a, i
+    push af
+    di
+    push bc
+    push de
+    push hl
+    push ix
+        ; push target
+        push hl
+            ; Seperate file path into dir and filename
+            ; Inputs:
+            ;  DE: Path string pointer
+            ; Outputs:
+            ;  BC: Pointer to last /
+            push de
+.loop:
+                ld a, (de)
+                or a
+                jr z, .done
+                cp '/'
+                jr nz, _
+                push de \ pop bc
+_:              inc de
+                jr .loop
+.done:
+            pop de
+            ; push pointer to last /
+            push bc
+                ; get length of parent dir
+                ld a, c
+                sub e
+                ld c, a
+                ld a, b
+                sbc d
+                ld b, a
+                ; copy parent dir to kernel garbage
+                ; TODO: Make sure this spot is safe
+                push de \ pop hl
+                ld de, kernelGarbage + 0x100
+                ldir
+                xor a
+                ld (de), a
+                ; findNode parent dir, error if not found
+                ld de, kernelGarbage + 0x100
+                call findNode
+                jp nz, .dirNotFound
+                ; Begin creating new FS entry
+                ; IX = buffer in kernel ram
+                ld ix, kernelGarbage + 0x100
+                ; Write symlink identifier
+                ld (ix), fsSymLink
+                dec ix
+                ; Skip entry size until later
+                dec ix
+                dec ix
+                ; write parent ID
+                dec hl
+                dec hl
+                dec hl
+                dec hl
+                dec hl
+                ld a, (hl)
+                ld (ix), a
+                dec hl
+                dec ix
+                ld a, (hl)
+                ld (ix), a
+                dec ix
+            ; pop pointer to last /
+            pop hl
+            push hl \ pop de
+            ; count length of filename
+            ld bc, 0
+_:          inc c
+            inc de
+            ld a, (de)
+            or a
+            jr nz, -_
+            ; TODO: Error if length of filename is 0
+            ; write length of filename
+            ld (ix), c
+            ; write filename
+_:          inc hl
+            dec ix
+            ld a, (hl)
+            ld (ix), a
+            dec c
+            ld a, c
+            or a
+            jr nz, -_
+            dec ix
+        ; pop and write target
+        ; TODO: Error if target length is 0
+        pop hl
+_:      ld a, (hl)
+        ld (ix), a
+        dec ix
+        inc hl
+        or a
+        jr nz, -_
+        ; sub IX from start of buffer to get entry length
+        push ix \ pop hl
+        ld bc, kernelGarbage + 0x0FD
+        ld a, c
+        sub l
+        ld c, a
+        ld a, b
+        sbc h
+        ld b, a
+        ; write entry length to buffer-1
+        ld hl, kernelGarbage + 0x0FF
+        ld (hl), c
+        dec hl
+        ld (hl), b
+        ; get location of next entry in FS table
+        call findFATEnd
+        ; error if no more room in table
+        jr nz, .fatFull
+        ; subtract entry length from end of FAT
+        inc bc
+        inc bc
+        inc bc
+        ld a, l
+        sub c
+        ld l, a
+        ld a, h
+        sbc b
+        ld h, a
+        ; Check for end of flash page
+        ; TODO: Stradle flash pages
+        push bc
+            ld bc, 0x4000
+            call cpHLBC
+        pop bc
+        jp c, .fatFull
+        ; write entry to flash
+        call unlockFlash
+        inc ix
+        push ix \ pop de
+        ex de, hl
+        inc de
+        call writeFlashBuffer
+        call lockFlash
+        ; Return HL with file entry address
+        ex de, hl
+        add hl, bc
+        dec hl
+        ; and return A with flash page
+        getBankA
+        ld (ix + 5), a
+    pop ix
+    inc sp \ inc sp ; Skip HL
+    pop de
+    pop bc
+    ; Restore interrupts
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    cp a
+    ret
+
+.dirNotFound:
+            ; pop pointer to last /
+            pop bc
+        ; pop target
+        pop hl
+    pop ix
+    pop hl
+    pop de
+    pop bc
+    pop af
+    jp po, _
+_:  pop af
+    or 1
+    ld a, errFileNotFound
+    ret
+
+.fatFull:
+    pop ix
+    pop hl
+    pop de
+    pop bc
+    pop af
+    jp po, _
+_:  pop af
+    or 1
+    ld a, errFilesystemFull
     ret
