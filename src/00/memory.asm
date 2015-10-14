@@ -625,6 +625,8 @@ _:  pop af
             jr ++_
 _:      pop de
 _:      ld hl, (prev_block_ptr)
+        call free ; Consolodate blocks
+        dec hl \ dec hl \ dec hl
         jp do_allocate@malloc ; Hand it over to malloc to finish the job
 .manual_realloc:
         ; We can't expand into neighboring sections so we have to do a manual realloc/copy/free
