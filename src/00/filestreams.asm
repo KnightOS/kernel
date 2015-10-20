@@ -1369,7 +1369,7 @@ _:      ; A is the number of bytes to write this time around the loop
             pop de
             call z, advanceBlock
             bit 5, (ix + FILE_FLAGS)
-            jr z, .done
+            jr z, .done_2
             ld a, (ix + FILE_WORKING_SIZE)
             add c
             ld (ix + FILE_WORKING_SIZE), a
@@ -1391,6 +1391,10 @@ _:      pop af
     pop ix
     cp a
     ret
+.done_2:
+        pop af
+        pop bc
+    jr .done
 
 ;; streamReadBuffer [Filestreams]
 ;;  Reads a number of bytes from a file stream and advances the stream.
