@@ -1365,10 +1365,12 @@ _:      ; A is the number of bytes to write this time around the loop
                 ld a, (ix + FILE_STREAM)
                 add a, c
                 ld (ix + FILE_STREAM), a
-                or a ; cp 0
             pop de
+            bit 7, (ix + FILE_FLAGS)
+            call z, .check_end
+            or a ; cp 0
             call z, advanceBlock
-            bit 5, (ix + FILE_FLAGS)
+            bit 5, (ix + FILE_FLAGS) ; eof
             jr z, .done_2
             ld a, (ix + FILE_WORKING_SIZE)
             add c
@@ -1395,6 +1397,20 @@ _:      pop af
         pop af
         pop bc
     jr .done
+.check_end:
+        ; Checks if the amount written increases the file size
+        push af
+        push bc
+            ld a, (ix + FILE_STREAM)
+            ld c, a
+            ld a, (ix + FILE_FINAL_LENGTH)
+            cp c
+            jr nc, .nope
+            set 5, (ix + FILE_STREAM) ; set eof
+.nope:
+        pop bc
+        pop af
+        ret
 
 ;; streamReadBuffer [Filestreams]
 ;;  Reads a number of bytes from a file stream and advances the stream.
