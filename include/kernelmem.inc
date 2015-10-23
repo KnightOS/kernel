@@ -53,6 +53,19 @@ color_mode              .equ clip_mask + 1              ; 1 byte
 
 random_seed             .equ color_mode + 1             ; 8 bytes
 
+; This is incremented on timer 1, which is a little over 100 Hz
+kernel_current_time     .equ random_seed + 8            ; 2 bytes
+
+; Link assist
+la_header_buffer        .equ kernel_current_time + 2    ; 4 bytes
+la_header_ix            .equ la_header_buffer + 4       ; 1 byte
+la_last_byte_time       .equ la_header_ix + 1           ; 2 bytes
+
+kbd_scan_len            .equ la_last_byte_time + 2      ; 1 byte
+kbd_scan_queue          .equ kbd_scan_len + 1           ; 16 bytes
+
+stateUsed               .equ kbd_scan_queue + 16 - stateMemory
+
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize
 

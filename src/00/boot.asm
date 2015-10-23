@@ -61,6 +61,11 @@ reboot:
     out (PORT_BANKB), a
 #endif
 
+#ifdef LINK_ASSIST
+    ld a, LA_ENABLE_INT_RX | LA_ENABLE_INT_ERROR
+    out (PORT_LINK_ASSIST_ENABLE), a
+#endif
+
 #ifdef CLOCK
     ld a, 1
     out (PORT_CLOCKCONTROL), a
@@ -98,7 +103,6 @@ reboot:
     call launchProgram
     ld h, 0
     call setInitialA
-
     jp contextSwitch_manual
 
 init:

@@ -36,16 +36,25 @@ sysInterrupt:
     jp usbInterrupt
 interruptResume:
 #endif
+#ifdef LINK_ASSIST
+    in a, (PORT_LINK_ASSIST_STATUS)
+    and 0b00000111 ; LA_INT_* bits
+    jp nz, la_handleInterrupt
+#endif
+#ifdef LINK_ASSIST_RO
+    ; TODO
+#endif
 
     in a, (PORT_INT_TRIG)
     bit BIT_INT_TRIG_ON, a
-    jr nz, intHandleON
+    jp nz, intHandleON
     bit BIT_INT_TRIG_TIMER1, a
-    jr nz, intHandleTimer1
+    jp nz, intHandleTimer1
     bit BIT_INT_TRIG_TIMER2, a
-    jr nz, intHandleTimer2
+    jp nz, intHandleTimer2
     bit BIT_INT_TRIG_LINK, a
-    jr nz, intHandleLink
+    jp nz, intHandleLink
+
     jr contextSwitch
 intHandleON:
     in a, (PORT_INT_MASK)
@@ -63,6 +72,8 @@ intHandleTimer1:
     set BIT_INT_TIMER1, a
     out (PORT_INT_MASK), a
     ; Timer 1 interrupt
+    ld hl, kernel_current_time
+    inc (hl)
 doContextSwitch:
     ld a, (currentThreadIndex)
     add a, a
@@ -121,6 +132,7 @@ _:  dec hl
 
     jr sysInterruptDone
 noThreads:
+    jr sysInterruptDone
     ld a, panic_no_threads
     jp panic
 noActiveThreads:

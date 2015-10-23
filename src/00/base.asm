@@ -41,6 +41,7 @@ drawHexHL   .equ 0x0D01
 #include "display.asm"
 #include "display-color.asm"
 #include "keyboard.asm"
+#include "link.asm"
 
 #include "crc.asm"
 #include "math.asm"
@@ -58,5 +59,6 @@ drawHexHL   .equ 0x0D01
 .echo "flashFunctions: 0x{0:X4}" flashFunctions
 .echo "kernelGarbage: 0x{0:X4}" kernelGarbage
 .echo "userMemory: 0x{0:X4}" userMemory
+.echo "state in use: 0x{0:X4}" stateUsed
 
 .echo "Bytes remaining on page 00: {0}" 0x4000-$ ; TODO: Fix this problem in sass

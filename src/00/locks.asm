@@ -12,6 +12,8 @@ _:  pop af
 
 ;; getIOLock [Hardware]
 ;;  Locks the I/O port to the current thread.
+;;  Note that the I/O port can be used by several processes - it's usually best to
+;;  leave it unlocked and let the kernel do your I/O.
 getIOLock:
     push af
         call getCurrentThreadId
@@ -25,6 +27,11 @@ getKeypadLock:
     push af
         call getCurrentThreadId
         ld (hwLockKeypad), a
+
+        ; Flush keys
+        call flushKeys
+_:      call getScanCode
+        jr z, -_
     pop af
     ret
 

@@ -40,6 +40,63 @@ _:      xor a
     pop af
     ret
 
+;; getScanCode [Input]
+;;  Returns the most recently pressed scan code from an external keyboard.
+;; Outputs:
+;;  A: Scan code
+;;  Z: Set if there were pending scan codes, reset if not
+getScanCode:
+    push hl
+    push de
+    push bc
+        call hasKeypadLock
+        jr nz, .none
+        ld a, (kbd_scan_len)
+        or a
+        jr z, .none
+        dec a
+        ld (kbd_scan_len), a
+
+        ld de, kbd_scan_queue + 1
+        ld hl, kbd_scan_queue
+
+        ld a, (hl)
+
+        ex de, hl
+        ld bc, 15
+        ldir ; shift queue
+
+    pop bc
+    pop de
+    pop hl
+    cp a
+    ret
+.none:
+    pop bc
+    pop de
+    pop hl
+    or 1
+    ret
+
+push_scan_code:
+    push hl
+        push af
+            ld a, (kbd_scan_len)
+            cp 16
+            jr z, .drop
+            ld hl, kbd_scan_queue
+            add a, l \ ld l, a \ jr nc, $+3 \ inc h
+        pop af
+        ld (hl), a
+        ld hl, kbd_scan_len
+        inc (hl)
+    pop hl
+    ret
+.drop:
+    pop af
+    pop hl
+    ret
+
 ;; getKey [Input]
 ;;  Returns the currently pressed key code, or zero if no keys are pressed.
 ;; Outputs:

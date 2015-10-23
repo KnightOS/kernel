@@ -67,6 +67,24 @@
         define_mask(BANKB_ISRAM_CPU6, 6)
         ; 83+ SE/84+ only
         define_mask(BANKB_ISRAM_CPU15, 7)
+
+    PORT_LINK_ASSIST_ENABLE      .equ 8
+        define_mask(LA_ENABLE_INT_RX, 0)
+        define_mask(LA_ENABLE_INT_TX, 1)
+        define_mask(LA_ENABLE_INT_ERROR, 2)
+        define_mask(LA_DISABLE, 7)
+
+    PORT_LINK_ASSIST_STATUS      .equ 9
+        define_mask(LA_INT_RX_DONE, 0)
+        define_mask(LA_INT_TX_DONE, 1)
+        define_mask(LA_INT_ERROR, 2)
+        define_mask(LA_RX_ACTIVE, 3)
+        define_mask(LA_RX_READY, 4)
+        define_mask(LA_TX_READY, 5)
+        define_mask(LA_RX_ERROR, 6)
+        define_mask(LA_TX_ACTIVE, 7)
+
+    PORT_LINK_ASSIST_RX_BUFFER  .equ 0x0A
     
     PORT_MEMA_HIGH      .equ 0x0E
     

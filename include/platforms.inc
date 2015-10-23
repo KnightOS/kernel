@@ -1,4 +1,5 @@
 #ifdef TI73
+#define LINK_ASSIST_RO
 swapSector .equ 0x18
 fatStart .equ 0x17
 privledgedPage .equ 0x1C
@@ -6,6 +7,7 @@ bootPage .equ 0x1F
 #endif
 
 #ifdef TI83p
+#define LINK_ASSIST_RO
 swapSector .equ 0x18
 fatStart .equ 0x17
 privledgedPage .equ 0x1C
@@ -36,6 +38,7 @@ bootPage .equ 0x3F
 
 #ifdef TI84pSE
 #define CPU15
+#define LINK_ASSIST
 #define MD5_ACCELERATION
 #define USB
 #define CLOCK
@@ -47,6 +50,7 @@ bootPage .equ 0x7F
 
 #ifdef TI84pCSE
 #define CPU15
+#define LINK_ASSIST
 #define MD5_ACCELERATION
 #define USB
 #define CLOCK
