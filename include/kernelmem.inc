@@ -64,7 +64,12 @@ la_last_byte_time       .equ la_header_ix + 1           ; 2 bytes
 kbd_scan_len            .equ la_last_byte_time + 2      ; 1 byte
 kbd_scan_queue          .equ kbd_scan_len + 1           ; 16 bytes
 
-stateUsed               .equ kbd_scan_queue + 16 - stateMemory
+io_send_queue           .equ kbd_scan_queue + 16        ; 2 bytes
+io_send_remain          .equ io_send_queue + 2          ; 2 bytes
+io_send_callback        .equ io_send_remain + 2         ; 2 bytes
+io_header_handlers      .equ io_send_callback + 2       ; 2 bytes
+
+stateUsed               .equ io_send_remain + 16 - stateMemory
 
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize

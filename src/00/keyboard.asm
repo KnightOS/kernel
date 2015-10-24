@@ -78,6 +78,17 @@ getScanCode:
     or 1
     ret
 
+#define CMD_KEYBOARD_INPUT  0x01
+#define CMD_KEYPAD_INPUT    0xA6
+
+handle_keyboard_header:
+    inc hl
+    ld a, (hl) ; cmd
+    cp CMD_KEYBOARD_INPUT
+    ret nz
+    inc hl
+    ld a, (hl) ; scan code
+    ; fallthrough
 push_scan_code:
     push hl
         push af

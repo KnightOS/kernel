@@ -95,6 +95,7 @@ reboot:
     call initFilesystem
     call initMultitasking
     call initDisplay
+    call initIO
 
     ld de, init
     call fileExists

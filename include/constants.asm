@@ -85,6 +85,8 @@
         define_mask(LA_TX_ACTIVE, 7)
 
     PORT_LINK_ASSIST_RX_BUFFER  .equ 0x0A
+
+    PORT_LINK_ASSIST_TX_BUFFER  .equ 0x0D
     
     PORT_MEMA_HIGH      .equ 0x0E
     
