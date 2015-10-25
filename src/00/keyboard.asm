@@ -90,6 +90,7 @@ handle_keyboard_header:
     ld a, (hl) ; scan code
     ld hl, 0
     ld bc, 0
+    ld ix, 0
     ; fallthrough
 push_scan_code:
     push hl
