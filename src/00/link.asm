@@ -117,6 +117,35 @@ default_header_handlers_end:
 ;;  If a handler has already been reserved with this machine ID, it will take
 ;;  precedence.
 ioRegisterHandler:
+    push hl
+    push de
+        push af
+            push bc
+                push ix
+                push ix
+                    ld ix, (io_header_handlers)
+                    ld b, (ix + -1)
+                    ld c, (ix + -2)
+                    inc bc \ inc bc \ inc bc
+                    inc bc \ inc bc
+                    call realloc ; Add 5 bytes to header handlers
+                    ; TODO: OOM
+                    ld (io_header_handlers), ix
+                    call memSeekToEnd
+                    push ix \ pop hl
+                    ld (hl), 0xFF \ dec hl
+                pop de
+                pop ix
+                ld (hl), d \ dec hl
+                ld (hl), e \ dec hl
+                call getCurrentThreadID
+                ld (hl), a \ dec hl
+            pop bc
+            ld (hl), b \ dec hl
+        pop af
+        ld (hl), a
+    pop de
+    pop hl
     ret
 
 ; TODO: remove handlers when the owning thread exits
@@ -213,14 +242,16 @@ la_rx_handle_byte:
     jp z, la_reset_buffer
     cp b
     jr z, .found
-    inc hl \ inc hl
+    inc hl \ inc hl \ inc hl \ inc hl
     jr .header_handler_find
 .found:
     ld b, (hl)
     ld a, (la_header_ix)
     cp b
     ret nz
-    inc hl ; Skip thread ID
+    inc hl
+    ld a, (hl) ; Thread ID
+    ; TODO: set context to that thread (so kcall et all works)
     inc hl
     ld e, (hl)
     inc hl

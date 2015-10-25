@@ -99,7 +99,7 @@ memset:
         push ix \ pop hl \ push ix \ pop de
         inc de
         ld (hl), a
-        ld c, (IX + -2) \ ld b, (IX + -1)
+        ld c, (ix + -2) \ ld b, (ix + -1)
         dec bc
         ldir
     pop de
