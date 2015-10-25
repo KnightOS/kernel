@@ -297,6 +297,7 @@ io_rx_handle_byte:
     jp io_reset_buffer
 .handle_bulk_byte:
     ld hl, (io_bulk_buffer)
+    ld a, b
     ld (hl), a
     inc hl
     ld (io_bulk_buffer), hl
@@ -306,7 +307,20 @@ io_rx_handle_byte:
     ld hl, 0
     call cpHLBC
     ret nz
-    ; TODO: Invoke callback
+    call getCurrentThreadID
+    push af
+        ld hl, .return_point_bulk
+        push hl
+
+        ld hl, (io_bulk_callback)
+        ld a, (io_bulk_callback_thread)
+
+        call setCurrentThread
+        push hl
+        ret
+.return_point_bulk:
+    pop af
+    call setCurrentThread
     jp io_reset_buffer
 
 you_are_here:
