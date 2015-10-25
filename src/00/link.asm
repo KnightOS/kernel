@@ -102,10 +102,10 @@ default_header_handlers_end:
 ;;  A: Machine ID
 ;;  B: Expected header length
 ;;  IX: Callback
-;; Notes
+;; Notes:
 ;;  The "expected header length" is the length of the packet header at the time
 ;;  you want your callback told about it. The maximum is 4.
-;; 
+;;  
 ;;  During normal operation, your callback will be called with the Z flag set and
 ;;  HL set to the address of the packet header.
 ;;  
@@ -113,7 +113,7 @@ default_header_handlers_end:
 ;;  If you return HL != 0 and BC != 0, we'll assume that HL is a pointer to a
 ;;  buffer to be filled with BC bytes from the rest of the packet. Your callback
 ;;  will be run again once we get that many bytes, but this time with Z reset.
-;;
+;;  
 ;;  If a handler has already been reserved with this machine ID, it will take
 ;;  precedence.
 ioRegisterHandler:
