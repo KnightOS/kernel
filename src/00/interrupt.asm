@@ -77,6 +77,8 @@ intHandleTimer1:
     ld (kernel_current_time), hl
 doContextSwitch:
     ld a, (currentThreadIndex)
+    cp -1
+    jr z, contextSwitch_manual
     add a, a
     add a, a
     add a, a
@@ -137,10 +139,14 @@ noThreads:
     ld a, panic_no_threads
     jp panic
 noActiveThreads:
+    ld a, -1
+    ld (currentThreadIndex), a
+    ld hl, idlethread_stack
+    ld de, userMemory - (idlethread_stack_end - idlethread_stack)
+    ld bc, idlethread_stack_end - idlethread_stack
+    ldir
+    ld sp, userMemory - (idlethread_stack_end - idlethread_stack)
     jr sysInterruptDone
-    ld a, panic_no_active_threads
-    set 7, a
-    jp panic
 intHandleTimer2:
     in a, (PORT_INT_MASK)
     res BIT_INT_TIMER2, a
@@ -172,6 +178,24 @@ sysInterruptDone:
     pop af
     ei
     ret
+
+; Sits and spins if all other threads are suspended
+idlethread:
+    halt
+    jr idlethread
+idlethread_stack:
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw 0
+    .dw idlethread
+idlethread_stack_end:
 
 handleKeyboard:
     call getKey_skipCheck

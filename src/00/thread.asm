@@ -852,7 +852,7 @@ suspendCurrentThread:
         add a, l
         ld l, a
         set 2, (hl)
-        ei \ halt
+        call contextSwitch
     pop af
     pop hl
     ret
