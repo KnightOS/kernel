@@ -88,6 +88,8 @@ handle_keyboard_header:
     ret nz
     inc hl
     ld a, (hl) ; scan code
+    ld hl, 0
+    ld bc, 0
     ; fallthrough
 push_scan_code:
     push hl

@@ -20,7 +20,7 @@ wrapStrXOR  .equ 0x0901
 drawHexA    .equ 0x0A01
 measureChar .equ 0x0B01
 measureStr  .equ 0x0C01
-drawHexHL   .equ 0x0D01
+drawHexHL   .equ 0x0E01
 
 #include "header.asm"
 #include "boot.asm"

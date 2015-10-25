@@ -39,6 +39,31 @@ getCurrentThreadID:
     pop hl
     ret
 
+; setCurrentThread [Threading]
+;  Sets the current thread context to the given ID
+; Inputs:
+;  A: Thread ID
+setCurrentThread:
+    push hl
+    push bc
+        ld c, a
+        ld b, 0
+        ld hl, threadTable
+.loop:
+        ld a, c
+        cp (hl)
+        jr z, .done
+        inc b
+        ld a, 8
+        add a, l \ ld l, a \ jr nc, $+3 \ inc h
+        jr .loop
+.done:
+        ld a, b
+        ld (currentThreadIndex), a
+    pop bc
+    pop hl
+    ret
+
 ;; checkThread [Threading]
 ;;  Checks to see if the specified thread ID is still running.
 ;; Inputs:

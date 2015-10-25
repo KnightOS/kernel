@@ -57,11 +57,15 @@ random_seed             .equ color_mode + 1             ; 8 bytes
 kernel_current_time     .equ random_seed + 8            ; 2 bytes
 
 ; Link assist
-la_header_buffer        .equ kernel_current_time + 2    ; 4 bytes
-la_header_ix            .equ la_header_buffer + 4       ; 1 byte
-la_last_byte_time       .equ la_header_ix + 1           ; 2 bytes
+io_header_buffer        .equ kernel_current_time + 2    ; 4 bytes
+io_header_ix            .equ io_header_buffer + 4       ; 1 byte
+io_last_byte_time       .equ io_header_ix + 1           ; 2 bytes
+io_bulk_buffer          .equ io_last_byte_time + 2      ; 2 bytes
+io_bulk_len             .equ io_bulk_buffer + 2         ; 2 bytes
+io_bulk_callback        .equ io_bulk_len + 2            ; 2 bytes
+io_bulk_callback_thread .equ io_bulk_callback + 2       ; 1 byte
 
-kbd_scan_len            .equ la_last_byte_time + 2      ; 1 byte
+kbd_scan_len            .equ io_bulk_callback_thread + 1; 1 byte
 kbd_scan_queue          .equ kbd_scan_len + 1           ; 16 bytes
 
 io_send_queue           .equ kbd_scan_queue + 16        ; 2 bytes
