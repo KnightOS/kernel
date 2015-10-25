@@ -72,8 +72,9 @@ intHandleTimer1:
     set BIT_INT_TIMER1, a
     out (PORT_INT_MASK), a
     ; Timer 1 interrupt
-    ld hl, kernel_current_time
-    inc (hl)
+    ld hl, (kernel_current_time)
+    inc hl
+    ld (kernel_current_time), hl
 doContextSwitch:
     ld a, (currentThreadIndex)
     add a, a
@@ -136,6 +137,7 @@ noThreads:
     ld a, panic_no_threads
     jp panic
 noActiveThreads:
+    jr sysInterruptDone
     ld a, panic_no_active_threads
     set 7, a
     jp panic
