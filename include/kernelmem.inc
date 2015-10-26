@@ -73,7 +73,7 @@ io_send_remain          .equ io_send_queue + 2          ; 2 bytes
 io_send_callback        .equ io_send_remain + 2         ; 2 bytes
 io_header_handlers      .equ io_send_callback + 2       ; 2 bytes
 
-stateUsed               .equ io_send_remain + 16 - stateMemory
+stateUsed               .equ io_header_handlers + 2 - stateMemory
 
 flashFunctions          .equ stateMemory + stateMemorySize
 kernelGarbage           .equ flashFunctions + flashFunctionSize
