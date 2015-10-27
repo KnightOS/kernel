@@ -612,6 +612,7 @@ _:      ; Move DE to end of file entry
     ei
 _:  pop af
     pop ix
+    cp a
     ret
 .exitError:
     pop hl
@@ -699,12 +700,14 @@ _:      push de
         ld de, 0
 .createEntry:
         call createDirectoryEntry
+        jr nz, .error2
     inc sp \ inc sp ; pop hl
     pop de
     pop af
     jp po, _
     ei
 _:  pop af
+    cp a
     ret
                 .error:
             pop hl
@@ -717,6 +720,16 @@ _:  pop af
 _:  pop af
     or 1
     ld a, errFileNotFound
+    ret
+        .error2:
+    inc sp \ inc sp ; pop hl
+    pop de
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    or 1
+    ld a, errFilesystemFull
     ret
 
 ; findNode
