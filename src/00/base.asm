@@ -7,20 +7,27 @@
 #include "constants.asm"
 
 ; TODO: Use a proper linker instead of this trash
-newline     .equ 0x0001
-drawChar    .equ 0x0101
-drawCharAND .equ 0x0201
-drawCharXOR .equ 0x0301
-drawStr     .equ 0x0401
-drawStrAND  .equ 0x0501
-drawStrXOR  .equ 0x0601
-wrapStr     .equ 0x0701
-wrapStrAND  .equ 0x0801
-wrapStrXOR  .equ 0x0901
-drawHexA    .equ 0x0A01
-measureChar .equ 0x0B01
-measureStr  .equ 0x0C01
-drawHexHL   .equ 0x0E01
+newline         .equ 0x0001
+drawChar        .equ 0x0101
+drawCharAND     .equ 0x0201
+drawCharXOR     .equ 0x0301
+drawStr         .equ 0x0401
+drawStrAND      .equ 0x0501
+drawStrXOR      .equ 0x0601
+wrapStr         .equ 0x0701
+wrapStrAND      .equ 0x0801
+wrapStrXOR      .equ 0x0901
+drawHexA        .equ 0x0A01
+measureChar     .equ 0x0B01
+measureStr      .equ 0x0C01
+drawHexHL       .equ 0x0E01
+draw3x3Char     .equ 0x1101
+draw3x3Str      .equ 0x1201
+draw3x3DecA     .equ 0x1301
+draw3x3HexA     .equ 0x1401
+draw3x3HexHL    .equ 0x1501
+draw3x3DecHL    .equ 0x1601
+draw3x3DecACIX  .equ 0x1701
 
 #include "header.asm"
 #include "boot.asm"

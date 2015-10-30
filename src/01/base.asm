@@ -7,6 +7,7 @@
 
 .org 0x4000
 #include "text.asm"
+#include "smalltext.asm"
 #include "font.asm"
 
 .echo "Bytes remaining on page 01: {0}" 0x8000-$
