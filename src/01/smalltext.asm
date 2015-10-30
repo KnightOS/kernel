@@ -16,7 +16,7 @@ draw3x3Char:
         cp '\n'
         jr nz, _
         ld a, e
-        add a, 6
+        add a, 4
         ld e, a
         ld d, b
         jr .exit
