@@ -97,15 +97,6 @@ reboot:
     call initDisplay
     call initIO
 
-    ld iy, 0xC000
-    call clearBuffer
-    ld hl, init
-    ld de, 0
-    rst 0x20
-    .dw draw3x3str
-    call fastCopy
-    jr $
-
     ld de, init
     call fileExists
     ld a, panic_init_not_found
