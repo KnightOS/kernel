@@ -64,6 +64,12 @@ reboot:
 #ifdef LINK_ASSIST
     ld a, LA_ENABLE_INT_RX | LA_ENABLE_INT_ERROR
     out (PORT_LINK_ASSIST_ENABLE), a
+    ; Configure link assist signaling speed
+    ld a, 0x97
+    out (PORT_LINK_ASSIST_STATUS), a
+    ld a, 0xB4
+    out (PORT_LINK_ASSIST_RX_BUFFER), a
+    ; These constants are what TIOS writes during boot
 #endif
 
 #ifdef CLOCK

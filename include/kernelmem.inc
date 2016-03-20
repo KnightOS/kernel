@@ -72,6 +72,7 @@ io_send_queue           .equ kbd_scan_queue + 16        ; 2 bytes
 io_send_remain          .equ io_send_queue + 2          ; 2 bytes
 io_send_callback        .equ io_send_remain + 2         ; 2 bytes
 io_header_handlers      .equ io_send_callback + 2       ; 2 bytes
+io_checksum             .equ io_header_handlers + 2     ; 2 bytes
 
 stateUsed               .equ io_header_handlers + 2 - stateMemory
 

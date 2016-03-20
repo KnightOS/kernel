@@ -1,0 +1,69 @@
+                               I/O Link Protocol
+
+The KnightOS kernel provides an implementation of the DBus protocol over the
+link port, as well as some simple higher level protocol details (such as
+checksum verification and resending broken packets).
+
+Multi-octet values in this protocol are transmitted in little endian.
+
+The DBus protocol begins with a header:
+
+struct {
+    uint8_t machine_id;
+    uint8_t command_id;
+    uint16_t data_length;
+}
+
+The machine ID identifies what kind of device is on the other end. Userspace
+applications choose what ID they want to use for communication, but the kernel
+is assigned 0x5F for its own packets (checksum error and ack, mostly). 0x40-0x5F
+(inclusive) are also reserved for future kernel use. Other machine IDs are in
+use by Texas Instruments - choose wisely.
+
+The command ID distinguishes what kind of packet we're dealing with. This is
+also handled by userspace, but within the kernel we use 0x56 to ACK and 0x5A to
+indicate a checksum error.
+
+If the data_length is nonzero, this packet is a bulk packet and an additional
+data_length bytes are to be received, followed by a uint16_t checksum.
+
+The kernel does nothing but notify userspace when a non-bulk packet arrives. If
+a bulk packet arrives, the kernel will check the checksum and send an ACK or an
+ERR. The userspace won't be notified of a new bulk packet until the checksum
+passes (even if it requires multiple attempts).
+
+When sending packets, the kernel does not do anything remarkable for non-bulk
+packets. For bulk packets, the kernel will wait for an ACK or an ERR and handle
+resending if necessary before indicating to userspace that the packet was
+successfully sent.
+
+                                    Examples
+
+Sending a non-bulk packet:
+
+    A->B: 12 32 00 00
+
+This sequence of bytes indicates a packet with machine ID 0x12, command ID 0x32,
+and no payload.
+
+Sending a bulk packet:
+
+    A->B: 12 32 02 00 01 02 03 00
+    B->A: 5F 56 00 00
+
+This packet uses the same machine ID and command ID, but includes a two byte
+payload of [01 02], and a checksum. The checksum matches and the kernel sends an
+ACK.
+
+Resending a bulk packet:
+
+    A->B: 12 32 02 00 01 05 03 00
+    B->A: 5F 5A 00 00
+    A->B: 12 32 02 00 01 02 08 40
+    B->A: 5F 5A 00 00
+    A->B: 12 32 02 00 01 02 03 00
+    B->A: 5F 56 00 00
+
+This packet fails twice - first the body is corrupted, and second the checksum
+is corrupted. The kernel sends an ERR twice, requesting that the packet be
+re-transmitted. The third time is correct and the kernel sends an ACK.
