@@ -8,8 +8,13 @@
 #define MID_CALC_83             0x83
 #define MID_TI_KEYBOARD         0xE0
 #define MID_KOS_RESERVED_MIN    0x40 ; Reserved for kernel use
-#define MID_KOS_RESERVED_MAX    0x50 ; Reserved for kernel use
-; To the best of my knowledge, TI does not use 0x40-0x50
+#define MID_KOS_RESERVED_MAX    0x5F ; Reserved for kernel use
+#define MID_KOS_KERNEL          0x5F
+; To the best of my knowledge, TI does not use 0x40-0x5F
+
+#define CMD_ACK                 0x56
+#define CMD_CHECK_ERR           0x5A
+#define CMD_CTS                 0x09
 
 io_reset_buffer:
     push af
@@ -289,24 +294,62 @@ io_rx_handle_byte:
     jp z, io_reset_buffer
 
     ; Bulk mode
+    inc bc \ inc bc ; checksum
     ld (io_bulk_buffer), hl
+    ld (io_bulk_buffer_bak), hl
     ld (io_bulk_len), bc
     ld (io_bulk_callback), ix
     ret
 .not_found:
     jp io_reset_buffer
 .handle_bulk_byte:
-    ld hl, (io_bulk_buffer)
     ld a, b
-    ld (hl), a
-    inc hl
-    ld (io_bulk_buffer), hl
     ld bc, (io_bulk_len)
     dec bc
     ld (io_bulk_len), bc
+    ld hl, 2
+    scf \ ccf
+    sbc hl, bc
+    jr z, .bulk_data
+    jr nc, .checksum_data
+.bulk_data:
+    ld hl, (io_bulk_buffer)
+    ld (hl), a
+    inc hl
+    ld (io_bulk_buffer), hl
+    ret
+.checksum_data:
+    ld hl, io_checksum + 1
+    sbc hl, bc
+    ld (hl), a
     ld hl, 0
-    call cpHLBC
+    sbc hl, bc
     ret nz
+    ; Confirm checksum is accurate
+    ld de, 0
+    ld hl, (io_bulk_buffer_bak) ; Start
+    ld bc, (io_bulk_buffer)     ; End
+.checksum_loop:
+    ld a, (hl)
+    add a, e \ ld e, a \ jr nc, $+3 \ inc d
+    inc hl
+    call cpHLBC
+    jr nz, .checksum_loop
+    ld hl, (io_checksum)
+    call cpHLDE
+    jr z, .send_ack
+.send_err:
+    call io_reset_buffer
+    ld hl, pkt_err
+    ld bc, 4
+    ld ix, 0
+    jp ioSendBuffer
+.send_ack:
+    ld hl, pkt_ack
+    ld bc, 4
+    ld ix, .execute_callback
+    jp ioSendBuffer
+.execute_callback:
     call getCurrentThreadID
     push af
         ld hl, .return_point_bulk
@@ -323,5 +366,7 @@ io_rx_handle_byte:
     call setCurrentThread
     jp io_reset_buffer
 
-you_are_here:
-    .db "you are here", 0
+pkt_ack:
+    .db 0x5F, 0x56, 0x00, 0x00
+pkt_err:
+    .db 0x5F, 0x5A, 0x00, 0x00

@@ -61,7 +61,8 @@ io_header_buffer        .equ kernel_current_time + 2    ; 4 bytes
 io_header_ix            .equ io_header_buffer + 4       ; 1 byte
 io_last_byte_time       .equ io_header_ix + 1           ; 2 bytes
 io_bulk_buffer          .equ io_last_byte_time + 2      ; 2 bytes
-io_bulk_len             .equ io_bulk_buffer + 2         ; 2 bytes
+io_bulk_buffer_bak      .equ io_bulk_buffer + 2         ; 2 bytes
+io_bulk_len             .equ io_bulk_buffer_bak + 2     ; 2 bytes
 io_bulk_callback        .equ io_bulk_len + 2            ; 2 bytes
 io_bulk_callback_thread .equ io_bulk_callback + 2       ; 1 byte
 
