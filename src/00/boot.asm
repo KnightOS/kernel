@@ -69,7 +69,6 @@ reboot:
     out (PORT_LINK_ASSIST_STATUS), a
     ld a, 0xB4
     out (PORT_LINK_ASSIST_RX_BUFFER), a
-    ; These constants are what TIOS writes during boot
 #endif
 
 #ifdef CLOCK

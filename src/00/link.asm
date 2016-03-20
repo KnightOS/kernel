@@ -29,7 +29,7 @@ la_handleInterrupt:
     bit BIT_LA_INT_RX_DONE, a
     jr nz, .rx_done
     bit BIT_LA_INT_TX_DONE, a
-    jr nz, .tx_done
+    jp nz, io_tx_ready
     bit BIT_LA_INT_ERROR, a
     jr nz, .la_error
     jp sysInterruptDone
@@ -37,51 +37,13 @@ la_handleInterrupt:
     in a, (PORT_LINK_ASSIST_RX_BUFFER) ; ack
     call io_rx_handle_byte
     jp sysInterruptDone
-.tx_done:
-    ld bc, (io_send_remain)
-    xor a
-    cp b
-    jr nz, .tx_part
-    cp c
-    jr nz, .tx_part
-    in a, (PORT_LINK_ASSIST_ENABLE)
-    res BIT_LA_ENABLE_INT_TX, a
-    out (PORT_LINK_ASSIST_ENABLE), a ; Disable sending
-    jp sysInterruptDone
-.tx_part:
-    ld hl, (io_send_queue)
-    ld a, (hl)
-    out (PORT_LINK_ASSIST_TX_BUFFER), a
-    inc hl
-    dec bc
-    ld (io_send_queue), hl
-    ld (io_send_remain), bc
-    ld hl, 0
-    call cpHLBC
-    jp nz, sysInterruptDone
-    ; Buffer empty
-    in a, (PORT_LINK_ASSIST_ENABLE)
-    res BIT_LA_ENABLE_INT_TX, a
-    out (PORT_LINK_ASSIST_ENABLE), a ; Disable sending
-    ; Run callback
-    ld hl, sysInterruptDone
-    push hl
-    ld hl, (io_send_callback)
-    push hl
-    call cpHLBC
-    ret nz
-    ; If they didn't provide a callback:
-    pop hl
-    ret
 .la_error:
     in a, (PORT_LINK_ASSIST_ENABLE)
     res BIT_LA_ENABLE_INT_TX, a
     out (PORT_LINK_ASSIST_ENABLE), a
     ld hl, 0
     ld (io_send_remain), hl ; abort tx
-
     call io_reset_buffer ; abort rx
-
     jp sysInterruptDone
 
 initIO:
@@ -93,6 +55,8 @@ initIO:
     ld hl, default_header_handlers
     ldir
     ld (io_header_handlers), ix
+    ld a, 0xFF
+    ld (io_tx_header_ix), a ; ready to send
     ret
 
 default_header_handlers:
@@ -156,12 +120,14 @@ ioRegisterHandler:
 
 ; TODO: remove handlers when the owning thread exits
 
-;; ioSendBuffer [I/O]
-;;  Sends a buffer of bytes over I/O.
+;; ioSendPacket [I/O]
+;;  Sends a DBus packet via the I/O port.
 ;; Inputs:
-;;  HL: Buffer
-;;  BC: Length
-;;  IX: Callback (or 0)
+;;  HL: Buffer (or zero)
+;;  BC: Buffer length (or zero)
+;;  D: Command ID
+;;  E: Machine ID
+;;  IX: Callback (or zero)
 ;; Outputs:
 ;;  Z: Set if successful, reset if I/O is busy
 ;; Notes:
@@ -170,34 +136,45 @@ ioRegisterHandler:
 ;;  Please keep your callback short and sweet, as it will be called
 ;;  during an interrupt. You are advised to suspend your main thread
 ;;  or use [[condWait]] and have your callback resume/notify it.
-ioSendBuffer:
-    push bc
+ioSendPacket:
     push af
+    push bc
+        ; io_tx_header_ix is 0xFF when ready to send
+        ld a, (io_tx_header_ix)
+        cp 0xFF \ jr nz, .abort
+        ld a, (io_header_ix)
+        or a \ jr nz, .abort
+        ld a, (io_bulk_len)
+        or a \ jr nz, .abort
+        ld a, (io_bulk_len + 1)
+        or a \ jr nz, .abort
     push hl
-        ld hl, (io_send_remain)
+    push de
         xor a
-        cp h \ jr nz, .fail
-        cp l \ jr nz, .fail
-    pop hl \ push hl
+        cp c \ jr nz, _
+        cp b \ jr nz, _
+        ld hl, 0 ; NULL out the send queue if len=0
+_:      ld (io_tx_header), de
+        ld (io_tx_header + 2), bc
         ld (io_send_queue), hl
+        ld (io_send_queue_bak), hl
         ld (io_send_remain), bc
         ld (io_send_callback), ix
+        ld (io_tx_header_ix), a
+        ld hl, 0
+        ld (io_checksum), hl
         in a, (PORT_LINK_ASSIST_ENABLE)
         set BIT_LA_ENABLE_INT_TX, a
         out (PORT_LINK_ASSIST_ENABLE), a
+    pop de
     pop hl
     pop af
     pop bc
     cp a
     ret
-.fail:
-    pop hl
-    ld b, a
-    pop af
-    or 1
-    ld a, b
-    pop bc
-    ret
+.abort:
+    pop af \ ld b, a \ or 1 \ ld a, b
+    pop bc \ ret ; Packet in progress, GTFO
 
 io_check_timeout:
     push af
@@ -226,20 +203,82 @@ io_check_timeout:
     pop af
     ret
 
+io_tx_ready:
+    ld a, (io_tx_header_ix)
+    cp 0xFF
+    jr z, .tx_complete
+    cp 4
+    jr c, .tx_header
+    ld hl, (io_send_queue)
+    ld bc, (io_send_remain)
+    ld de, 0
+    call cpHLDE
+    jr z, .tx_complete ; HL=0, then done
+    call cpBCDE
+    jr z, .tx_checksum ; BC=0, then send checksum
+    ld a, (hl)
+    out (PORT_LINK_ASSIST_TX_BUFFER), a
+    ld de, (io_checksum)
+    add a, e \ ld e, a \ jr nc, $+3 \ inc d
+    ld (io_checksum), de
+    inc hl \ dec bc
+    ld (io_send_queue), hl
+    ld (io_send_remain), bc
+    call cpBCDE
+    jr z, .tx_complete
+    jp sysInterruptDone
+.tx_header:
+    ld hl, io_tx_header
+    add a, l \ ld l, a \ jr nc, $+3 \ inc h
+    ld a, (hl)
+    out (PORT_LINK_ASSIST_TX_BUFFER), a
+    ld hl, io_tx_header_ix
+    inc (hl)
+    jp sysInterruptDone
+.tx_checksum:
+    ld hl, io_checksum
+    sub a, 4
+    add a, l \ ld l, a \ jr nc, $+3 \ inc h
+    ld a, (hl)
+    out (PORT_LINK_ASSIST_TX_BUFFER), a
+    ld hl, io_tx_header_ix
+    inc (hl)
+    ld a, (hl)
+    cp 6
+    jp nz, sysInterruptDone
+.tx_complete:
+    ; TODO: Await ACK and run callback etc
+    in a, (PORT_LINK_ASSIST_ENABLE)
+    res BIT_LA_ENABLE_INT_TX, a
+    out (PORT_LINK_ASSIST_ENABLE), a
+
+    ; Was this packet a simple packet? If so, run callback now
+    ld hl, (io_send_queue_bak)
+    ld bc, 0
+    call cpHLBC
+    ld hl, sysInterruptDone
+    push hl
+    ret nz
+
+    ld a, 0xFF
+    ld (io_tx_header_ix), a
+
+    ld hl, (io_send_callback)
+    push hl
+        call cpHLBC
+        ret nz
+    pop hl
+    ret
+
 io_rx_handle_byte:
     call io_check_timeout
-
     ld b, a
-
     ld hl, (io_bulk_len)
-
     xor a
     cp h \ jp nz, .handle_bulk_byte
     cp l \ jp nz, .handle_bulk_byte
-
     ld a, (io_header_ix)
     ld hl, io_header_buffer
-
     add a, l \ ld l, a \ jr nc, $+3 \ inc h
     ld (hl), b
     ld hl, io_header_ix
@@ -265,12 +304,10 @@ io_rx_handle_byte:
     inc hl
     call getCurrentThreadId
     push af
-
         ld a, (hl) ; Thread ID
         ld (io_bulk_callback_thread), a
         call setCurrentThread
 
-        ; TODO: set context to that thread (so kcall et all works)
         inc hl
         ld e, (hl)
         inc hl
@@ -340,15 +377,16 @@ io_rx_handle_byte:
     jr z, .send_ack
 .send_err:
     call io_reset_buffer
-    ld hl, pkt_err
-    ld bc, 4
+    ld bc, 0
     ld ix, 0
-    jp ioSendBuffer
+    ld de, 0x5A5F ; ERR
+    jp ioSendPacket
 .send_ack:
-    ld hl, pkt_ack
-    ld bc, 4
+    call io_reset_buffer
+    ld bc, 0
     ld ix, .execute_callback
-    jp ioSendBuffer
+    ld de, 0x565F ; ACK
+    jp ioSendPacket
 .execute_callback:
     call getCurrentThreadID
     push af
@@ -365,8 +403,3 @@ io_rx_handle_byte:
     pop af
     call setCurrentThread
     jp io_reset_buffer
-
-pkt_ack:
-    .db 0x5F, 0x56, 0x00, 0x00
-pkt_err:
-    .db 0x5F, 0x5A, 0x00, 0x00
