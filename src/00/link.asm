@@ -138,9 +138,12 @@ ioRegisterHandler:
 ;;  Please keep your callback short and sweet, as it will be called
 ;;  during an interrupt. You are advised to suspend your main thread
 ;;  or use [[condWait]] and have your callback resume/notify it.
+;;  
+;;  Attempts to access the buffer memory before the callback is run
+;;  will end in tears.
 ioSendPacket:
-    push af
     push bc
+    push af
         ; io_tx_header_ix is 0xFF when ready to send
         ld a, (io_tx_header_ix)
         cp 0xFF \ jr nz, .abort
