@@ -169,6 +169,10 @@ _:      ld (io_tx_header), de
         ld (io_tx_header_ix), a
         ld hl, 0
         ld (io_checksum), hl
+
+        call getCurrentThreadId
+        ld (io_send_callback_thread), a
+
         in a, (PORT_LINK_ASSIST_ENABLE)
         set BIT_LA_ENABLE_INT_TX, a
         out (PORT_LINK_ASSIST_ENABLE), a
@@ -424,22 +428,30 @@ handle_internal_packets:
     ld a, 0xFF
     ld (io_tx_header_ix), a
 
-    ld hl, .ack_rp
-    push hl
-    ld hl, (io_send_callback)
-    push hl
-        call cpHLBC
-        ret nz
-    pop hl
+    call getCurrentThreadId
+    push af
+        ld a, (io_send_callback_thread)
+        call setCurrentThread
+
+        ld hl, .ack_rp
+        push hl
+        ld hl, (io_send_callback)
+        push hl
+            call cpHLBC
+            ret nz
+        pop hl
+        ret
+.ack_rp:
+    pop af
+    call setCurrentThread
+.ack_rp_2:
+    ld bc, 0 \ ld hl, 0
     ret
 .err: ; Checksum error, resend
     ld hl, (io_send_queue_bak)
     ld de, (io_tx_header)
     ld bc, (io_tx_header + 2)
-    ld hl, .ack_rp
+    ld hl, .ack_rp_2
     push hl
     push af \ push bc
     jp checks_pass@ioSendPacket
-.ack_rp:
-    ld bc, 0 \ ld hl, 0
-    ret

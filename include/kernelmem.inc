@@ -75,7 +75,8 @@ io_send_queue           .equ io_tx_header_ix + 1        ; 2 bytes
 io_send_queue_bak       .equ io_send_queue + 2          ; 2 bytes
 io_send_remain          .equ io_send_queue_bak + 2      ; 2 bytes
 io_send_callback        .equ io_send_remain + 2         ; 2 bytes
-io_header_handlers      .equ io_send_callback + 2       ; 2 bytes
+io_send_callback_thread .equ io_send_callback + 2       ; 1 bytes
+io_header_handlers      .equ io_send_callback_thread + 1; 2 bytes
 io_checksum             .equ io_header_handlers + 2     ; 2 bytes
 
 stateUsed               .equ io_header_handlers + 2 - stateMemory
