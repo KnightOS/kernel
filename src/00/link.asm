@@ -13,7 +13,7 @@
 ; To the best of my knowledge, TI does not use 0x40-0x5F
 
 #define CMD_ACK                 0x56
-#define CMD_CHECK_ERR           0x5A
+#define CMD_ERR                 0x5A
 #define CMD_CTS                 0x09
 
 io_reset_buffer:
@@ -64,6 +64,8 @@ default_header_handlers:
     ;dw handler
     .db MID_TI_KEYBOARD, 3, 0xFE
     .dw handle_keyboard_header
+    .db MID_KOS_KERNEL, 4, 0xFE
+    .dw handle_internal_packets
     .db 0xFF
 default_header_handlers_end:
 
@@ -148,6 +150,7 @@ ioSendPacket:
         or a \ jr nz, .abort
         ld a, (io_bulk_len + 1)
         or a \ jr nz, .abort
+.checks_pass:
     push hl
     push de
         xor a
@@ -403,3 +406,37 @@ io_rx_handle_byte:
     pop af
     call setCurrentThread
     jp io_reset_buffer
+
+handle_internal_packets:
+    ; TODO: Don't freak out if we receive an unexpected ACK
+    inc hl
+    ld a, (hl) ; command type
+    cp CMD_ACK
+    jr z, .ack
+    cp CMD_ERR
+    jr z, .err
+    ret
+.ack: ; Success, run callback
+    ld bc, 0
+    ld a, 0xFF
+    ld (io_tx_header_ix), a
+
+    ld hl, .ack_rp
+    push hl
+    ld hl, (io_send_callback)
+    push hl
+        call cpHLBC
+        ret nz
+    pop hl
+    ret
+.err: ; Checksum error, resend
+    ld hl, (io_send_queue_bak)
+    ld de, (io_tx_header)
+    ld bc, (io_tx_header + 2)
+    ld hl, .ack_rp
+    push hl
+    push af \ push bc
+    jp checks_pass@ioSendPacket
+.ack_rp:
+    ld bc, 0 \ ld hl, 0
+    ret
