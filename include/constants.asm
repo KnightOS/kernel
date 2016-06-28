@@ -152,6 +152,22 @@
         define_mask(LCD_DELAY_FLASH, 0)
         define_mask(LCD_DELAY_RAM, 1)
         define_mask(LCD_DELAY_AMOUNT, 2)
+
+    ; 83+ SE/84+ only
+    PORT_CRYS1_FREQ     .equ 0x30
+    PORT_CRYS1_LOOP     .equ 0x31
+    PORT_CRYS1_COUNTER  .equ 0x32
+    PORT_CRYS2_FREQ     .equ 0x33
+    PORT_CRYS2_LOOP     .equ 0x34
+    PORT_CRYS2_COUNTER  .equ 0x35
+    PORT_CRYS3_FREQ     .equ 0x36
+    PORT_CRYS3_LOOP     .equ 0x37
+    PORT_CRYS3_COUNTER  .equ 0x38
+
+        define_mask(CRYS_LOOP_ENABLED, 0)
+        define_mask(CRYS_LOOP_INT, 1)
+        CRYS_FREQ_0     .equ 0x00
+        CRYS_FREQ_8HZ   .equ 0x47
     
     ; 84+ only
     PORT_GPIO_CONFIG    .equ 0x39

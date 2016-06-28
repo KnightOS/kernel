@@ -55,6 +55,16 @@ interruptResume:
     ; TODO
 #endif
 
+#ifdef CRYSTAL_TIMERS
+    in a, (PORT_INT_TRIG)
+    bit BIT_INT_TRIG_CRYS1, a
+    jp nz, io_timer_expired
+    bit BIT_INT_TRIG_CRYS2, a
+    jp nz, intHandleCrys2
+    bit BIT_INT_TRIG_CRYS3, a
+    jp nz, intHandleCrys3
+#endif
+
     jr contextSwitch
 intHandleON:
     in a, (PORT_INT_MASK)
@@ -65,6 +75,17 @@ intHandleON:
 
     ; Check for special keycodes
     jp handleKeyboard
+intHandleCrys2:
+    ld c, PORT_CRYS2_FREQ
+    jr _
+intHandleCrys3:
+    ld c, PORT_CRYS3_FREQ
+_:  xor a
+    out (c), a
+    inc c ; LOOP port for interrupt ACK
+    in a, (c)
+    out (c), a
+    jp sysInterruptDone
 intHandleTimer1:
     in a, (PORT_INT_MASK)
     res BIT_INT_TIMER1, a

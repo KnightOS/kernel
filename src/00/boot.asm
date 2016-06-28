@@ -76,6 +76,19 @@ reboot:
     out (PORT_CLOCKCONTROL), a
 #endif
 
+#ifdef CRYSTAL_TIMERS
+    xor a ; ld a, CRYS_FREQ_0
+    out (PORT_CRYS1_FREQ), a
+    out (PORT_CRYS2_FREQ), a
+    out (PORT_CRYS3_FREQ), a
+
+    out (PORT_CRYS2_LOOP), a
+    out (PORT_CRYS3_LOOP), a
+
+    ld a, CRYS_LOOP_INT
+    out (PORT_CRYS1_LOOP), a
+#endif
+
     ld hl, 0x8000
     ld (hl), 0
     ld de, 0x8001

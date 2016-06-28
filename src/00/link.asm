@@ -1,5 +1,7 @@
 ; Machine IDs
 
+#define TIMEOUT_SECS 1
+
 #define MID_PC_82               0x02
 #define MID_PC_83               0x03
 #define MID_PC_8X               0x23
@@ -186,32 +188,37 @@ _:      ld (io_tx_header), de
     pop af \ ld b, a \ or 1 \ ld a, b
     pop bc \ ret ; Packet in progress, GTFO
 
-io_check_timeout:
+io_reset_timeout:
+#ifdef CRYSTAL_TIMERS
     push af
-    push hl
-    push de
-    push bc
-        ld a, (io_header_ix)
-        or a
-        jr z, .done ; Skip if this is the first byte of a packet
-
-        ld hl, (io_last_byte_time)
-        ld bc, 200 ; 2 seconds ish
-        add hl, bc
-        ex de, hl
-        ld hl, (kernel_current_time)
-        sbc hl, de
-        jr c, .done
-        xor a
-        ld (io_header_ix), a ; drop packet
-.done:
-        ld hl, (kernel_current_time)
-        ld (io_last_byte_time), hl
-    pop bc
-    pop de
-    pop hl
+        ld a, CRYS_FREQ_8HZ
+        out (PORT_CRYS1_FREQ), a
+        ld a, CRYS_LOOP_INT
+        out (PORT_CRYS1_LOOP), a
+        ld a, TIMEOUT_SECS * 8
+        out (PORT_CRYS1_COUNTER), a
     pop af
+#endif
     ret
+
+io_timer_expired:
+    ; ACK interrupt
+    ld a, CRYS_FREQ_0
+    out (PORT_CRYS1_FREQ), a
+    ld a, CRYS_LOOP_INT
+    out (PORT_CRYS1_COUNTER), a
+    ; What were we doing?
+    in a, (PORT_LINK_ASSIST_ENABLE)
+    bit BIT_LA_ENABLE_INT_RX, a
+    jr z, .rx_timeout
+    bit BIT_LA_ENABLE_INT_TX, a
+    jr z, .tx_timeout
+    ; We aren't in the middle of anything. Weird.
+    jp sysInterruptDone
+.rx_timeout:
+.tx_timeout:
+    ; TODO
+    jp sysInterruptDone
 
 io_tx_ready:
     ld a, (io_tx_header_ix)
@@ -281,7 +288,7 @@ io_tx_ready:
     ret
 
 io_rx_handle_byte:
-    call io_check_timeout
+    call io_reset_timeout
     ld b, a
     ld hl, (io_bulk_len)
     xor a
