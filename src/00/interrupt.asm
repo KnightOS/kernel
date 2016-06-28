@@ -36,15 +36,6 @@ sysInterrupt:
     jp usbInterrupt
 interruptResume:
 #endif
-#ifdef LINK_ASSIST
-    in a, (PORT_LINK_ASSIST_STATUS)
-    and 0b00000111 ; LA_INT_* bits
-    jp nz, la_handleInterrupt
-#endif
-#ifdef LINK_ASSIST_RO
-    ; TODO
-#endif
-
     in a, (PORT_INT_TRIG)
     bit BIT_INT_TRIG_ON, a
     jp nz, intHandleON
@@ -54,6 +45,15 @@ interruptResume:
     jp nz, intHandleTimer2
     bit BIT_INT_TRIG_LINK, a
     jp nz, intHandleLink
+
+#ifdef LINK_ASSIST
+    in a, (PORT_LINK_ASSIST_STATUS)
+    and 0b00000111 ; LA_INT_* bits
+    jp nz, la_handleInterrupt
+#endif
+#ifdef LINK_ASSIST_RO
+    ; TODO
+#endif
 
     jr contextSwitch
 intHandleON:
