@@ -90,6 +90,10 @@ default_header_handlers_end:
 ;;  
 ;;  If a handler has already been reserved with this machine ID, it will take
 ;;  precedence.
+;;
+;;  Your header handler may be called multiple times before the final callback is
+;;  invoked. This may occur if we have to retry the packet due to a corrupted
+;;  header.
 ioRegisterHandler:
     push hl
     push de
