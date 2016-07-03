@@ -90,7 +90,38 @@ _:  ld h, a
 ;; Outputs:
 ;;  Z: Set if file exists, reset if not
 directoryExists:
-    jr fileExists ; TODO: Check if this node is a directory
+    ; Copy path to kernel ram, without trailing slash
+    push de
+        push af
+        push bc
+        push hl
+            push de
+                ex de, hl
+                xor a
+                ld b, a
+                ld c, a
+                cpir
+                ; bc = -bc
+                xor a \ sub c \ ld c, a \ sbc a, a \ sub b \ ld b, a
+                dec bc
+                dec hl
+                dec hl
+                ld a, '/'
+                cp (hl)
+                jr nz,_
+                dec bc
+_:          pop hl
+            ld de, kernelGarbage+0x100
+            ldir
+            xor a
+            ld (de), a
+        pop hl
+        pop bc
+        pop af
+        ld de, kernelGarbage+0x100
+        call fileExists ; TODO: Check if this node is a directory
+    pop de
+    ret
 
 ;; listDirectory [Filesystem]
 ;;  Lists the contents of a directory on the filesystem.
