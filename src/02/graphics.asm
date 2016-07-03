@@ -70,7 +70,7 @@ setPixel:
     ret
 
 ;; resetPixel [Display]
-;;  Sets (turns on) a pixel on the screen buffer.
+;;  Resets (turns off) a pixel on the screen buffer.
 ;; Inputs:
 ;;  IY: Screen buffer
 ;;  A,L: X, Y
