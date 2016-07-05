@@ -86,8 +86,8 @@ _:  ld a, (de)
     jr z, _
     inc hl \ inc de
     jr -_
-_:  pop de
-    pop hl
+_:  pop hl
+    pop de
     ret
     
 ;; strchr [Strings]
