@@ -19,6 +19,7 @@
 #define CMD_CTS                 0x09
 
 io_reset_buffer:
+    call io_kill_timeout
     push af
         xor a
         ld (io_header_ix), a
@@ -205,6 +206,17 @@ io_reset_timeout:
 #endif
     ret
 
+io_kill_timeout:
+#ifdef CRYSTAL_TIMERS
+    push af
+        xor a
+        out (PORT_CRYS1_FREQ), a
+        out (PORT_CRYS1_LOOP), a
+        out (PORT_CRYS1_COUNTER), a
+    pop af
+#endif
+    ret
+
 io_timer_expired:
     ; ACK interrupt
     ld a, CRYS_FREQ_0
@@ -221,7 +233,6 @@ io_timer_expired:
     jp sysInterruptDone
 .rx_timeout:
 .tx_timeout:
-    ; TODO
     jp sysInterruptDone
 
 io_tx_ready:
@@ -268,7 +279,6 @@ io_tx_ready:
     cp 6
     jp nz, sysInterruptDone
 .tx_complete:
-    ; TODO: Await ACK and run callback etc
     in a, (PORT_LINK_ASSIST_ENABLE)
     res BIT_LA_ENABLE_INT_TX, a
     out (PORT_LINK_ASSIST_ENABLE), a

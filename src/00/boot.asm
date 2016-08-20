@@ -81,12 +81,12 @@ reboot:
     out (PORT_CRYS1_FREQ), a
     out (PORT_CRYS2_FREQ), a
     out (PORT_CRYS3_FREQ), a
-
+    out (PORT_CRYS1_LOOP), a
     out (PORT_CRYS2_LOOP), a
     out (PORT_CRYS3_LOOP), a
-
-    ld a, CRYS_LOOP_INT
-    out (PORT_CRYS1_LOOP), a
+    out (PORT_CRYS1_COUNTER), a
+    out (PORT_CRYS2_COUNTER), a
+    out (PORT_CRYS3_COUNTER), a
 #endif
 
     ld hl, 0x8000

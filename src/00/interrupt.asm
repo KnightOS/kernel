@@ -36,7 +36,16 @@ sysInterrupt:
     jp usbInterrupt
 interruptResume:
 #endif
+
     in a, (PORT_INT_TRIG)
+#ifdef CRYSTAL_TIMERS
+    bit BIT_INT_TRIG_CRYS1, a
+    jp nz, io_timer_expired
+    bit BIT_INT_TRIG_CRYS2, a
+    jp nz, intHandleCrys2
+    bit BIT_INT_TRIG_CRYS3, a
+    jp nz, intHandleCrys3
+#endif
     bit BIT_INT_TRIG_ON, a
     jp nz, intHandleON
     bit BIT_INT_TRIG_TIMER1, a
@@ -53,16 +62,6 @@ interruptResume:
 #endif
 #ifdef LINK_ASSIST_RO
     ; TODO
-#endif
-
-#ifdef CRYSTAL_TIMERS
-    in a, (PORT_INT_TRIG)
-    bit BIT_INT_TRIG_CRYS1, a
-    jp nz, io_timer_expired
-    bit BIT_INT_TRIG_CRYS2, a
-    jp nz, intHandleCrys2
-    bit BIT_INT_TRIG_CRYS3, a
-    jp nz, intHandleCrys3
 #endif
 
     jr contextSwitch
@@ -202,7 +201,6 @@ sysInterruptDone:
 
 ; Sits and spins if all other threads are suspended
 idlethread:
-    halt
     jr idlethread
 idlethread_stack:
     .dw 0
