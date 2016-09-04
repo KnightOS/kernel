@@ -1377,6 +1377,10 @@ _:      ; A is the number of bytes to write this time around the loop
             ld (ix + FILE_WORKING_SIZE), a
             jr nc, _ \ inc (ix + FILE_WORKING_SIZE + 1)
 _:          jr nc, _ \ inc (ix + FILE_WORKING_SIZE + 2)
+_:          ld a, (ix + FILE_WORKING_SIZE + 1)
+            add b
+            ld (ix + FILE_WORKING_SIZE + 1), a
+            jr nc, _ \ inc (ix + FILE_WORKING_SIZE + 2)
 _:      pop af
         pop bc
 
