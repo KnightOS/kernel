@@ -1042,6 +1042,7 @@ renameFile:
             jp po, _
             ei
 _:      pop af
+        cp a
         jr .done
 .notFound:
                pop hl
