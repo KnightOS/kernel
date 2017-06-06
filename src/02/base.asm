@@ -13,5 +13,6 @@
 #include "sort.asm"
 #include "graphics.asm"
 #include "strings.asm"
+#include "fp-math.asm"
 
 .echo "Bytes remaining on page 02: {0}" 0x8000-$
