@@ -104,3 +104,136 @@ _:
     pop ix
     pop hl
     ret
+
+;; fpAdd [FP Math]
+;;  Adds the two floating point numbers at BC and DE and
+;;  stores the result at HL.
+;; Inputs:
+;;  BC, DE: Pointers to floating point operands
+;;  HL: Pointer to destination buffer
+fpAdd:
+    push ix
+    push iy
+    push de
+    push bc
+    push hl
+        ; Move operands to index registers for convenience
+        push bc \ pop ix
+        push de \ pop iy
+        ; Make sure that iy has the smaller exponent
+        ld a, (ix + 1)
+        ld b, (iy + 1)
+        cp b
+        jr nc, .setupLoop
+        ; iy is larger, so swap with ix
+        push ix \ push iy \ pop ix \ pop iy
+.setupLoop:
+        ; Start at the end of the buffers
+        ld bc, 8
+        add ix, bc
+        add iy, bc
+        add hl, bc
+        ld b, 7
+        ; Clear the carry flag for the first digit
+        scf \ ccf
+.loop:
+        ld a, (ix)
+        ld c, (iy)
+        adc a, c
+        daa     ; Adjust the addition for BCD
+        ld (hl), a
+        dec ix
+        dec iy
+        dec hl
+        ; TODO: handle exponent/digit shifts
+        ; TODO: handle sign
+        djnz .loop
+    pop hl
+    pop bc
+    pop de
+    pop iy
+    pop ix
+    ret
+
+;; fpSub [FP Math]
+;;  Subtracts the floating point numbers at DE from BC and
+;;  stores the result at HL.
+;; Inputs:
+;;  BC, DE: Pointers to floating point operands
+;;  HL: Pointer to destination buffer
+fpSub:
+    ex de, hl
+    call fpNeg
+    ex de, hl
+    call fpAdd
+    ret
+
+;; fpNeg [FP Math]
+;;  Negates the floating point number at HL.
+;; Inputs:
+;;  HL: Pointer to floating point operand
+fpNeg:
+    push af
+    ld a, (hl)
+    xor 0x80
+    ld (hl), a
+    pop af
+    ret
+
+;; fpCompare [FP Math]
+;;  Compares the two floating point numbers at BC and DE.
+;; Inputs:
+;;  BC, DE: Pointers to floating point operands
+;; Output:
+;;  Same as z80 CP instruction.
+fpCompare:
+    push bc
+    push ix
+    push iy
+    push hl
+        ; Move operands to index registers for convenience
+        push bc \ pop ix
+        push de \ pop iy
+        ; Save A
+        ld l, a
+        ; Compare signs
+        ld a, (ix)
+        and 0x80
+        ld b, a
+        ld a, (iy)
+        and 0x80
+        cp b
+        jr nz, .end     ; Operands have opposite signs
+        ; Check if both operands are negative
+        and 0x80
+        jr z, .noSwap
+        ; Both operands are negative, so swap them to ensure correct comparison
+        push ix \ push iy \ pop ix \ pop iy
+.noSwap:
+.macro fpCompareIter
+        inc ix
+        inc iy
+        ld a, (ix)
+        ld b, (iy)
+        cp b
+        jr nz, .end
+.endmacro
+        ; Compare exponents
+        fpCompareIter
+        ; Compare mantissas
+        fpCompareIter
+        fpCompareIter
+        fpCompareIter
+        fpCompareIter
+        fpCompareIter
+        fpCompareIter
+        fpCompareIter
+.undefine fpCompareIter
+.end:
+        ; Restore A
+        ld a, l
+    pop hl
+    pop iy
+    pop ix
+    pop bc
+    ret
