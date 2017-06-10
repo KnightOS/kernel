@@ -4,6 +4,8 @@
 ;; Inputs:
 ;;  ACIX: Unsigned integer
 ;;  HL: Pointer to 9-byte destination buffer
+;; Output:
+;;  HL: Pointer to result
 ;; Notes:
 ;;  The result is in the following format:
 ;;  * 1 byte flags, currently only a sign bit as the MSB
@@ -111,7 +113,10 @@ _:
 ;; Inputs:
 ;;  BC, DE: Pointers to floating point operands
 ;;  HL: Pointer to destination buffer
+;; Output:
+;;  HL: Pointer to result
 fpAdd:
+    push af
     push ix
     push iy
     push de
@@ -124,35 +129,73 @@ fpAdd:
         ld a, (ix + 1)
         ld b, (iy + 1)
         cp b
-        jr nc, .setupLoop
+        jr nc, _
         ; iy is larger, so swap with ix
         push ix \ push iy \ pop ix \ pop iy
-.setupLoop:
-        ; Start at the end of the buffers
+_:
+        ; Invert negative operands using 10's complement
+.macro fpAddTensComplIter(r)
+        ld a, 0x99
+        sub (r)
+        ld (r), a
+.endmacro
+        bit 7, (ix)
+        jr z, _     ; Not negative
+        fpAddTensComplIter(ix + 2)
+        fpAddTensComplIter(ix + 3)
+        fpAddTensComplIter(ix + 4)
+        fpAddTensComplIter(ix + 5)
+        fpAddTensComplIter(ix + 6)
+        fpAddTensComplIter(ix + 7)
+        fpAddTensComplIter(ix + 8)
+_:
+        bit 7, (iy)
+        jr z, _     ; Not negative
+        fpAddTensComplIter(iy + 2)
+        fpAddTensComplIter(iy + 3)
+        fpAddTensComplIter(iy + 4)
+        fpAddTensComplIter(iy + 5)
+        fpAddTensComplIter(iy + 6)
+        fpAddTensComplIter(iy + 7)
+        fpAddTensComplIter(iy + 8)
+.undefine fpAddTensComplIter
+_:
+        ; Start at the end of the buffer
         ld bc, 8
-        add ix, bc
-        add iy, bc
         add hl, bc
-        ld b, 7
-        ; Clear the carry flag for the first digit
-        scf \ ccf
-.loop:
+        ; Clear the carry flag if operands have the same sign, else set it
         ld a, (ix)
-        ld c, (iy)
-        adc a, c
+        and 0x80
+        ld b, a
+        ld a, (iy)
+        and 0x80
+        cp b
+        scf
+        ; jr nz, _  ; TODO: find a way to only add 1 when it will overflow
+        ccf
+_:
+.macro fpAddSumIter(x, y)
+        ld a, (x)
+        adc a, (y)
         daa     ; Adjust the addition for BCD
         ld (hl), a
-        dec ix
-        dec iy
         dec hl
+.endmacro
+        fpAddSumIter(ix + 8, iy + 8)
+        fpAddSumIter(ix + 7, iy + 7)
+        fpAddSumIter(ix + 6, iy + 6)
+        fpAddSumIter(ix + 5, iy + 5)
+        fpAddSumIter(ix + 4, iy + 4)
+        fpAddSumIter(ix + 3, iy + 3)
+        fpAddSumIter(ix + 2, iy + 2)
         ; TODO: handle exponent/digit shifts
-        ; TODO: handle sign
-        djnz .loop
+.undefine fpAddSumIter
     pop hl
     pop bc
     pop de
     pop iy
     pop ix
+    pop af
     ret
 
 ;; fpSub [FP Math]
@@ -161,17 +204,22 @@ fpAdd:
 ;; Inputs:
 ;;  BC, DE: Pointers to floating point operands
 ;;  HL: Pointer to destination buffer
+;; Output:
+;;  HL: Pointer to result
 fpSub:
-    ex de, hl
-    call fpNeg
-    ex de, hl
-    call fpAdd
-    ret
+    push af
+    ld a, (de)
+    xor 0x80
+    ld (de), a
+    pop af
+    jp fpAdd
 
 ;; fpNeg [FP Math]
 ;;  Negates the floating point number at HL.
-;; Inputs:
+;; Input:
 ;;  HL: Pointer to floating point operand
+;; Output:
+;;  HL: Pointer to result
 fpNeg:
     push af
     ld a, (hl)
@@ -190,12 +238,11 @@ fpCompare:
     push bc
     push ix
     push iy
-    push hl
         ; Move operands to index registers for convenience
         push bc \ pop ix
         push de \ pop iy
         ; Save A
-        ld l, a
+        ld c, a
         ; Compare signs
         ld a, (ix)
         and 0x80
@@ -206,33 +253,29 @@ fpCompare:
         jr nz, .end     ; Operands have opposite signs
         ; Check if both operands are negative
         and 0x80
-        jr z, .noSwap
+        jr z, _
         ; Both operands are negative, so swap them to ensure correct comparison
         push ix \ push iy \ pop ix \ pop iy
-.noSwap:
-.macro fpCompareIter
-        inc ix
-        inc iy
-        ld a, (ix)
-        ld b, (iy)
-        cp b
+_:
+.macro fpCompareIter(x, y)
+        ld a, (x)
+        cp (y)
         jr nz, .end
 .endmacro
         ; Compare exponents
-        fpCompareIter
+        fpCompareIter(ix + 1, iy + 1)
         ; Compare mantissas
-        fpCompareIter
-        fpCompareIter
-        fpCompareIter
-        fpCompareIter
-        fpCompareIter
-        fpCompareIter
-        fpCompareIter
+        fpCompareIter(ix + 2, iy + 2)
+        fpCompareIter(ix + 3, iy + 3)
+        fpCompareIter(ix + 4, iy + 4)
+        fpCompareIter(ix + 5, iy + 5)
+        fpCompareIter(ix + 6, iy + 6)
+        fpCompareIter(ix + 7, iy + 7)
+        fpCompareIter(ix + 8, iy + 8)
 .undefine fpCompareIter
 .end:
         ; Restore A
-        ld a, l
-    pop hl
+        ld a, c
     pop iy
     pop ix
     pop bc
