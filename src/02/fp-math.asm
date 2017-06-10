@@ -108,29 +108,23 @@ _:
     ret
 
 ;; fpAdd [FP Math]
-;;  Adds the two floating point numbers at BC and DE and
-;;  stores the result at HL.
+;;  Adds the two floating point numbers.
 ;; Inputs:
-;;  BC, DE: Pointers to floating point operands
+;;  IX, IY: Pointers to operands
 ;;  HL: Pointer to destination buffer
 ;; Output:
 ;;  HL: Pointer to result
 fpAdd:
-    push af
     push ix
     push iy
-    push de
-    push bc
     push hl
-        ; Move operands to index registers for convenience
-        push bc \ pop ix
-        push de \ pop iy
-        ; Make sure that iy has the smaller exponent
+    push af
+    push bc
+        ; Make sure that IY has the smaller exponent
         ld a, (ix + 1)
-        ld b, (iy + 1)
-        cp b
+        cp (iy + 1)
         jr nc, _
-        ; iy is larger, so swap with ix
+        ; IY is larger, so swap with IX
         push ix \ push iy \ pop ix \ pop iy
 _:
         ; Invert negative operands using 10's complement
@@ -190,57 +184,53 @@ _:
         fpAddSumIter(ix + 2, iy + 2)
         ; TODO: handle exponent/digit shifts
 .undefine fpAddSumIter
-    pop hl
     pop bc
-    pop de
+    pop af
+    pop hl
     pop iy
     pop ix
-    pop af
     ret
 
 ;; fpSub [FP Math]
-;;  Subtracts the floating point numbers at DE from BC and
-;;  stores the result at HL.
+;;  Subtracts the two floating point numbers.
 ;; Inputs:
-;;  BC, DE: Pointers to floating point operands
+;;  IX: Pointer to operand 1 (minuend)
+;;  IY: Pointer to operand 2 (subtrahend)
 ;;  HL: Pointer to destination buffer
 ;; Output:
 ;;  HL: Pointer to result
 fpSub:
     push af
-    ld a, (de)
+    ld a, (iy)
     xor 0x80
-    ld (de), a
+    ld (iy), a
     pop af
     jp fpAdd
 
 ;; fpNeg [FP Math]
 ;;  Negates the floating point number at HL.
 ;; Input:
-;;  HL: Pointer to floating point operand
+;;  IX: Pointer to operand
 ;; Output:
-;;  HL: Pointer to result
+;;  IX: Pointer to result
 fpNeg:
     push af
-    ld a, (hl)
+    ld a, (ix)
     xor 0x80
-    ld (hl), a
+    ld (ix), a
     pop af
     ret
 
 ;; fpCompare [FP Math]
-;;  Compares the two floating point numbers at BC and DE.
+;;  Compares the two floating point numbers.
 ;; Inputs:
-;;  BC, DE: Pointers to floating point operands
+;;  IX, IY: Pointer to operands
 ;; Output:
 ;;  Same as z80 CP instruction.
 fpCompare:
-    push bc
     push ix
     push iy
-        ; Move operands to index registers for convenience
-        push bc \ pop ix
-        push de \ pop iy
+    push bc
         ; Save A
         ld c, a
         ; Compare signs
@@ -276,7 +266,7 @@ _:
 .end:
         ; Restore A
         ld a, c
+    pop bc
     pop iy
     pop ix
-    pop bc
     ret
