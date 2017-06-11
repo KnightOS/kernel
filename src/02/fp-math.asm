@@ -107,6 +107,164 @@ _:
     pop hl
     ret
 
+;; strtofp [FP Math]
+;;  Converts an ASCII-encoded signed decimal into a floating-point
+;;  binary coded decimal format and stores it to the buffer at HL.
+;; Inputs:
+;;  IX: Pointer to string
+;;  HL: Pointer to 9-byte destination buffer
+;; Output:
+;;  HL: Pointer to result
+;;  Z: Set on success, reset on error
+;; Notes:
+;;  The result is in the following format:
+;;  * 1 byte flags, currently only a sign bit as the MSB
+;;  * 1 byte signed exponent, normalized to 0x80 instead of 0
+;;  * 7 byte mantissa, BCD encoded with two digits per byte
+;;
+;;  Only the first 14 significant digits are converted. The rest are truncated
+;;  but still used for exponent calculation.
+;;
+;;  In case of error, the destination buffer's contents are undefined.
+strtofp:
+    push ix
+    push hl
+    push bc
+    push de
+    push iy
+    push af
+        ; Store HL into IY for convenience
+        push hl \ pop iy
+        ; Check for a negative sign at the beginning
+        ld a, (ix)
+        cp '-'
+        ld (hl), 0x00
+        jr nz, _
+        ld (hl), 0x80
+        inc ix
+_:
+        inc hl
+        inc hl
+        ld b, 14    ; Remaining digits counter
+        ld c, 0     ; Current BCD byte
+        ld d, 0     ; Parsing flags
+        ld e, 0x80  ; Place value counter
+.loop:
+        ; Check if we are at the end of the buffer
+        xor a
+        cp b
+        jr z, .loopEnd
+        ; Check if we've reached a null terminator
+        ld a, (ix)
+        or a
+        jr z, .loopEnd
+        cp '.'
+        jr nz, _
+        ; Make sure we haven't already seen a decimal point
+        bit 0, d
+        jr nz, .error
+        set 0, d
+        jr .loopCont
+_:
+        ; Error on non-numeric characters
+        cp '9' + 1
+        jr nc, .error
+        sub '0'
+        jr c, .error
+        jr nz, _
+        ; Handle zero
+        bit 1, d
+        jr z, .loopCont    ; Skip leading zero
+_:
+        set 1, d   ; Finished with all leading zeroes
+        ; Shift the digit into the current BCD byte
+        sla c
+        sla c
+        sla c
+        sla c
+        or c
+        ld c, a
+        ; Check if we need to write out the BCD byte yet
+        bit 0, b
+        jr z, .loopIter
+        ld (hl), c
+        inc hl
+.loopIter:
+        ; Adjust place value for digits before decimal
+        ld a, d
+        cp 0x02
+        jr nz, _
+        inc e
+_:
+        inc ix
+        djnz .loop
+        jr .loopEnd
+.loopCont:
+        ; Adjust place value for leading zeroes after decimal
+        ld a, d
+        cp 0x01
+        jr nz, _
+        dec e
+_:
+        inc ix
+        jr .loop
+.loopEnd:
+        ; Handle the remaining digit if it didn't get written out
+        bit 0, b
+        jr z, _
+        sla c
+        sla c
+        sla c
+        sla c
+        ld (hl), c
+_:
+        ; Check if there may be more place values that need counted
+        ld a, b
+        or a
+        jr nz, .remainderLoopEnd
+        bit 0, d
+        jr nz, .remainderLoopEnd
+.remainderLoop:
+        ; Count remaining place values
+        ld a, (ix)
+        or a
+        jr z, .remainderLoopEnd
+        cp '.'
+        jr z, .remainderLoopEnd
+        cp '9' + 1
+        jr nc, .error
+        cp '0'
+        jr c, .error
+        inc e
+        inc ix
+        jr .remainderLoop
+.remainderLoopEnd:
+        ; Correct for one's place value
+        ld a, 0x80
+        cp e
+        jr nc, _
+        dec e
+_:
+        ; Save the place value counter into the exponent byte
+        ld (iy + 1), e
+        pop af
+        cp a    ; Set Z flag
+        jr .exit
+.error:
+        pop af
+        ; Save A
+        ld b, a
+        or 1    ; Reset Z flag
+        ; Restore A
+        ld a, b
+.exit:
+    pop iy
+    pop de
+    pop bc
+    pop hl
+    pop ix
+    ret
+
 ;; fpAdd [FP Math]
 ;;  Adds the two floating point numbers.
 ;; Inputs:
