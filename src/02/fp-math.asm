@@ -126,6 +126,8 @@ _:
 ;;  but still used for exponent calculation.
 ;;
 ;;  In case of error, the destination buffer's contents are undefined.
+;;
+;;  The destination buffer must be zeroed before calling strtofp.
 strtofp:
     push ix
     push hl
@@ -138,7 +140,6 @@ strtofp:
         ; Check for a negative sign at the beginning
         ld a, (ix)
         cp '-'
-        ld (hl), 0x00
         jr nz, _
         ld (hl), 0x80
         inc ix
@@ -146,7 +147,6 @@ _:
         inc hl
         inc hl
         ld b, 14    ; Remaining digits counter
-        ld c, 0     ; Current BCD byte
         ld d, 0     ; Parsing flags
         ld e, 0x80  ; Place value counter
 .loop:
@@ -174,20 +174,12 @@ _:
         jr nz, _
         ; Handle zero
         bit 1, d
-        jr z, .loopCont    ; Skip leading zero
+        jr z, .loopCont     ; Skip leading zero
 _:
-        set 1, d   ; Finished with all leading zeroes
-        ; Shift the digit into the current BCD byte
-        sla c
-        sla c
-        sla c
-        sla c
-        or c
-        ld c, a
-        ; Check if we need to write out the BCD byte yet
-        bit 0, b
+        set 1, d    ; Finished with all leading zeroes
+        rld         ; Shift the digit into the current BCD byte
+        bit 0, b    ; Only increment HL every other digit
         jr z, .loopIter
-        ld (hl), c
         inc hl
 .loopIter:
         ; Adjust place value for digits before decimal
@@ -209,14 +201,10 @@ _:
         inc ix
         jr .loop
 .loopEnd:
-        ; Handle the remaining digit if it didn't get written out
+        ; Shift the last digit if there were an odd number
         bit 0, b
         jr z, _
-        sla c
-        sla c
-        sla c
-        sla c
-        ld (hl), c
+        rld
 _:
         ; Check if there may be more place values that need counted
         ld a, b
