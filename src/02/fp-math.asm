@@ -204,6 +204,7 @@ _:
         ; Shift the last digit if there were an odd number
         bit 0, b
         jr z, _
+        xor a
         rld
 _:
         ; Check if there may be more place values that need counted
@@ -273,6 +274,10 @@ fpAdd:
         ; IY is larger, so swap with IX
         push ix \ push iy \ pop ix \ pop iy
 _:
+        ; Set the result's exponent to IX's for now
+        inc hl
+        ld (hl), a
+        dec hl
         ; Invert negative operands using 10's complement
 .macro fpAddTensComplIter(r)
         ld a, 0x99
@@ -330,6 +335,25 @@ _:
         fpAddSumIter(ix + 2, iy + 2)
         ; TODO: handle exponent/digit shifts
 .undefine fpAddSumIter
+        ; Handle carry
+        jr nc, _
+        ld a, 1
+.macro fpAddCarryIter
+        inc hl
+        rrd
+.endmacro
+        fpAddCarryIter
+        fpAddCarryIter
+        fpAddCarryIter
+        fpAddCarryIter
+        fpAddCarryIter
+        fpAddCarryIter
+        fpAddCarryIter
+.undefine fpAddCarryIter
+        ld bc, -7
+        add hl, bc
+        inc (hl)
+_:
     pop bc
     pop af
     pop hl
