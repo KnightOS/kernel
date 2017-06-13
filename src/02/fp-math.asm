@@ -261,6 +261,8 @@ _:
 ;;  HL: Pointer to destination buffer
 ;; Output:
 ;;  HL: Pointer to result
+;; Notes:
+;;  May destroy one or both operands.
 fpAdd:
     push ix
     push iy
@@ -276,8 +278,72 @@ fpAdd:
 _:
         ; Set the result's exponent to IX's for now
         inc hl
+        ld a, (ix + 1)
         ld (hl), a
         dec hl
+        ; Align smaller operand's radix point with the larger one's
+        sub (iy + 1)
+        jr z, .skipShifting
+        cp 2
+        jr c, .shiftLast
+        push hl
+        push de
+            push af
+                push iy \ pop hl
+                push iy \ pop de
+                ; Point DE to the end of the buffer
+                ld bc, 8
+                add hl, bc
+                ex de, hl
+                ; Point HL to the byte that will be moved to the end
+                srl a       ; Number of bytes to shift right
+                cp 6
+                jr c, _
+                ld a, 6
+_:
+                neg
+                add a, 8
+                ld c, a
+                add hl, bc
+                dec bc
+                lddr
+            ; Replace shifted digits with leading zeroes
+            pop af
+            ld b, 0
+            ld c, a
+            srl c
+            add hl, bc
+            ld b, c
+            ld c, 0
+.zeroLoop:
+            ld (hl), c
+            dec hl
+            djnz .zeroLoop
+        pop de
+        pop hl
+.shiftLast:
+        ; Shift last digit if necessary
+        and 0x01
+        jr z, _
+        push hl
+            ; Swap with HL to make shifting easier
+            push iy \ pop hl
+            inc hl
+            xor a
+.macro fpAddShiftRight
+            inc hl
+            rrd
+.endmacro
+            fpAddShiftRight
+            fpAddShiftRight
+            fpAddShiftRight
+            fpAddShiftRight
+            fpAddShiftRight
+            fpAddShiftRight
+            fpAddShiftRight
+.undefine fpAddShiftRight
+        pop hl
+.skipShifting:
         ; Invert negative operands using 10's complement
 .macro fpAddTensComplIter(r)
         ld a, 0x99
@@ -333,25 +399,24 @@ _:
         fpAddSumIter(ix + 4, iy + 4)
         fpAddSumIter(ix + 3, iy + 3)
         fpAddSumIter(ix + 2, iy + 2)
-        ; TODO: handle exponent/digit shifts
 .undefine fpAddSumIter
         ; Handle carry
         jr nc, _
         ld a, 1
+        push hl
 .macro fpAddCarryIter
-        inc hl
-        rrd
+            inc hl
+            rrd
 .endmacro
-        fpAddCarryIter
-        fpAddCarryIter
-        fpAddCarryIter
-        fpAddCarryIter
-        fpAddCarryIter
-        fpAddCarryIter
-        fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
+            fpAddCarryIter
 .undefine fpAddCarryIter
-        ld bc, -7
-        add hl, bc
+        pop hl
         inc (hl)
 _:
     pop bc
