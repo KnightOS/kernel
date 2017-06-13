@@ -4,8 +4,6 @@
 ;; Inputs:
 ;;  ACIX: Unsigned integer
 ;;  HL: Pointer to 9-byte destination buffer
-;; Output:
-;;  HL: Pointer to result
 ;; Notes:
 ;;  The result is in the following format:
 ;;  * 1 byte flags, currently only a sign bit as the MSB
@@ -114,7 +112,6 @@ _:
 ;;  IX: Pointer to string
 ;;  HL: Pointer to 9-byte destination buffer
 ;; Output:
-;;  HL: Pointer to result
 ;;  Z: Set on success, reset on error
 ;; Notes:
 ;;  The result is in the following format:
@@ -254,13 +251,107 @@ _:
     pop ix
     ret
 
+;; fptostr [FP Math]
+;;  Converts a floating point number into an ASCII-encoded decimal string.
+;; Inputs:
+;;  IX: Pointer to floating point number
+;;  HL: Pointer to destination buffer
+;; Notes:
+;;  The destination buffer must be large enough to store the result
+;;  (currently 22 bytes maximum).
+fptostr:
+    ; TODO: allow options like scientific vs. engineering vs. normal mode,
+    ; as well as thousands separators. Would be nice to support both
+    ; periods and commas as the decimal point symbol, and vice versa for
+    ; the thousands separator symbol.
+    push hl
+    push af
+    push bc
+    push de
+        ; Negative sign
+        ld a, (ix)
+        and 0x80
+        jr z, _
+        ld (hl), '-'
+        inc hl
+_:
+.macro fptostrIter1(reg)
+        ld a, (reg)
+        ld b, a
+        rrca
+        rrca
+        rrca
+        rrca
+        and 0x0F
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+.macro fptostrIter2
+        ld a, b
+        and 0x0F
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+        ; Digits
+        fptostrIter1(ix + 2)
+        ld (hl), '.'
+        inc hl
+        fptostrIter2
+        fptostrIter1(ix + 3)
+        fptostrIter2
+        fptostrIter1(ix + 4)
+        fptostrIter2
+        fptostrIter1(ix + 5)
+        fptostrIter2
+        fptostrIter1(ix + 6)
+        fptostrIter2
+        fptostrIter1(ix + 7)
+        fptostrIter2
+        fptostrIter1(ix + 8)
+        fptostrIter2
+.undefine fptostrIter1
+.undefine fptostrIter2
+        ld (hl), 'E'
+        inc hl
+        ; Exponent
+        ld a, (ix + 1)
+        sub 0x80
+        jr nc, _
+        ld (hl), '-'
+        inc hl
+        neg
+_:
+        ld d, a
+        ld e, 10
+        ld b, 0     ; Exponent digit counter
+.calcExponentLoop:
+        call div8By8
+        add a, '0'
+        push af
+        inc b
+        ld a, d
+        or a
+        jr nz, .calcExponentLoop
+.writeExponentLoop:
+        pop af
+        ld (hl), a
+        inc hl
+        djnz .writeExponentLoop
+        ; Null terminator
+        ld (hl), 0
+    pop de
+    pop bc
+    pop af
+    pop hl
+    ret
+
 ;; fpAdd [FP Math]
 ;;  Adds the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
 ;;  HL: Pointer to destination buffer
-;; Output:
-;;  HL: Pointer to result
 ;; Notes:
 ;;  May destroy one or both operands.
 fpAdd:
@@ -432,8 +523,6 @@ _:
 ;;  IX: Pointer to operand 1 (minuend)
 ;;  IY: Pointer to operand 2 (subtrahend)
 ;;  HL: Pointer to destination buffer
-;; Output:
-;;  HL: Pointer to result
 fpSub:
     push af
     ld a, (iy)
@@ -443,7 +532,7 @@ fpSub:
     jp fpAdd
 
 ;; fpNeg [FP Math]
-;;  Negates the floating point number at HL.
+;;  Negates the floating point number at IX.
 ;; Input:
 ;;  IX: Pointer to operand
 ;; Output:
