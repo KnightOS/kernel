@@ -269,7 +269,7 @@ _:
 ;;         or 0xF for float mode. Works like TI-OS's Fix/Float mode.
 ;;
 ;; TODO:
-;;  * Scientific notation - mostly done (need to hide trailing 0s)
+;;  * Scientific notation - done
 ;;  * Normal mode - done
 ;;  * Thousands separators - done
 ;;  * Switching periods and commas - done
@@ -415,17 +415,64 @@ _:
         jp .end
 .sciNot:
         ; Scientific notation mode
+        ; Calculate how many fractional digits there are
+        push af
+        push hl
+        push de
+            push ix \ pop hl
+            ld de, 6    ; Ignore last 2 bytes for display purposes
+            add hl, de
+            ld b, 6
+            ld c, 10
+.sciNotCheckFractionLoop:
+            ld a, (hl)
+            and 0x0F
+            jr nz, _
+            dec c
+            ld a, (hl)
+            and 0xF0
+            jr nz, _
+            dec c
+            dec hl
+            djnz .sciNotCheckFractionLoop
+        pop de
+        pop hl
+        pop af
+        jp .exp
+_:
+        pop de
+        pop hl
+        pop af
         fptostrIter1(ix + 2)
+        dec c
+        jp z, .exp
         fptostrI18N('.', ',')
         fptostrIter2(ix + 2)
+        dec c
+        jp z, .exp
         fptostrIter1(ix + 3)
+        dec c
+        jp z, .exp
         fptostrIter2(ix + 3)
+        dec c
+        jp z, .exp
         fptostrIter1(ix + 4)
+        dec c
+        jp z, .exp
         fptostrIter2(ix + 4)
+        dec c
+        jp z, .exp
         fptostrIter1(ix + 5)
+        dec c
+        jp z, .exp
         fptostrIter2(ix + 5)
+        dec c
+        jp z, .exp
         fptostrIter1(ix + 6)
+        dec c
+        jp z, .exp
         fptostrIter2(ix + 6)
+.exp:
         ld (hl), 'E'
         inc hl
         ; Exponent
