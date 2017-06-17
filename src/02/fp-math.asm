@@ -256,18 +256,84 @@ _:
 ;; Inputs:
 ;;  IX: Pointer to floating point number
 ;;  HL: Pointer to destination buffer
+;;  A: Flags
 ;; Notes:
-;;  The destination buffer must be large enough to store the result
-;;  (currently 22 bytes maximum).
+;;  The destination buffer must be large enough to store the result.
+;;
+;;  The flag byte consists of the following bits:
+;;  * 7: Set to use comma as decimal point and period as place value separator
+;;  * 6: Set to display place value separators
+;;  * 5-4: Display mode. 00 = Normal and 01 = Scientific. Modes 10 and 11
+;;         are currently undefined.
+;;  * 3-0: Number of fixed point digits to display after the decimal (0-9),
+;;         or 0xF for float mode. Works like TI-OS's Fix/Float mode.
+;;
+;; TODO:
+;;  * Scientific notation - mostly done (need to hide trailing 0s)
+;;  * Normal mode - buggy (trailing 0 issues)
+;;  * Thousands separators - done
+;;  * Switching periods and commas - done
+;;  * Fixed point - not started
+;;  * Rounding last digit - not started
+.macro fptostrIter1(reg)
+        ; Output the first digit in the byte pointed to by reg
+        ld a, (reg)
+        rrca
+        rrca
+        rrca
+        rrca
+        and 0x0F
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+.macro fptostrIter2(reg)
+        ; Output the second digit in the byte pointed to by reg
+        ld a, (reg)
+        and 0x0F
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+.macro fptostrI18N(normal, alt)
+        ; Output a different character depending on the bit 7 flag
+        ex (sp), hl
+        bit 7, h
+        ex (sp), hl
+        jr nz, $+6
+        ld (hl), normal
+        jr $+4
+        ld (hl), alt
+        inc hl
+.endmacro
+.macro fptostrInsertPVSep
+        ; Insert place value separator if necessary
+        pop af \ push af
+        bit 6, a
+        jr z, ++_
+        push de
+            ld d, b
+            dec d
+            ld e, 3
+            call div8By8
+            or a
+            jr nz, _
+            or d
+            jr z, _
+        pop de
+        fptostrI18N(',', '.')
+        jr ++_
+_:
+        pop de
+_:
+.endmacro
+
 fptostr:
-    ; TODO: allow options like scientific vs. engineering vs. normal mode,
-    ; as well as thousands separators. Would be nice to support both
-    ; periods and commas as the decimal point symbol, and vice versa for
-    ; the thousands separator symbol.
+    ; TODO: implement rounding
     push hl
-    push af
     push bc
     push de
+    push af
         ; Negative sign
         ld a, (ix)
         and 0x80
@@ -275,44 +341,87 @@ fptostr:
         ld (hl), '-'
         inc hl
 _:
-.macro fptostrIter1(reg)
-        ld a, (reg)
-        ld b, a
-        rrca
-        rrca
-        rrca
-        rrca
-        and 0x0F
-        add a, '0'
-        ld (hl), a
-        inc hl
-.endmacro
-.macro fptostrIter2
-        ld a, b
-        and 0x0F
-        add a, '0'
-        ld (hl), a
-        inc hl
-.endmacro
-        ; Digits
+        ; Check which mode to use
+        pop af \ push af
+        bit 4, a
+        jp nz, .sciNot
+        ; Normal mode
+        ld a, (ix + 1)
+        cp 0x8a
+        jp nc, .sciNot
+        cp 0x7c
+        jp c, .sciNot
+        sub 0x7F
+        ld b, a     ; Number of pre-decimal digits
+        ld a, 10
+        sub b       ; TODO: fix underflow
+        ld c, a     ; (Maximum) number of post-decimal digits
+        push ix \ pop de
+        inc de
+        inc de
+.normalLoop1:
+        fptostrIter1(de)
+        fptostrInsertPVSep
+        dec b
+        ld a, 1     ; Mark that this byte isn't complete yet
+        jr z, .doneWithIPart
+        fptostrIter2(de)
+        fptostrInsertPVSep
+        inc de
+        xor a       ; Mark that this byte is complete
+        djnz .normalLoop1
+.doneWithIPart:
+        ; Calculate how many fractional digits there are
+        push af
+        push hl
+        push de
+            push ix \ pop hl
+            ld de, 6    ; TODO: fix overflow when more than 6 fractional digits
+            add hl, de
+            ld b, c
+            srl b
+.checkFractionLoop:
+            ld a, (hl)
+            and 0x0F
+            jr nz, _
+            dec c
+            ld a, (hl)
+            and 0xF0
+            jr nz, _
+            dec c
+            dec hl
+            djnz .checkFractionLoop
+_:
+        pop de
+        pop hl
+        pop af
+        fptostrI18N('.', ',')
+        ld b, c
+        dec a
+        jr z, .normalLoop2Half
+.normalLoop2:
+        fptostrIter1(de)
+        dec b
+        jr z, _
+.normalLoop2Half:
+        fptostrIter2(de)
+        inc de
+        djnz .normalLoop2
+_:
+        jp .end
+.sciNot:
+        ; Scientific notation mode
         fptostrIter1(ix + 2)
-        ld (hl), '.'
-        inc hl
-        fptostrIter2
+        fptostrI18N('.', ',')
+        fptostrIter2(ix + 2)
         fptostrIter1(ix + 3)
-        fptostrIter2
+        fptostrIter2(ix + 3)
         fptostrIter1(ix + 4)
-        fptostrIter2
+        fptostrIter2(ix + 4)
         fptostrIter1(ix + 5)
-        fptostrIter2
+        fptostrIter2(ix + 5)
         fptostrIter1(ix + 6)
-        fptostrIter2
-        fptostrIter1(ix + 7)
-        fptostrIter2
-        fptostrIter1(ix + 8)
-        fptostrIter2
-.undefine fptostrIter1
-.undefine fptostrIter2
+        fptostrIter2(ix + 6)
         ld (hl), 'E'
         inc hl
         ; Exponent
@@ -339,13 +448,18 @@ _:
         ld (hl), a
         inc hl
         djnz .writeExponentLoop
+.end:
         ; Null terminator
         ld (hl), 0
+    pop af
     pop de
     pop bc
-    pop af
     pop hl
     ret
+.undefine fptostrIter1
+.undefine fptostrIter2
+.undefine fptostrI18N
+.undefine fptostrInsertPVSep
 
 ;; fpAdd [FP Math]
 ;;  Adds the two floating point numbers.
