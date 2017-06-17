@@ -270,7 +270,7 @@ _:
 ;;
 ;; TODO:
 ;;  * Scientific notation - mostly done (need to hide trailing 0s)
-;;  * Normal mode - buggy (trailing 0 issues)
+;;  * Normal mode - done
 ;;  * Thousands separators - done
 ;;  * Switching periods and commas - done
 ;;  * Fixed point - not started
@@ -354,7 +354,7 @@ _:
         sub 0x7F
         ld b, a     ; Number of pre-decimal digits
         ld a, 10
-        sub b       ; TODO: fix underflow
+        sub b
         ld c, a     ; (Maximum) number of post-decimal digits
         push ix \ pop de
         inc de
@@ -376,7 +376,7 @@ _:
         push hl
         push de
             push ix \ pop hl
-            ld de, 6    ; TODO: fix overflow when more than 6 fractional digits
+            ld de, 6    ; Ignore last 2 bytes for display purposes
             add hl, de
             ld b, c
             srl b
@@ -391,6 +391,10 @@ _:
             dec c
             dec hl
             djnz .checkFractionLoop
+        pop de
+        pop hl
+        pop af
+        jp .end
 _:
         pop de
         pop hl
