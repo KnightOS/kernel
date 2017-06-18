@@ -395,12 +395,16 @@ _:
                 pop af \ push af
                 dec sp \ dec sp
                 and 0x0F
-                jr z, _
+                jr z, ++_
                 cp 10
-                jr nc, ++_
+                jr nc, +++_
                 cp c
-                jr nc, ++_
+                jr nc, _
                 ld c, a
+_:
+                xor a
+                or c
+                jr z, _
             pop af
             jr .skipFloating
 _:
