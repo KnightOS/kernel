@@ -307,7 +307,7 @@ _:
         inc hl
 .endmacro
 .macro fptostrInsertPVSep
-        ; Insert place value separator if necessary
+        ; Output a place value separator depending on the bit 6 flag
         pop af \ push af
         bit 6, a
         jr z, ++_
@@ -329,150 +329,115 @@ _:
 .endmacro
 
 fptostr:
-    ; TODO: implement rounding
     push hl
     push bc
     push de
     push af
-        ; Negative sign
-        ld a, (ix)
-        and 0x80
-        jr z, _
-        ld (hl), '-'
-        inc hl
-_:
         ; Check which mode to use
-        pop af \ push af
         bit 4, a
-        jp nz, .sciNot
-        ; Normal mode
+        jp nz, _
         ld a, (ix + 1)
         cp 0x8a
-        jp nc, .sciNot
+        jp nc, _
         cp 0x7c
-        jp c, .sciNot
-        sub 0x7F
-        ld b, a     ; Number of pre-decimal digits
-        ld a, 10
-        sub b
-        ld c, a     ; (Maximum) number of post-decimal digits
-        push ix \ pop de
-        inc de
-        inc de
-.normalLoop1:
-        fptostrIter1(de)
-        fptostrInsertPVSep
-        dec b
-        ld a, 1     ; Mark that this byte isn't complete yet
-        jr z, .doneWithIPart
-        fptostrIter2(de)
-        fptostrInsertPVSep
-        inc de
-        xor a       ; Mark that this byte is complete
-        djnz .normalLoop1
+        jp c, _
+        ; Normal mode
+        pop af \ push af
+        jr ++_
+_:
+        ; Scientific mode
+        pop af \ push af
+        set 4, a
+        res 5, a
+_:
+        push af
+            ; Negative sign
+            ld a, (ix)
+            and 0x80
+            jr z, _
+            ld (hl), '-'
+            inc hl
+_:
+            ; Calculate number of digits to display
+            pop af \ push af
+            bit 4, a
+            jr nz, _
+            ; Normal mode
+            ld a, (ix + 1)
+            sub 0x7F
+            jr ++_
+_:
+            ; Scientific notation
+            ld a, 1
+_:
+            ld b, a     ; Number of pre-decimal digits
+            ld a, 10
+            sub b
+            ld c, a     ; (Maximum) number of post-decimal digits
+            push ix \ pop de
+            inc de
+            inc de
+.iPartLoop:
+            fptostrIter1(de)
+            fptostrInsertPVSep
+            dec b
+            ld a, 1     ; Mark that this byte isn't complete yet
+            jr z, .doneWithIPart
+            fptostrIter2(de)
+            fptostrInsertPVSep
+            inc de
+            xor a       ; Mark that this byte is complete
+            djnz .iPartLoop
 .doneWithIPart:
-        ; Calculate how many fractional digits there are
-        push af
-        push hl
-        push de
-            push ix \ pop hl
-            ld de, 6    ; Ignore last 2 bytes for display purposes
-            add hl, de
+            ; Calculate how many fractional digits there are
+            push af
+            push hl
+            push de
+                ; Escape early if there isn't room for fractional digits
+                xor a
+                or c
+                jr z, _
+                push ix \ pop hl
+                ld de, 6    ; Ignore last 2 bytes for display purposes
+                add hl, de
+.countFractionalDigitsLoop:
+                ld a, (hl)
+                and 0x0F
+                jr nz, ++_
+                dec c
+                jr z, _
+                ld a, (hl)
+                and 0xF0
+                jr nz, ++_
+                dec hl
+                dec c
+                jr nz, .countFractionalDigitsLoop
+_:
+            pop de
+            pop hl
+            pop af
+            jp .end
+_:
+            pop de
+            pop hl
+            pop af
+            fptostrI18N('.', ',')
             ld b, c
-            srl b
-.checkFractionLoop:
-            ld a, (hl)
-            and 0x0F
-            jr nz, _
-            dec c
-            ld a, (hl)
-            and 0xF0
-            jr nz, _
-            dec c
-            dec hl
-            djnz .checkFractionLoop
-        pop de
-        pop hl
+            dec a
+            jr z, .fPartLoopHalf
+.fPartLoop:
+            fptostrIter1(de)
+            dec b
+            jr z, .end
+.fPartLoopHalf:
+            fptostrIter2(de)
+            inc de
+            djnz .fPartLoop
+.end:
+        ; Check if need to include exponent or not
         pop af
-        jp .end
-_:
-        pop de
-        pop hl
-        pop af
-        fptostrI18N('.', ',')
-        ld b, c
-        dec a
-        jr z, .normalLoop2Half
-.normalLoop2:
-        fptostrIter1(de)
-        dec b
-        jr z, _
-.normalLoop2Half:
-        fptostrIter2(de)
-        inc de
-        djnz .normalLoop2
-_:
-        jp .end
-.sciNot:
-        ; Scientific notation mode
-        ; Calculate how many fractional digits there are
-        push af
-        push hl
-        push de
-            push ix \ pop hl
-            ld de, 6    ; Ignore last 2 bytes for display purposes
-            add hl, de
-            ld b, 6
-            ld c, 10
-.sciNotCheckFractionLoop:
-            ld a, (hl)
-            and 0x0F
-            jr nz, _
-            dec c
-            ld a, (hl)
-            and 0xF0
-            jr nz, _
-            dec c
-            dec hl
-            djnz .sciNotCheckFractionLoop
-        pop de
-        pop hl
-        pop af
-        jp .exp
-_:
-        pop de
-        pop hl
-        pop af
-        fptostrIter1(ix + 2)
-        dec c
-        jp z, .exp
-        fptostrI18N('.', ',')
-        fptostrIter2(ix + 2)
-        dec c
-        jp z, .exp
-        fptostrIter1(ix + 3)
-        dec c
-        jp z, .exp
-        fptostrIter2(ix + 3)
-        dec c
-        jp z, .exp
-        fptostrIter1(ix + 4)
-        dec c
-        jp z, .exp
-        fptostrIter2(ix + 4)
-        dec c
-        jp z, .exp
-        fptostrIter1(ix + 5)
-        dec c
-        jp z, .exp
-        fptostrIter2(ix + 5)
-        dec c
-        jp z, .exp
-        fptostrIter1(ix + 6)
-        dec c
-        jp z, .exp
-        fptostrIter2(ix + 6)
-.exp:
+        bit 4, a
+        jr z, .terminate
         ld (hl), 'E'
         inc hl
         ; Exponent
@@ -499,7 +464,7 @@ _:
         ld (hl), a
         inc hl
         djnz .writeExponentLoop
-.end:
+.terminate:
         ; Null terminator
         ld (hl), 0
     pop af
