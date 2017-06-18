@@ -397,6 +397,8 @@ _:
                 jr z, _
                 cp 10
                 jr nc, ++_
+                cp c
+                jr nc, ++_
                 ld c, a
                 push af
                 dec sp \ dec sp
