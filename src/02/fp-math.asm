@@ -392,7 +392,8 @@ _:
             ; Check if we are using fixed point or not
             push af
                 inc sp \ inc sp
-                pop af
+                pop af \ push af
+                dec sp \ dec sp
                 and 0x0F
                 jr z, _
                 cp 10
@@ -400,18 +401,12 @@ _:
                 cp c
                 jr nc, ++_
                 ld c, a
-                push af
-                dec sp \ dec sp
             pop af
             jr .skipFloating
 _:
-                push af
-                dec sp \ dec sp
             pop af
             jr .end
 _:
-                push af
-                dec sp \ dec sp
             pop af
             ; Calculate how many fractional digits there are
             push af
