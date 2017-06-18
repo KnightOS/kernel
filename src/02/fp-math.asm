@@ -273,7 +273,7 @@ _:
 ;;  * Normal mode - done
 ;;  * Thousands separators - done
 ;;  * Switching periods and commas - done
-;;  * Fixed point - not started
+;;  * Fixed point - done
 ;;  * Rounding last digit - not started
 .macro fptostrIter1(reg)
         ; Output the first digit in the byte pointed to by reg
@@ -389,6 +389,28 @@ _:
             xor a       ; Mark that this byte is complete
             djnz .iPartLoop
 .doneWithIPart:
+            ; Check if we are using fixed point or not
+            push af
+                inc sp \ inc sp
+                pop af
+                and 0x0F
+                jr z, _
+                cp 10
+                jr nc, ++_
+                ld c, a
+                push af
+                dec sp \ dec sp
+            pop af
+            jr .skipFloating
+_:
+                push af
+                dec sp \ dec sp
+            pop af
+            jr .end
+_:
+                push af
+                dec sp \ dec sp
+            pop af
             ; Calculate how many fractional digits there are
             push af
             push hl
@@ -421,6 +443,7 @@ _:
             pop de
             pop hl
             pop af
+.skipFloating:
             fptostrI18N('.', ',')
             ld b, c
             dec a
