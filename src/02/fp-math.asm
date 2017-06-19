@@ -274,7 +274,7 @@ _:
 ;;  * Thousands separators - done
 ;;  * Switching periods and commas - done
 ;;  * Fixed point - done
-;;  * Rounding last digit - not started
+;;  * Rounding last digit - buggy
 .macro fptostrIter1(reg)
         ; Output the first digit in the byte pointed to by reg
         ld a, (reg)
@@ -291,6 +291,54 @@ _:
         ; Output the second digit in the byte pointed to by reg
         ld a, (reg)
         and 0x0F
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+.macro fptostrIter1Round(reg)
+        ; Like fptostrIter1 but it rounds the last digit
+        ld a, (reg)
+        rrca
+        rrca
+        rrca
+        rrca
+        and 0x0F
+        dec b
+        jr nz, .fptostrIter1RoundSkip
+        ld c, a
+        ld a, (reg)
+        and 0x0F
+        cp 5
+        jr c, _
+        ld a, c
+        inc a
+.fptostrIter1RoundSkip:
+        inc b
+        add a, '0'
+        ld (hl), a
+        inc hl
+.endmacro
+.macro fptostrIter2Round(reg)
+        ; Like fptostrIter2 but it rounds the last digit
+        ld a, (reg)
+        and 0x0F
+        dec b
+        jr nz, .fptostrIter2RoundSkip
+        ld c, a
+        inc reg
+        ld a, (reg)
+        dec reg
+        rrca
+        rrca
+        rrca
+        rrca
+        and 0x0F
+        cp 5
+        jr c, _
+        ld a, c
+        inc a
+.fptostrIter2RoundSkip:
+        inc b
         add a, '0'
         ld (hl), a
         inc hl
@@ -450,11 +498,11 @@ _:
             dec a
             jr z, .fPartLoopHalf
 .fPartLoop:
-            fptostrIter1(de)
+            fptostrIter1Round(de)
             dec b
             jr z, .end
 .fPartLoopHalf:
-            fptostrIter2(de)
+            fptostrIter2Round(de)
             inc de
             djnz .fPartLoop
 .end:
@@ -498,6 +546,8 @@ _:
     ret
 .undefine fptostrIter1
 .undefine fptostrIter2
+.undefine fptostrIter1Round
+.undefine fptostrIter2Round
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
