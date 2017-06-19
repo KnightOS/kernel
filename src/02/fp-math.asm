@@ -269,12 +269,7 @@ _:
 ;;         or 0xF for float mode. Works like TI-OS's Fix/Float mode.
 ;;
 ;; TODO:
-;;  * Scientific notation - done
-;;  * Normal mode - done
-;;  * Thousands separators - done
-;;  * Switching periods and commas - done
-;;  * Fixed point - done
-;;  * Rounding last digit - buggy
+;;  * Rounding last digit - buggy, currently abandoned
 .macro fptostrIter1(reg)
         ; Output the first digit in the byte pointed to by reg
         ld a, (reg)
@@ -309,7 +304,7 @@ _:
         ld a, (reg)
         and 0x0F
         cp 5
-        jr c, _
+        jr c, .fptostrIter1RoundSkip
         ld a, c
         inc a
 .fptostrIter1RoundSkip:
@@ -334,7 +329,7 @@ _:
         rrca
         and 0x0F
         cp 5
-        jr c, _
+        jr c, .fptostrIter2RoundSkip
         ld a, c
         inc a
 .fptostrIter2RoundSkip:
@@ -498,11 +493,13 @@ _:
             dec a
             jr z, .fPartLoopHalf
 .fPartLoop:
-            fptostrIter1Round(de)
+            fptostrIter1(de)
+            ; fptostrIter1Round(de)
             dec b
             jr z, .end
 .fPartLoopHalf:
-            fptostrIter2Round(de)
+            fptostrIter2(de)
+            ; fptostrIter2Round(de)
             inc de
             djnz .fPartLoop
 .end:
