@@ -548,6 +548,19 @@ _:
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
+;; fpSub [FP Math]
+;;  Subtracts the two floating point numbers.
+;; Inputs:
+;;  IX: Pointer to operand 1 (minuend)
+;;  IY: Pointer to operand 2 (subtrahend)
+;;  HL: Pointer to destination buffer
+fpSub:
+    push af
+    ld a, (iy)
+    xor 0x80
+    ld (iy), a
+    pop af
+    ; Fall through to fpAdd
 ;; fpAdd [FP Math]
 ;;  Adds the two floating point numbers.
 ;; Inputs:
@@ -717,20 +730,6 @@ _:
     pop iy
     pop ix
     ret
-
-;; fpSub [FP Math]
-;;  Subtracts the two floating point numbers.
-;; Inputs:
-;;  IX: Pointer to operand 1 (minuend)
-;;  IY: Pointer to operand 2 (subtrahend)
-;;  HL: Pointer to destination buffer
-fpSub:
-    push af
-    ld a, (iy)
-    xor 0x80
-    ld (iy), a
-    pop af
-    jp fpAdd
 
 ;; fpNeg [FP Math]
 ;;  Negates the floating point number at IX.
