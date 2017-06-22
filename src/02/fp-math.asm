@@ -548,6 +548,20 @@ _:
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
+;; fpNeg [FP Math]
+;;  Negates the floating point number at IX.
+;; Input:
+;;  IX: Pointer to operand
+;; Output:
+;;  IX: Pointer to result
+fpNeg:
+    push af
+    ld a, (ix)
+    xor 0x80
+    ld (ix), a
+    pop af
+    ret
+
 ;; fpSub [FP Math]
 ;;  Subtracts the two floating point numbers.
 ;; Inputs:
@@ -729,20 +743,6 @@ _:
     pop hl
     pop iy
     pop ix
-    ret
-
-;; fpNeg [FP Math]
-;;  Negates the floating point number at IX.
-;; Input:
-;;  IX: Pointer to operand
-;; Output:
-;;  IX: Pointer to result
-fpNeg:
-    push af
-    ld a, (ix)
-    xor 0x80
-    ld (ix), a
-    pop af
     ret
 
 ;; fpCompare [FP Math]
