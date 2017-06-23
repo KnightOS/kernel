@@ -548,6 +548,82 @@ _:
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
+; (Internal) Normalize the floating point number at HL.
+fpNormalize:
+    push af
+    push bc
+    push de
+        push hl
+            inc hl \ inc hl
+            ld b, 0
+.macro fpNormalizeCountLeading
+            ; Counts the number of leading zeroes
+            ld a, (hl)
+            and 0xF0
+            jr nz, .foundNonzero
+            inc b
+            ld a, (hl)
+            and 0x0F
+            jr nz, .foundNonzero
+            inc b
+            inc hl
+.endmacro
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+            fpNormalizeCountLeading
+.undefine fpNormalizeCountLeading
+.foundNonzero:
+            ; Skip shifting if there are no leading zeroes
+            inc b \ dec b
+            jr z, .fixExp
+            pop hl \ push hl
+            inc hl
+            ld c, b
+.macro fpNormalizeShiftLeft
+            rld
+            dec hl
+.endmacro
+.loop:
+            ; Shift out the leading zeroes
+            ld de, 7
+            add hl, de
+            xor a
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            fpNormalizeShiftLeft
+            djnz .loop
+.undefine fpNormalizeShiftLeft
+.fixExp:
+        ; Fix exponent
+        pop hl
+        inc hl
+        ld a, (hl)
+        sub c
+        ld (hl), a
+        dec hl
+    pop de
+    pop bc
+    pop af
+    ret
+
+;; fpAbs [FP Math]
+;;  Takes the absolute value of the floating point number at IX.
+;; Input:
+;;  IX: Pointer to operand
+;; Output:
+;;  IX: Pointer to result
+fpAbs:
+    res 7, (ix)
+    ret
+
 ;; fpNeg [FP Math]
 ;;  Negates the floating point number at IX.
 ;; Input:
@@ -793,4 +869,56 @@ _:
     pop bc
     pop iy
     pop ix
+    ret
+
+;; fpRand [FP Math]
+;;  Generates a random floating point number between 0 and 1, similar to
+;;  TI-OS's `rand` command.
+;; Input:
+;;  HL: Pointer to output
+;; Notes:
+;;  Uses `getRandom` to generate the digits, so it is not cryptographically
+;;  random.
+fpRand:
+    push af
+    push bc
+    push de
+        push hl
+            ld (hl), 0
+            inc hl
+            ld (hl), 0x7F
+            inc hl
+.macro fpRandIter
+            call getRandom
+            ld b, a
+            and 0xF0
+            ld d, a
+            call div8By8
+            rld
+            ld a, b
+            and 0x0F
+            ld d, a
+            call div8By8
+            rld
+            inc hl
+.endmacro
+            ld e, 10
+            fpRandIter
+            fpRandIter
+            fpRandIter
+            fpRandIter
+            fpRandIter
+            fpRandIter
+            fpRandIter
+        pop hl
+        ; There may be leading zeroes, so normalize.
+        ; Note: There is no need to add extra random digits to compensate for
+        ; removed leading zeroes. Even leading zeroes count towards entropy,
+        ; so every result output from this function should have exactly
+        ; 14 digits of entropy (roughly 46.5 bits).
+        call fpNormalize
+.undefine fpRandIter
+    pop de
+    pop bc
+    pop af
     ret
