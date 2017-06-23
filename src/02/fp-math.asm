@@ -553,20 +553,16 @@ fpNormalize:
     push af
     push bc
     push de
+        inc hl \ inc hl
         push hl
-            inc hl \ inc hl
-            ld b, 0
+            ld c, 0
 .macro fpNormalizeCountLeading
-            ; Counts the number of leading zeroes
+            ; Find the first nonzero byte
             ld a, (hl)
-            and 0xF0
-            jr nz, .foundNonzero
-            inc b
-            ld a, (hl)
-            and 0x0F
-            jr nz, .foundNonzero
-            inc b
+            or a
+            jr nz, _
             inc hl
+            inc c
 .endmacro
             fpNormalizeCountLeading
             fpNormalizeCountLeading
@@ -576,22 +572,37 @@ fpNormalize:
             fpNormalizeCountLeading
             fpNormalizeCountLeading
 .undefine fpNormalizeCountLeading
-.foundNonzero:
-            ; Skip shifting if there are no leading zeroes
-            inc b \ dec b
-            jr z, .fixExp
+_:
+            ; HL points to the first nonzero byte
+            ; Copy from HL to the beginning of the significand
+            pop de \ push de
+            push bc
+                ld bc, 6
+                ldir
+            pop bc
+            ; Zero out the trailing bytes left over from copying
+            ld b, c
+            sla c
+            jr z, _
+            dec hl
+            xor a
+.zeroLoop:
+            ld (hl), a
+            dec hl
+            djnz .zeroLoop
+_:
+            ; Shift out the last leading zero if necessary
             pop hl \ push hl
-            inc hl
-            ld c, b
+            ld a, (hl)
+            and 0xF0
+            jr nz, _
+            inc c
+            ld de, 6
+            add hl, de
 .macro fpNormalizeShiftLeft
             rld
             dec hl
 .endmacro
-.loop:
-            ; Shift out the leading zeroes
-            ld de, 7
-            add hl, de
-            xor a
             fpNormalizeShiftLeft
             fpNormalizeShiftLeft
             fpNormalizeShiftLeft
@@ -599,12 +610,11 @@ fpNormalize:
             fpNormalizeShiftLeft
             fpNormalizeShiftLeft
             fpNormalizeShiftLeft
-            djnz .loop
 .undefine fpNormalizeShiftLeft
-.fixExp:
+_:
         ; Fix exponent
         pop hl
-        inc hl
+        dec hl
         ld a, (hl)
         sub c
         ld (hl), a
