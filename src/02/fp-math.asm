@@ -1,3 +1,15 @@
+; FP Math TODO:
+; 1. Addition and subtraction
+; 2. Multiplication and division
+; 3. Miscellaneous math operations:
+;   - Roots/powers
+;   - Logarithms
+;   - Trigonometry
+;   - etc.
+; 4. Conversion to and from IEEE 754 floats/doubles
+
+
+
 ;; itofp [FP Math]
 ;;  Converts a 32-bit unsigned integer into a floating-point
 ;;  binary coded decimal format and stores it to the buffer at HL.
@@ -382,7 +394,7 @@ fptostr:
         ld a, (ix + 1)
         cp 0x8a
         jp nc, _
-        cp 0x7c
+        cp 0x7d
         jp c, _
         ; Normal mode
         pop af \ push af
@@ -404,22 +416,33 @@ _:
             ; Calculate number of digits to display
             pop af \ push af
             bit 4, a
-            jr nz, _
-            ; Normal mode
-            ld a, (ix + 1)
-            sub 0x7F
-            jr ++_
-_:
+            jr z, _
             ; Scientific notation
             ld a, 1
+            jr .beginIPart
 _:
+            ; Normal mode
+            ld a, (ix + 1)
+            cp 0x80
+            jr c, _
+            sub 0x7F
+            jr .beginIPart
+_:
+            ; Negative exponent
+            ld (hl), '0'
+            inc hl
+            push ix \ pop de
+            inc de \ inc de
+            ld c, 9
+            xor a
+            jp .doneWithIPart
+.beginIPart:
             ld b, a     ; Number of pre-decimal digits
             ld a, 10
             sub b
             ld c, a     ; (Maximum) number of post-decimal digits
             push ix \ pop de
-            inc de
-            inc de
+            inc de \ inc de
 .iPartLoop:
             fptostrIter1(de)
             fptostrInsertPVSep
@@ -489,6 +512,22 @@ _:
             pop af
 .skipFloating:
             fptostrI18N('.', ',')
+            ; Check if we need to add leading zeroes
+            push af
+                ld a, (ix + 1)
+                sub 0x80
+                jr nc, _
+                neg
+                dec a
+                jr z, _
+                ld b, a
+.leadingZeroLoop:
+                ld (hl), '0'
+                inc hl
+                dec c
+                djnz .leadingZeroLoop
+_:
+            pop af
             ld b, c
             dec a
             jr z, .fPartLoopHalf
