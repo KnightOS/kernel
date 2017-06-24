@@ -514,6 +514,13 @@ _:
             fptostrI18N('.', ',')
             ; Check if we need to add leading zeroes
             push af
+                ; Make sure we aren't in scientific notation mode
+                inc sp \ inc sp
+                pop af \ push af
+                dec sp \ dec sp
+                bit 4, a
+                jr nz, _
+                ; Check the exponent
                 ld a, (ix + 1)
                 sub 0x80
                 jr nc, _
