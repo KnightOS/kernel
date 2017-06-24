@@ -282,6 +282,7 @@ _:
 ;;
 ;; TODO:
 ;;  * Rounding last digit - buggy, currently abandoned
+;;  * Never show exponent if significand is 0 - not started
 .macro fptostrIter1(reg)
         ; Output the first digit in the byte pointed to by reg
         ld a, (reg)
@@ -975,6 +976,65 @@ fpRand:
         call fpNormalize
 .undefine fpRandIter
     pop de
+    pop bc
+    pop af
+    ret
+
+;; fpIPart [FP Math]
+;;  Calculates the integer part of a floating point number, similar to
+;;  TI-OS's `iPart()` command.
+;; Input:
+;;  IX: Pointer to operand
+;; Output:
+;;  IX: Pointer to result
+fpIPart:
+    push af
+    push bc
+    push hl
+        push ix \ pop hl
+        inc hl \ inc hl
+        ; Check exponent
+        ld a, (ix + 1)
+        or a
+        ; Very large numbers don't store a fractional part, so skip them
+        cp 0x80 + 14
+        jr nc, .end
+        ; Negative exponents have no integer part
+        cp 0x80
+        jr nc, _
+        ld (ix + 1), 0x80
+        xor a
+        jr .beginZeroLoop
+_:
+        sub 0x7F
+        ; Point HL to the first fractional byte
+        ld b, 0
+        ld c, a
+        srl c
+        add hl, bc
+.beginZeroLoop:
+        ; If there are an odd number of integer digits, only zero half of
+        ; the first byte
+        ld b, a
+        and 1
+        jr z, _
+        ld a, (hl)
+        and 0xF0
+        ld (hl), a
+        inc hl
+        inc b
+_:
+        ld a, 14
+        sub b
+        ld b, a
+        srl b
+        jr z, .end
+.zeroLoop:
+        ld (hl), 0
+        inc hl
+        djnz .zeroLoop
+.end:
+    pop hl
     pop bc
     pop af
     ret
