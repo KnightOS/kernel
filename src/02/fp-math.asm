@@ -624,7 +624,10 @@ _:
             ; Copy from HL to the beginning of the significand
             pop de \ push de
             push bc
-                ld bc, 6
+                ld a, 7
+                sub c
+                ld c, a
+                ld b, 0
                 ldir
             pop bc
             ; Zero out the trailing bytes left over from copying
