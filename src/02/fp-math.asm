@@ -995,7 +995,6 @@ fpIPart:
         inc hl \ inc hl
         ; Check exponent
         ld a, (ix + 1)
-        or a
         ; Very large numbers don't store a fractional part, so skip them
         cp 0x80 + 14
         jr nc, .end
@@ -1033,6 +1032,65 @@ _:
         ld (hl), 0
         inc hl
         djnz .zeroLoop
+.end:
+    pop hl
+    pop bc
+    pop af
+    ret
+
+;; fpFPart [FP Math]
+;;  Calculates the fractional part of a floating point number, similar to
+;;  TI-OS's `fPart()` command.
+;; Input:
+;;  IX: Pointer to operand
+;; Output:
+;;  IX: Pointer to result
+fpFPart:
+    push af
+    push bc
+    push hl
+        push ix \ pop hl
+        inc hl \ inc hl
+        ; Check exponent
+        ld a, (ix + 1)
+        ; Negative exponents are entirely fractional, so skip them
+        cp 0x80
+        jr c, .end
+        ; Very large numbers have no fractional part
+        cp 0x80 + 14
+        jr c, _
+        ld (ix + 1), 0x80
+        xor a
+        jr .beginZeroLoop
+_:
+        sub 0x80
+        ; Point HL to the last integer byte
+        ld b, 0
+        ld c, a
+        srl c
+        add hl, bc
+.beginZeroLoop:
+        ; If there are an odd number of integer digits, only zero half of
+        ; the first byte
+        ld b, a
+        and 1
+        jr nz, _
+        ld a, (hl)
+        and 0x0F
+        ld (hl), a
+        dec hl
+        dec b
+_:
+        inc b
+        srl b
+        jr z, .normalize
+.zeroLoop:
+        ld (hl), 0
+        dec hl
+        djnz .zeroLoop
+.normalize:
+        push ix \ pop hl
+        call fpNormalize
 .end:
     pop hl
     pop bc
