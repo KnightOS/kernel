@@ -595,6 +595,79 @@ _:
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
+;; fpLdConst [FP Math]
+;;  Loads a floating point constant specified by A into HL.
+;; Input:
+;;  A: Which constant to load:
+;;      - 0: 0.0
+;;      - 1: 1.0
+;;      - 2: pi
+;;      - 3: pi/2
+;;      - 4: pi/4
+;;      - 5: pi/180
+;;      - 6: 180/pi
+;;      - 7: e
+;;      - 8: log(e)
+;;      - 9: ln(10)
+;;  HL: Pointer to destination buffer
+fpLdConst:
+    push af
+    push bc
+    push de
+    push hl
+        ex de, hl
+        ld hl, .lookupTable
+        ld bc, 9
+.macro fpLdConstIter
+        add hl, bc
+        dec a
+        jr z, _
+.endmacro
+        or a
+        jr z, _
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+        fpLdConstIter
+.undefine fpLdConstIter
+        ; None matched - return unchanged
+        jr .end
+_:
+        ldir
+.end:
+    pop hl
+    pop de
+    pop bc
+    pop af
+    ret
+
+.lookupTable:
+    ; 0
+    .db 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ; 1
+    .db 0x00, 0x80, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ; pi
+    .db 0x00, 0x80, 0x31, 0x41, 0x59, 0x26, 0x53, 0x58, 0x98
+    ; pi/2
+    .db 0x00, 0x80, 0x15, 0x70, 0x79, 0x63, 0x26, 0x79, 0x49
+    ; pi/4
+    .db 0x00, 0x7F, 0x78, 0x53, 0x98, 0x16, 0x33, 0x97, 0x45
+    ; pi/180
+    .db 0x00, 0x7E, 0x17, 0x45, 0x32, 0x92, 0x51, 0x99, 0x43
+    ; 180/pi
+    .db 0x00, 0x81, 0x57, 0x29, 0x57, 0x79, 0x51, 0x30, 0x82
+    ; e
+    .db 0x00, 0x80, 0x27, 0x18, 0x28, 0x18, 0x28, 0x45, 0x90
+    ; log(e)
+    .db 0x00, 0x7F, 0x43, 0x42, 0x94, 0x48, 0x19, 0x03, 0x25
+    ; ln(10)
+    .db 0x00, 0x80, 0x23, 0x02, 0x58, 0x50, 0x92, 0x99, 0x40
+
 ; (Internal) Normalize the floating point number at HL.
 fpNormalize:
     push af
