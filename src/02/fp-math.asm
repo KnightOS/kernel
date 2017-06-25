@@ -773,9 +773,26 @@ fpAbs:
 ;;  IX: Pointer to result
 fpNeg:
     push af
+    ; Make sure operand is not zero
+    xor a
+.macro fpNegIter(reg)
+    cp (reg)
+    jr nz, .invert
+.endmacro
+    fpNegIter(ix + 2)
+    fpNegIter(ix + 3)
+    fpNegIter(ix + 4)
+    fpNegIter(ix + 5)
+    fpNegIter(ix + 6)
+    fpNegIter(ix + 7)
+    fpNegIter(ix + 8)
+    jr .end
+.undefine fpNegIter
+.invert:
     ld a, (ix)
     xor 0x80
     ld (ix), a
+.end:
     pop af
     ret
 
@@ -787,9 +804,26 @@ fpNeg:
 ;;  HL: Pointer to destination buffer
 fpSub:
     push af
+    ; Make sure operand is not zero
+    xor a
+.macro fpSubIter(reg)
+    cp (reg)
+    jr nz, .invert
+.endmacro
+    fpSubIter(iy + 2)
+    fpSubIter(iy + 3)
+    fpSubIter(iy + 4)
+    fpSubIter(iy + 5)
+    fpSubIter(iy + 6)
+    fpSubIter(iy + 7)
+    fpSubIter(iy + 8)
+    jr .end
+.undefine fpSubIter
+.invert:
     ld a, (iy)
     xor 0x80
     ld (iy), a
+.end:
     pop af
     ; Fall through to fpAdd
 ;; fpAdd [FP Math]
