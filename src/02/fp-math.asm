@@ -434,7 +434,7 @@ _:
             inc hl
             push ix \ pop de
             inc de \ inc de
-            ld c, 9
+            ld c, 10    ; Should be 9, but that causes it to skip the last digit
             xor a
             jp .doneWithIPart
 .beginIPart:
