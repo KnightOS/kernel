@@ -939,6 +939,36 @@ _:
     pop ix
     ret
 
+;; fpMin [FP Math]
+;;  Finds the minimum of the two floating point numbers.
+;; Inputs:
+;;  IX, IY: Pointer to operands
+;; Output:
+;;  HL: Pointer to minimum
+fpMin:
+    call fpCompare
+    jr c, _
+    push iy \ pop hl
+    ret
+_:
+    push ix \ pop hl
+    ret
+
+;; fpMax [FP Math]
+;;  Finds the maximum of the two floating point numbers.
+;; Inputs:
+;;  IX, IY: Pointer to operands
+;; Output:
+;;  HL: Pointer to maximum
+fpMax:
+    call fpCompare
+    jr c, _
+    push ix \ pop hl
+    ret
+_:
+    push iy \ pop hl
+    ret
+
 ;; fpRand [FP Math]
 ;;  Generates a random floating point number between 0 and 1, similar to
 ;;  TI-OS's `rand` command.
