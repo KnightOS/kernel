@@ -773,25 +773,25 @@ fpAbs:
 ;;  IX: Pointer to result
 fpNeg:
     push af
-    ; Make sure operand is not zero
-    xor a
+        ; Make sure operand is not zero
+        xor a
 .macro fpNegIter(reg)
-    cp (reg)
-    jr nz, .invert
+        cp (reg)
+        jr nz, _
 .endmacro
-    fpNegIter(ix + 2)
-    fpNegIter(ix + 3)
-    fpNegIter(ix + 4)
-    fpNegIter(ix + 5)
-    fpNegIter(ix + 6)
-    fpNegIter(ix + 7)
-    fpNegIter(ix + 8)
-    jr .end
+        fpNegIter(ix + 2)
+        fpNegIter(ix + 3)
+        fpNegIter(ix + 4)
+        fpNegIter(ix + 5)
+        fpNegIter(ix + 6)
+        fpNegIter(ix + 7)
+        fpNegIter(ix + 8)
+        jr .end
 .undefine fpNegIter
-.invert:
-    ld a, (ix)
-    xor 0x80
-    ld (ix), a
+_:
+        ld a, (ix)
+        xor 0x80
+        ld (ix), a
 .end:
     pop af
     ret
@@ -804,25 +804,25 @@ fpNeg:
 ;;  HL: Pointer to destination buffer
 fpSub:
     push af
-    ; Make sure operand is not zero
-    xor a
+        ; Make sure operand is not zero
+        xor a
 .macro fpSubIter(reg)
-    cp (reg)
-    jr nz, .invert
+        cp (reg)
+        jr nz, _
 .endmacro
-    fpSubIter(iy + 2)
-    fpSubIter(iy + 3)
-    fpSubIter(iy + 4)
-    fpSubIter(iy + 5)
-    fpSubIter(iy + 6)
-    fpSubIter(iy + 7)
-    fpSubIter(iy + 8)
-    jr .end
+        fpSubIter(iy + 2)
+        fpSubIter(iy + 3)
+        fpSubIter(iy + 4)
+        fpSubIter(iy + 5)
+        fpSubIter(iy + 6)
+        fpSubIter(iy + 7)
+        fpSubIter(iy + 8)
+        jr .end
 .undefine fpSubIter
-.invert:
-    ld a, (iy)
-    xor 0x80
-    ld (iy), a
+_:
+        ld a, (iy)
+        xor 0x80
+        ld (iy), a
 .end:
     pop af
     ; Fall through to fpAdd
@@ -994,6 +994,40 @@ _:
     pop hl
     pop iy
     pop ix
+    ret
+
+;; fpMulPow10 [FP Math]
+;;  Multiplies the floating point number in IX by 10^E.
+;; Input:
+;;  IX: Pointer to operand
+;;  E: Signed exponent (i.e. 2 -> 100, 3 -> 0.001)
+;; Output:
+;;  IX: Pointer to result
+;; Notes:
+;;  Does not check for overflow.
+fpMulPow10:
+    push af
+        ; Make sure operand is not zero
+        xor a
+.macro fpMulPow10Iter(reg)
+        cp (reg)
+        jr nz, _
+.endmacro
+        fpMulPow10Iter(ix + 2)
+        fpMulPow10Iter(ix + 3)
+        fpMulPow10Iter(ix + 4)
+        fpMulPow10Iter(ix + 5)
+        fpMulPow10Iter(ix + 6)
+        fpMulPow10Iter(ix + 7)
+        fpMulPow10Iter(ix + 8)
+        jr .end
+.undefine fpMulPow10Iter
+_:
+        ld a, (ix + 1)
+        add e
+        ld (ix + 1), a
+.end:
+    pop af
     ret
 
 ;; fpCompare [FP Math]
