@@ -603,10 +603,10 @@ fpNormalize:
         inc hl \ inc hl
         push hl
             ld c, 0
+            xor a
 .macro fpNormalizeCountLeading
             ; Find the first nonzero byte
-            ld a, (hl)
-            or a
+            or (hl)
             jr nz, _
             inc hl
             inc c
@@ -619,6 +619,13 @@ fpNormalize:
             fpNormalizeCountLeading
             fpNormalizeCountLeading
 .undefine fpNormalizeCountLeading
+        ; It's all zero, so clean it up and exit
+        pop hl
+        dec hl
+        ld (hl), 0x80
+        dec hl
+        ld (hl), 0
+        jr .end
 _:
             ; HL points to the first nonzero byte
             ; Copy from HL to the beginning of the significand
@@ -669,6 +676,7 @@ _:
         sub c
         ld (hl), a
         dec hl
+.end:
     pop de
     pop bc
     pop af
