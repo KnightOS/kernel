@@ -18,12 +18,13 @@
 ;;  HL: Pointer to 9-byte destination buffer
 ;; Notes:
 ;;  The result is in the following format:
-;;  * 1 byte flags:
-;;      - 7: Sign bit
-;;      - 4-6: Reserved for kernel
-;;      - 0-3: Available for program use
-;;  * 1 byte signed exponent, normalized to 0x80 instead of 0
-;;  * 7 byte mantissa, BCD encoded with two digits per byte
+;;
+;;  - 1 byte flags:
+;;    - 7: Sign bit
+;;    - 4-6: Reserved for kernel
+;;    - 0-3: Available for program use
+;;  - 1 byte signed exponent, normalized to 0x80 instead of 0
+;;  - 7 byte mantissa, BCD encoded with two digits per byte
 itofp:
     ; Modified version of itostr
     push hl
@@ -271,7 +272,7 @@ _:
 ;; Notes:
 ;;  The destination buffer must be at least 20 characters in length.
 ;;
-;;  The most significant nibble of A should be set to flags. FP_STR_*
+;;  The most significant nibble of A should be set to flags. `FP_STR_*`
 ;;  macros in kernel.inc can be ORed and stored in A for convenience.
 ;;
 ;;  The least significant nibble of A is the number of digits to display
@@ -279,10 +280,14 @@ _:
 ;;  non-zero.
 ;;
 ;;  Examples:
+;;
 ;;  All nonzero decimals in scientific notation, with decimal as ',':
-;;    ld a, FP_STR_INV_PUNC | FP_DISP_SCIENTIFIC | 0xF
-;;  5 fixed digits grouped with ','
-;;    ld a, FP_GROUP_DIGITS | 5
+;;
+;;      ld a, FP_STR_INV_PUNC | FP_DISP_SCIENTIFIC | 0xF
+;;
+;;  5 fixed digits grouped with ',':
+;;
+;;      ld a, FP_GROUP_DIGITS | 5
 ; TODO:
 ;  * Rounding last digit - buggy, currently abandoned
 ;  * Never show exponent if significand is 0 - not started
@@ -601,7 +606,7 @@ _:
 ;; fpLdConst [Decimal Floating Point]
 ;;  Loads a floating point constant specified by A into HL.
 ;; Input:
-;;  A: Constant to load, use FP_* macros from kernel.inc
+;;  A: Constant to load, use `FP_*` macros from kernel.inc
 ;;  HL: Pointer to destination buffer
 fpLdConst:
     push af
