@@ -279,10 +279,10 @@ _:
 ;;  non-zero.
 ;;
 ;;  Examples:
-;;  All nonzero decimals in scientific notation, digits grouped with ',':
-;;    ld a, FP_GROUP_DIGITS | FP_DISP_SCIENTIFIC | 0xF
-;;  5 fixed digits, digits grouped with '.' and decimal as ',':
-;;    ld a, FP_GROUP_DIGITS | FP_STR_INV_PUNC | 5
+;;  All nonzero decimals in scientific notation, with decimal as ',':
+;;    ld a, FP_STR_INV_PUNC | FP_DISP_SCIENTIFIC | 0xF
+;;  5 fixed digits grouped with ','
+;;    ld a, FP_GROUP_DIGITS | 5
 ; TODO:
 ;  * Rounding last digit - buggy, currently abandoned
 ;  * Never show exponent if significand is 0 - not started
