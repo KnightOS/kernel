@@ -10,7 +10,7 @@
 
 
 
-;; itofp [FP Math]
+;; itofp [Decimal Floating Point]
 ;;  Converts a 32-bit unsigned integer into a floating-point
 ;;  binary coded decimal format and stores it to the buffer at HL.
 ;; Inputs:
@@ -120,7 +120,7 @@ _:
     pop hl
     ret
 
-;; strtofp [FP Math]
+;; strtofp [Decimal Floating Point]
 ;;  Converts an ASCII-encoded signed decimal into a floating-point
 ;;  binary coded decimal format and stores it to the buffer at HL.
 ;; Inputs:
@@ -262,7 +262,7 @@ _:
     pop ix
     ret
 
-;; fptostr [FP Math]
+;; fptostr [Decimal Floating Point]
 ;;  Converts a floating point number into an ASCII-encoded decimal string.
 ;; Inputs:
 ;;  IX: Pointer to floating point number
@@ -598,7 +598,7 @@ _:
 .undefine fptostrI18N
 .undefine fptostrInsertPVSep
 
-;; fpLdConst [FP Math]
+;; fpLdConst [Decimal Floating Point]
 ;;  Loads a floating point constant specified by A into HL.
 ;; Input:
 ;;  A: Constant to load, use FP_* macros from kernel.inc
@@ -748,7 +748,7 @@ _:
     pop af
     ret
 
-;; fpAbs [FP Math]
+;; fpAbs [Decimal Floating Point]
 ;;  Takes the absolute value of the floating point number at IX.
 ;; Input:
 ;;  IX: Pointer to operand
@@ -758,7 +758,7 @@ fpAbs:
     res 7, (ix)
     ret
 
-;; fpNeg [FP Math]
+;; fpNeg [Decimal Floating Point]
 ;;  Negates the floating point number at IX.
 ;; Input:
 ;;  IX: Pointer to operand
@@ -778,7 +778,7 @@ fpNeg:
     pop af
     ret
 
-;; fpSub [FP Math]
+;; fpSub [Decimal Floating Point]
 ;;  Subtracts the two floating point numbers.
 ;; Inputs:
 ;;  IX: Pointer to operand 1 (minuend)
@@ -797,7 +797,8 @@ fpSub:
 .end:
     pop af
     ; Fall through to fpAdd
-;; fpAdd [FP Math]
+
+;; fpAdd [Decimal Floating Point]
 ;;  Adds the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -967,7 +968,7 @@ _:
     pop ix
     ret
 
-;; fpMulPow10 [FP Math]
+;; fpMulPow10 [Decimal Floating Point]
 ;;  Multiplies the floating point number in IX by 10^E.
 ;; Input:
 ;;  IX: Pointer to operand
@@ -990,7 +991,7 @@ fpMulPow10:
     pop af
     ret
 
-;; fpAnd [FP Math]
+;; fpAnd [Decimal Floating Point]
 ;;  Performs a logical AND on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -1014,7 +1015,7 @@ fpAnd:
     pop bc
     ret
 
-;; fpOr [FP Math]
+;; fpOr [Decimal Floating Point]
 ;;  Performs a logical OR on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -1037,7 +1038,7 @@ fpOr:
     pop bc
     ret
 
-;; fpXor [FP Math]
+;; fpXor [Decimal Floating Point]
 ;;  Performs a logical XOR on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -1071,7 +1072,7 @@ _:
     pop bc
     ret
 
-;; fpNot [FP Math]
+;; fpNot [Decimal Floating Point]
 ;;  Performs a logical NOT on the floating point number.
 ;; Input:
 ;;  IX: Pointer to operand
@@ -1096,7 +1097,7 @@ _:
     pop bc
     ret
 
-;; fpCompare [FP Math]
+;; fpCompare [Decimal Floating Point]
 ;;  Compares the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -1146,7 +1147,7 @@ _:
     pop ix
     ret
 
-;; fpMin [FP Math]
+;; fpMin [Decimal Floating Point]
 ;;  Finds the minimum of the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointer to operands
@@ -1161,7 +1162,7 @@ _:
     push ix \ pop hl
     ret
 
-;; fpMax [FP Math]
+;; fpMax [Decimal Floating Point]
 ;;  Finds the maximum of the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
@@ -1176,7 +1177,7 @@ _:
     push iy \ pop hl
     ret
 
-;; fpRand [FP Math]
+;; fpRand [Decimal Floating Point]
 ;;  Generates a random floating point number between 0 and 1, similar to
 ;;  TI-OS's `rand` command.
 ;; Input:
@@ -1228,7 +1229,7 @@ fpRand:
     pop af
     ret
 
-;; fpIPart [FP Math]
+;; fpIPart [Decimal Floating Point]
 ;;  Calculates the integer part of a floating point number, similar to
 ;;  TI-OS's `iPart()` command.
 ;; Input:
@@ -1286,7 +1287,7 @@ _:
     pop af
     ret
 
-;; fpFPart [FP Math]
+;; fpFPart [Decimal Floating Point]
 ;;  Calculates the fractional part of a floating point number, similar to
 ;;  TI-OS's `fPart()` command.
 ;; Input:
