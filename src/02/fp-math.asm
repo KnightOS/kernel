@@ -18,7 +18,10 @@
 ;;  HL: Pointer to 9-byte destination buffer
 ;; Notes:
 ;;  The result is in the following format:
-;;  * 1 byte flags, currently only a sign bit as the MSB
+;;  * 1 byte flags:
+;;      - 7: Sign bit
+;;      - 4-6: Reserved for kernel
+;;      - 0-3: Available for program use
 ;;  * 1 byte signed exponent, normalized to 0x80 instead of 0
 ;;  * 7 byte mantissa, BCD encoded with two digits per byte
 itofp:
@@ -126,10 +129,7 @@ _:
 ;; Output:
 ;;  Z: Set on success, reset on error
 ;; Notes:
-;;  The result is in the following format:
-;;  * 1 byte flags, currently only a sign bit as the MSB
-;;  * 1 byte signed exponent, normalized to 0x80 instead of 0
-;;  * 7 byte mantissa, BCD encoded with two digits per byte
+;;  See `itofp` for the result format.
 ;;
 ;;  Only the first 14 significant digits are converted. The rest are truncated
 ;;  but still used for exponent calculation.
