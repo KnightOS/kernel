@@ -977,7 +977,7 @@ _:
 ;;  Multiplies the floating point number in IX by 10^E.
 ;; Inputs:
 ;;  IX: Pointer to operand
-;;  E: Signed exponent (i.e. 2 -> 100, 3 -> 0.001)
+;;  E: Signed exponent (i.e. 2 -> 100, -3 -> 0.001)
 ;; Outputs:
 ;;  IX: Pointer to result
 ;; Notes:
