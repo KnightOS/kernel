@@ -1107,7 +1107,7 @@ _:
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
 ;; Outputs:
-;;  Same as z80 CP instruction.
+;;  Flags: same as z80 CP instruction
 fpCompare:
     push ix
     push iy
