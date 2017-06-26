@@ -127,7 +127,7 @@ _:
 ;; Inputs:
 ;;  IX: Pointer to string
 ;;  HL: Pointer to 9-byte destination buffer
-;; Output:
+;; Outputs:
 ;;  Z: Set on success, reset on error
 ;; Notes:
 ;;  See `itofp` for the result format.
@@ -605,7 +605,7 @@ _:
 
 ;; fpLdConst [Decimal Floating Point]
 ;;  Loads a floating point constant specified by A into HL.
-;; Input:
+;; Inputs:
 ;;  A: Constant to load, use `FP_*` macros from kernel.inc
 ;;  HL: Pointer to destination buffer
 fpLdConst:
@@ -755,9 +755,9 @@ _:
 
 ;; fpAbs [Decimal Floating Point]
 ;;  Takes the absolute value of the floating point number at IX.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
-;; Output:
+;; Outputs:
 ;;  IX: Pointer to result
 fpAbs:
     res 7, (ix)
@@ -765,9 +765,9 @@ fpAbs:
 
 ;; fpNeg [Decimal Floating Point]
 ;;  Negates the floating point number at IX.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
-;; Output:
+;; Outputs:
 ;;  IX: Pointer to result
 fpNeg:
     push af
@@ -975,10 +975,10 @@ _:
 
 ;; fpMulPow10 [Decimal Floating Point]
 ;;  Multiplies the floating point number in IX by 10^E.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
 ;;  E: Signed exponent (i.e. 2 -> 100, 3 -> 0.001)
-;; Output:
+;; Outputs:
 ;;  IX: Pointer to result
 ;; Notes:
 ;;  Does not check for overflow.
@@ -1000,7 +1000,7 @@ fpMulPow10:
 ;;  Performs a logical AND on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
-;; Output:
+;; Outputs:
 ;;  Z: Result was false
 ;;  NZ: Result was true
 fpAnd:
@@ -1024,7 +1024,7 @@ fpAnd:
 ;;  Performs a logical OR on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
-;; Output:
+;; Outputs:
 ;;  Z: Result was false
 ;;  NZ: Result was true
 fpOr:
@@ -1047,7 +1047,7 @@ fpOr:
 ;;  Performs a logical XOR on the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
-;; Output:
+;; Outputs:
 ;;  Z: Result was false
 ;;  NZ: Result was true
 fpXor:
@@ -1079,9 +1079,9 @@ _:
 
 ;; fpNot [Decimal Floating Point]
 ;;  Performs a logical NOT on the floating point number.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
-;; Output:
+;; Outputs:
 ;;  Z: Result was false
 ;;  NZ: Result was true
 fpNot:
@@ -1106,7 +1106,7 @@ _:
 ;;  Compares the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
-;; Output:
+;; Outputs:
 ;;  Same as z80 CP instruction.
 fpCompare:
     push ix
@@ -1156,7 +1156,7 @@ _:
 ;;  Finds the minimum of the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointer to operands
-;; Output:
+;; Outputs:
 ;;  HL: Pointer to minimum
 fpMin:
     call fpCompare
@@ -1171,7 +1171,7 @@ _:
 ;;  Finds the maximum of the two floating point numbers.
 ;; Inputs:
 ;;  IX, IY: Pointers to operands
-;; Output:
+;; Outputs:
 ;;  HL: Pointer to maximum
 fpMax:
     call fpCompare
@@ -1185,7 +1185,7 @@ _:
 ;; fpRand [Decimal Floating Point]
 ;;  Generates a random floating point number between 0 and 1, similar to
 ;;  TI-OS's `rand` command.
-;; Input:
+;; Inputs:
 ;;  HL: Pointer to output
 ;; Notes:
 ;;  Uses `getRandom` to generate the digits, so it is not cryptographically
@@ -1237,9 +1237,9 @@ fpRand:
 ;; fpIPart [Decimal Floating Point]
 ;;  Calculates the integer part of a floating point number, similar to
 ;;  TI-OS's `iPart()` command.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
-;; Output:
+;; Outputs:
 ;;  IX: Pointer to result
 fpIPart:
     push af
@@ -1295,9 +1295,9 @@ _:
 ;; fpFPart [Decimal Floating Point]
 ;;  Calculates the fractional part of a floating point number, similar to
 ;;  TI-OS's `fPart()` command.
-;; Input:
+;; Inputs:
 ;;  IX: Pointer to operand
-;; Output:
+;; Outputs:
 ;;  IX: Pointer to result
 fpFPart:
     push af
