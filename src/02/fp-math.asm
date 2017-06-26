@@ -1030,10 +1030,116 @@ _:
     pop af
     ret
 
+;; fpAnd [FP Math]
+;;  Performs a logical AND on the two floating point numbers.
+;; Inputs:
+;;  IX, IY: Pointers to operands
+;; Output:
+;;  Z: Result was false
+;;  NZ: Result was true
+fpAnd:
+    push bc
+        ; Save A in B to preserve flags
+        ld b, a
+        ; Check if first operand is 0
+        ld a, (ix + 2)
+        or a
+        jr z, .end
+        ; Check if second operand is 0
+        ld a, (iy + 2)
+        or a
+.end:
+        ; Restore A
+        ld a, b
+    pop bc
+    ret
+
+;; fpOr [FP Math]
+;;  Performs a logical OR on the two floating point numbers.
+;; Inputs:
+;;  IX, IY: Pointers to operands
+;; Output:
+;;  Z: Result was false
+;;  NZ: Result was true
+fpOr:
+    push bc
+        ; Save A in B to preserve flags
+        ld b, a
+        xor a
+        ; Check if first operand is 0
+        or (ix + 2)
+        jr nz, .end
+        ; Check if second operand is 0
+        or (iy + 2)
+.end:
+        ; Restore A
+        ld a, b
+    pop bc
+    ret
+
+;; fpXor [FP Math]
+;;  Performs a logical XOR on the two floating point numbers.
+;; Inputs:
+;;  IX, IY: Pointers to operands
+;; Output:
+;;  Z: Result was false
+;;  NZ: Result was true
+fpXor:
+    push bc
+        ; Save A in B to preserve flags
+        ld b, a
+        ; Check if first operand is 0
+        ld a, (ix + 2)
+        or a
+        jr nz, _
+        ; Check if second operand is 0
+        ld a, (iy + 2)
+        or a
+        jr .end
+_:
+        ; Check if second operand is nonzero
+        ld a, (iy + 2)
+        or a
+        jr nz, _
+        or 1
+        jr .end
+_:
+        xor a
+.end:
+        ; Restore A
+        ld a, b
+    pop bc
+    ret
+
+;; fpNot [FP Math]
+;;  Performs a logical NOT on the floating point number.
+;; Input:
+;;  IX: Pointer to operand
+;; Output:
+;;  Z: Result was false
+;;  NZ: Result was true
+fpNot:
+    push bc
+        ; Save A in B to preserve flags
+        ld b, a
+        ; Check if operand is 0
+        ld a, (ix + 2)
+        or a
+        jr nz, _
+        or 1
+        jr .end
+_:
+        xor a
+.end:
+        ; Restore A
+        ld a, b
+    pop bc
+    ret
+
 ;; fpCompare [FP Math]
 ;;  Compares the two floating point numbers.
 ;; Inputs:
-;;  IX, IY: Pointer to operands
+;;  IX, IY: Pointers to operands
 ;; Output:
 ;;  Same as z80 CP instruction.
 fpCompare:
@@ -1098,7 +1204,7 @@ _:
 ;; fpMax [FP Math]
 ;;  Finds the maximum of the two floating point numbers.
 ;; Inputs:
-;;  IX, IY: Pointer to operands
+;;  IX, IY: Pointers to operands
 ;; Output:
 ;;  HL: Pointer to maximum
 fpMax:
