@@ -160,7 +160,7 @@ FP_PI_OVER_180  .equ 5
 FP_180_OVER_PI  .equ 6
 FP_E            .equ 7
 FP_LOG_E        .equ 8
-FP_LN_E         .equ 9
+FP_LN_10        .equ 9
 
 ; Set to use , as the decimal point and . for digit grouping
 FP_STR_INV_PUNC     .equ 1<<7
