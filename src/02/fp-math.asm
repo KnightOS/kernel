@@ -774,21 +774,10 @@ fpAbs:
 fpNeg:
     push af
         ; Make sure operand is not zero
-        xor a
-.macro fpNegIter(reg)
-        cp (reg)
-        jr nz, _
-.endmacro
-        fpNegIter(ix + 2)
-        fpNegIter(ix + 3)
-        fpNegIter(ix + 4)
-        fpNegIter(ix + 5)
-        fpNegIter(ix + 6)
-        fpNegIter(ix + 7)
-        fpNegIter(ix + 8)
-        jr .end
-.undefine fpNegIter
-_:
+        ld a, (ix + 2)
+        or a
+        jr z, .end
+        ; Invert the sign bit
         ld a, (ix)
         xor 0x80
         ld (ix), a
@@ -805,21 +794,10 @@ _:
 fpSub:
     push af
         ; Make sure operand is not zero
-        xor a
-.macro fpSubIter(reg)
-        cp (reg)
-        jr nz, _
-.endmacro
-        fpSubIter(iy + 2)
-        fpSubIter(iy + 3)
-        fpSubIter(iy + 4)
-        fpSubIter(iy + 5)
-        fpSubIter(iy + 6)
-        fpSubIter(iy + 7)
-        fpSubIter(iy + 8)
-        jr .end
-.undefine fpSubIter
-_:
+        ld a, (iy + 2)
+        or a
+        jr z, .end
+        ; Invert the sign bit
         ld a, (iy)
         xor 0x80
         ld (iy), a
@@ -1008,21 +986,10 @@ _:
 fpMulPow10:
     push af
         ; Make sure operand is not zero
-        xor a
-.macro fpMulPow10Iter(reg)
-        cp (reg)
-        jr nz, _
-.endmacro
-        fpMulPow10Iter(ix + 2)
-        fpMulPow10Iter(ix + 3)
-        fpMulPow10Iter(ix + 4)
-        fpMulPow10Iter(ix + 5)
-        fpMulPow10Iter(ix + 6)
-        fpMulPow10Iter(ix + 7)
-        fpMulPow10Iter(ix + 8)
-        jr .end
-.undefine fpMulPow10Iter
-_:
+        ld a, (ix + 2)
+        or a
+        jr z, .end
+        ; Add the exponents
         ld a, (ix + 1)
         add e
         ld (ix + 1), a
