@@ -41,24 +41,24 @@ itofp:
         ; Check if ACIX is zero
         push bc
             ; If a is not zero
-            cp 0
+            or a
             jp nz, .notZero
             ; If c is not zero
             ld b, a
             ld a, c
-            cp 0
+            or a
             ld a, b
             jp nz, .notZero
             ; If ixh is not zero
             ld b, a
             ld a, ixh
-            cp 0
+            or a
             ld a, b
             jp nz, .notZero
             ; If ixl is not zero
             ld b, a
             ld a, ixl
-            cp 0
+            or a
             ld a, b
 .notZero:
         pop bc
@@ -77,7 +77,7 @@ itofp:
 _:
         ; Write a zero if ACIX is zero
         ld a, b
-        cp 0
+        or a
         jr nz, .writeExp
         ld (iy), 0
         inc iy
@@ -87,12 +87,12 @@ _:
         ld (iy+1), a
 .writeMantissa:
         ld a, b
-        cp 0
+        or a
         jr z, _     ; If our digit counter is zero, exit loop
         pop de      ; Pop our digit from the stack
         dec b       ; Decrement our digit counter
         ld a, b
-        cp 0
+        or a
         jr z, .lastDigit    ; If we have an odd number of digits, don't pop
         pop hl      ; Pop our digit from the stack
         dec b       ; Decrement our digit counter
@@ -155,9 +155,8 @@ strtofp:
 _:
         inc hl
         inc hl
-        ld b, 14    ; Remaining digits counter
-        ld d, 0     ; Parsing flags
-        ld e, 0x80  ; Place value counter
+        ld b, 14      ; Remaining digits counter
+        ld de, 0x0080 ; Parser flags and place value counter
 .loop:
         ; Check if we are at the end of the buffer
         xor a
@@ -268,21 +267,25 @@ _:
 ;; Inputs:
 ;;  IX: Pointer to floating point number
 ;;  HL: Pointer to destination buffer
-;;  A: Flags
+;;  A: Flags / digits
 ;; Notes:
-;;  The destination buffer must be large enough to store the result.
+;;  The destination buffer must be at least 20 characters in length.
 ;;
-;;  The flag byte consists of the following bits:
-;;  * 7: Set to use comma as decimal point and period as place value separator
-;;  * 6: Set to display place value separators
-;;  * 5-4: Display mode. 00 = Normal and 01 = Scientific. Modes 10 and 11
-;;         are currently undefined.
-;;  * 3-0: Number of fixed point digits to display after the decimal (0-9),
-;;         or 0xF for float mode. Works like TI-OS's Fix/Float mode.
+;;  The most significant nibble of A should be set to flags. FP_STR_*
+;;  macros in kernel.inc can be ORed and stored in A for convenience.
 ;;
-;; TODO:
-;;  * Rounding last digit - buggy, currently abandoned
-;;  * Never show exponent if significand is 0 - not started
+;;  The least significant nibble of A is the number of digits to display
+;;  after the decimal: 0-9 for that many digits, or 0xF for as many are
+;;  non-zero.
+;;
+;;  Examples:
+;;  All nonzero decimals in scientific notation, digits grouped with ',':
+;;    ld a, FP_GROUP_DIGITS | FP_DISP_SCIENTIFIC | 0xF
+;;  5 fixed digits, digits grouped with '.' and decimal as ',':
+;;    ld a, FP_GROUP_DIGITS | FP_STR_INV_PUNC | 5
+; TODO:
+;  * Rounding last digit - buggy, currently abandoned
+;  * Never show exponent if significand is 0 - not started
 .macro fptostrIter1(reg)
         ; Output the first digit in the byte pointed to by reg
         ld a, (reg)
@@ -598,17 +601,7 @@ _:
 ;; fpLdConst [FP Math]
 ;;  Loads a floating point constant specified by A into HL.
 ;; Input:
-;;  A: Which constant to load:
-;;      - 0: 0.0
-;;      - 1: 1.0
-;;      - 2: pi
-;;      - 3: pi/2
-;;      - 4: pi/4
-;;      - 5: pi/180
-;;      - 6: 180/pi
-;;      - 7: e
-;;      - 8: log(e)
-;;      - 9: ln(10)
+;;  A: Constant to load, use FP_* macros from kernel.inc
 ;;  HL: Pointer to destination buffer
 fpLdConst:
     push af
@@ -675,8 +668,8 @@ fpNormalize:
     push de
         inc hl \ inc hl
         push hl
-            ld c, 0
             xor a
+            ld c, a
 .macro fpNormalizeCountLeading
             ; Find the first nonzero byte
             or (hl)
