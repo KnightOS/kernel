@@ -162,6 +162,9 @@ _:
 ioSendPacket:
     push bc
     push af
+    ld a,i
+    di
+    push af
         ; io_tx_header_ix is 0xFF when ready to send
         ld a, (io_tx_header_ix)
         cp 0xFF \ jr nz, .abort
@@ -197,10 +200,18 @@ _:      ld (io_tx_header), de
     pop de
     pop hl
     pop af
+    jp po, _
+    ei
+_:
+    pop af
     pop bc
     cp a
     ret
 .abort:
+    pop af
+    jp po, _
+    ei
+_:
     pop af \ ld b, a \ or 1 \ ld a, b
     pop bc \ ret ; Packet in progress, GTFO
 
