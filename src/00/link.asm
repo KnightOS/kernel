@@ -98,6 +98,12 @@ default_header_handlers_end:
 ioRegisterHandler:
     push hl
     push de
+    push bc
+    ld c, a
+    ld a, i
+    push af
+    ld a, c
+    di
         push af
             push bc
                 push ix
@@ -123,6 +129,11 @@ ioRegisterHandler:
             ld (hl), b \ dec hl
         pop af
         ld (hl), a
+    pop af
+    jp po, _
+    ei
+_:
+    pop bc
     pop de
     pop hl
     ret
