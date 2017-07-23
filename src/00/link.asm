@@ -98,6 +98,12 @@ default_header_handlers_end:
 ioRegisterHandler:
     push hl
     push de
+    push bc
+    ld c, a
+    ld a, i
+    push af
+    ld a, c
+    di
         push af
             push bc
                 push ix
@@ -123,6 +129,11 @@ ioRegisterHandler:
             ld (hl), b \ dec hl
         pop af
         ld (hl), a
+    pop af
+    jp po, _
+    ei
+_:
+    pop bc
     pop de
     pop hl
     ret
@@ -150,6 +161,9 @@ ioRegisterHandler:
 ;;  will end in tears.
 ioSendPacket:
     push bc
+    push af
+    ld a,i
+    di
     push af
         ; io_tx_header_ix is 0xFF when ready to send
         ld a, (io_tx_header_ix)
@@ -186,10 +200,18 @@ _:      ld (io_tx_header), de
     pop de
     pop hl
     pop af
+    jp po, _
+    ei
+_:
+    pop af
     pop bc
     cp a
     ret
 .abort:
+    pop af
+    jp po, _
+    ei
+_:
     pop af \ ld b, a \ or 1 \ ld a, b
     pop bc \ ret ; Packet in progress, GTFO
 
