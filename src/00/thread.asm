@@ -375,12 +375,12 @@ launchProgram:
     push de
     push ix
         call openFileRead
-        jr nz, .error
+        jp nz, .error
 
         call getStreamInfo
         ; TODO: If E > 0, then the file is too large. Error out before we ask malloc about it.
         call malloc
-        jr nz, .error_pop2
+        jp nz, .error_pop2
         call getNewThreadId
         call reassignMemory
 
@@ -390,19 +390,48 @@ launchProgram:
         ; Check magic number
         ld a, 'K'
         cp (ix)
-        jr nz, .magic_error
+        jp nz, .magic_error
         ld a, 'E'
         cp (ix + 1)
-        jr nz, .magic_error
+        jp nz, .magic_error
         ld a, 'X'
         cp (ix + 2)
-        jr nz, .magic_error
+        jp nz, .magic_error
         ld a, 'C'
         cp (ix + 3)
-        jr nz, .magic_error
+        jp nz, .magic_error
 
-        ; TODO: Check minimum required kernel version, if present
-
+        ; Check minimum required kernel version, if present
+        ld b, KEXC_KERNEL_VER
+        push ix \ call _getThreadHeader \ pop ix
+        jr nz, +++_
+        push hl \ pop de
+        call getKernelMajorVersion
+        ld a, e
+        cp 0
+        jp z, ++_
+        ; Required isn't 0, just check for a match
+        cp l
+        jp nz, .mismatch
+        ; Major versions match, check minor versions
+_:
+        call getKernelMinorVersion
+        ld a, l
+        cp d
+        jr z, ++_
+        jr nc, ++_
+        ; Current kernel too old
+        jr .mismatch
+_:
+	; Required major version is 0, check if current is 1
+        ld a, l
+        cp 1
+        jr z, _
+        ; Current isn't 1, if current is 0 check minor version
+        cp 0
+        jr z, --_
+        jr .mismatch
+_:        
         ; Grab header info
         ld b, KEXC_ENTRY_POINT
         push ix \ call _getThreadHeader \ pop ix
@@ -441,6 +470,9 @@ _:  ld a, b
     jr .error
 .magic_error:
     ld a, errNoMagic
+    jr .error
+.mismatch:
+    ld a, errKernelMismatch
     jr .error
 .error_pop2:
     inc sp \ inc sp
