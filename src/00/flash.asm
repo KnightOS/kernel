@@ -114,6 +114,7 @@ _:  pop af
     ld (0), a
     jp .return
 .ram_end:
+.echo "writeFlashByte RAM footprint: 0x{0:X4}" .ram_end-.ram
 
 ;; writeFlashBuffer [Flash]
 ;;  Writes several bytes of memory to Flash
@@ -195,6 +196,7 @@ _:  pop af
     jr nz, .loop
     jp .return
 .ram_end:
+.echo "writeFlashBuffer RAM footprint: 0x{0:X4}" .ram_end-.ram
 
 ;; eraseSwapSector [Flash]
 ;;  Erases the swap sector.
@@ -267,6 +269,7 @@ _:  ld a, (0)
     ld (0x4000), a
     jp .return
 .ram_end:
+.echo "eraseFlashSector RAM footprint: 0x{0:X4}" .ram_end-.ram
 
 ;; eraseFlashPage [Flash]
 ;;  Erases a single page of Flash.
@@ -488,6 +491,7 @@ _:  pop af
     jp .return
 .ram_end:
 #endif
+.echo "copySectorToSwap RAM footprint: 0x{0:X4}" .ram_end-.ram
 
 ;; copyFlashExcept [Flash]
 ;;  Copies one Flash page to another, but omits a certain range of bytes in increments of
@@ -690,6 +694,7 @@ _:  inc hl
     jr .continue_loop
 .ram_end:
 #endif
+.echo "copyFlashExcept RAM footprint: 0x{0:X4}" .ram_end-.ram
 
 ;; copyFlashPage [Flash]
 ;;  Copies one page of Flash to another.
@@ -841,3 +846,4 @@ _:  inc hl
     jp .return
 .ram_end:
 #endif
+.echo "copyFlashPage RAM footprint: 0x{0:X4}" .ram_end-.ram
