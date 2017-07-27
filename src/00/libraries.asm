@@ -1,6 +1,6 @@
 ; TODO:
 ; Unload libraries
-; Allocate space to track usage; use maxThreads so that all threads may
+; Allocate space to track usage; use max_threads so that all threads may
 ; use it at once.
 
 ;; loadLibrary [System]
@@ -22,9 +22,9 @@ _:  push af
             call fileExists ; TODO: Let's just error out on openFileRead instead of checking here
             jp nz, .fileNotFound
             
-            ld a, (loadedLibraries)
+            ld a, (loaded_libraries)
             inc a
-            cp maxLibraries
+            cp max_libraries
             jp z, .tooManyLibraries
         pop de
         push af
@@ -37,12 +37,12 @@ _:  push af
                     ex de, hl
                 
                     ; Check to see if it has already been opened
-                    ld a, (loadedLibraries)
+                    ld a, (loaded_libraries)
                     or a
                     jr z, ++_
                     push bc
                         ld b, a
-                        ld hl, libraryTable
+                        ld hl, library_table
 _:                      ld a, (hl)
                         cp e
                         jr z, .alreadyLoaded
@@ -61,14 +61,14 @@ _:              pop af
                 call reassignMemory
             pop de
         pop af
-        ld (loadedLibraries), a
+        ld (loaded_libraries), a
         
         call streamReadToEnd
         call closeStream
         ; DE is library ID, IX is location
         
-        ld hl, libraryTable
-        ld a, (loadedLibraries)
+        ld hl, library_table
+        ld a, (loaded_libraries)
         dec a
         add a, a
         add a, a
@@ -173,7 +173,7 @@ _:  pop af
     
 .outOfMem:
     pop af
-    ld (currentThreadIndex), a
+    ld (current_thread_index), a
     pop ix
     pop bc
     pop hl

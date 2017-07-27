@@ -111,14 +111,14 @@ directoryExists:
                 jr nz,_
                 dec bc
 _:          pop hl
-            ld de, kernelGarbage+0x100
+            ld de, kernel_garbage+0x100
             ldir
             xor a
             ld (de), a
         pop hl
         pop bc
         pop af
-        ld de, kernelGarbage+0x100
+        ld de, kernel_garbage+0x100
         call fileExists ; TODO: Check if this node is a directory
     pop de
     ret
@@ -140,7 +140,7 @@ _:          pop hl
 ;;  * HL: Address of entry
 ;;  * BC: Length of entry
 ;;  * A: Type of entry
-;;  * kernelGarbage: Name of entry
+;;  * kernel_garbage: Name of entry
 ;;  * Correct page swapped into bank A
 ;;  * Interrupts disabled (do not enable them)
 ;;  
@@ -171,11 +171,11 @@ listDirectory:
         dec hl
         ld d, (hl)
         ex de, hl
-        ld (kernelGarbage + 0x100), hl
+        ld (kernel_garbage + 0x100), hl
         ex de, hl
         inc hl \ inc hl
         getBankA
-        ld (kernelGarbage + 0x102), a
+        ld (kernel_garbage + 0x102), a
         inc hl
         jr .skip
 .loop:
@@ -207,7 +207,7 @@ listDirectory:
                 ld c, (hl)
                 dec hl
                 ld b, (hl)
-                ld hl, (kernelGarbage + 0x100)
+                ld hl, (kernel_garbage + 0x100)
                 call cpHLBC
                 jr z, .matchingItem
             pop bc
@@ -231,7 +231,7 @@ listDirectory:
 .add:       
             or a
             sbc hl, bc ; Move HL to first character of name
-            ld bc, kernelGarbage
+            ld bc, kernel_garbage
 _:          ld a, (hl)
             ld (bc), a
             inc bc
@@ -251,7 +251,7 @@ _:          ld a, (hl)
     push hl
         ld h, b
         ld l, c
-        ld a, (kernelGarbage + 0x102)
+        ld a, (kernel_garbage + 0x102)
         setBankA
         dec hl
         ld c, (hl)
@@ -271,11 +271,11 @@ _:  pop af
     cp a
     ret
 .correctForRoot:
-    ld (kernelGarbage + 0x100), hl
+    ld (kernel_garbage + 0x100), hl
     ld hl, 0x7FFF
     ld a, fatStart
     setBankA
-    ld (kernelGarbage + 0x102), a
+    ld (kernel_garbage + 0x102), a
     ret
 
 ; createFileEntry [Internal]
@@ -342,8 +342,8 @@ _:          call cpHLBC
         ex de, hl
         ; BC is the length of the filename
         ; Everything else is on the stack
-        ; Let's build a new entry in kernelGarbage and then write it all at once
-        ld hl, kernelGarbage + 10
+        ; Let's build a new entry in kernel_garbage and then write it all at once
+        ld hl, kernel_garbage + 10
         add hl, bc
         ld a, fsFile 
         ld (hl), a ; Entry ID
@@ -509,7 +509,7 @@ createDirectoryEntry:
     add ix, sp
         ; Traverse the FAT
         ld hl, 0
-        ld (kernelGarbage + kernelGarbageSize - 2), hl ; Working directory ID
+        ld (kernel_garbage + kernel_garbage_size - 2), hl ; Working directory ID
         ld a, fatStart
         setBankA
         ld hl, 0x7FFF
@@ -545,7 +545,7 @@ createDirectoryEntry:
         ld e, (hl) \ dec hl
         ld d, (hl) \ dec hl
         push hl
-            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld hl, (kernel_garbage + kernel_garbage_size - 2)
             or a
             sbc hl, de
         pop hl
@@ -555,7 +555,7 @@ createDirectoryEntry:
 .update:
         ex de, hl
         inc hl
-        ld (kernelGarbage + kernelGarbageSize - 2), hl
+        ld (kernel_garbage + kernel_garbage_size - 2), hl
         ex de, hl
         inc hl \ inc hl \ inc hl \ inc hl
         jr .skip
@@ -571,7 +571,7 @@ createDirectoryEntry:
             ld b, h \ ld c, l
         pop hl
         ; BC: Length of new entry
-        ld de, kernelGarbage
+        ld de, kernel_garbage
         ex de, hl
         add hl, bc
         inc hl \ inc hl
@@ -589,7 +589,7 @@ createDirectoryEntry:
         ld (hl), b ; cotd.
         dec hl
         push hl
-            ld hl, (kernelGarbage + kernelGarbageSize - 2)
+            ld hl, (kernel_garbage + kernel_garbage_size - 2)
             ld b, h \ ld c, l
         pop hl
         ld (hl), c ; New ID
@@ -685,9 +685,9 @@ _:  push af
             jr nc, _ ; It's already in RAM
             ld h, d \ ld l, e
             call strlen
-            ld de, kernelGarbage + 10 ; + 10 gets us past what findDirectoryEntry uses
+            ld de, kernel_garbage + 10 ; + 10 gets us past what findDirectoryEntry uses
             ldir
-            ld de, kernelGarbage + 10
+            ld de, kernel_garbage + 10
 _:      pop bc
         ld hl, 0
         ld a, (de)
@@ -808,7 +808,7 @@ _:  pop af
 .proceed:
         setBankA(fatStart)
         ld hl, 0
-        ld (kernelGarbage), hl ; Used as temporary storage of parent directory ID
+        ld (kernel_garbage), hl ; Used as temporary storage of parent directory ID
         ld hl, 0x7FFF
         push af
             push de \ call checkForRemainingSlashes \ pop de
@@ -829,7 +829,7 @@ _:          ld a, (hl)
             push bc
                 push hl
                     ld c, (hl) \ dec hl \ ld b, (hl)
-                    ld hl, (kernelGarbage)
+                    ld hl, (kernel_garbage)
                     call cpHLBC
                     jr z, .compareNames
                     ; Not correct parent
@@ -856,7 +856,7 @@ _:          ld a, (hl)
                     dec hl \ dec hl
                     ld c, (hl) \ dec hl \ ld b, (hl)
                     ld h, b \ ld l, c
-                    ld (kernelGarbage), hl
+                    ld (kernel_garbage), hl
                 pop hl
             pop bc
             jr nz, .continueSearch
@@ -895,7 +895,7 @@ _:          ld a, (hl)
                 push hl
                     ; Check parent ID
                     ld c, (hl) \ dec hl \ ld b, (hl) \ dec hl
-                    ld hl, (kernelGarbage)
+                    ld hl, (kernel_garbage)
                     call cpHLBC
                     jr z, .parentMatch
                 pop hl
@@ -1118,17 +1118,17 @@ _:              inc de
                 ; copy parent dir to kernel garbage
                 ; TODO: Make sure this spot is safe
                 push de \ pop hl
-                ld de, kernelGarbage + 0x100
+                ld de, kernel_garbage + 0x100
                 ldir
                 xor a
                 ld (de), a
                 ; findNode parent dir, error if not found
-                ld de, kernelGarbage + 0x100
+                ld de, kernel_garbage + 0x100
                 call findNode
                 jp nz, .dirNotFound
                 ; Begin creating new FS entry
                 ; IX = buffer in kernel ram
-                ld ix, kernelGarbage + 0x100
+                ld ix, kernel_garbage + 0x100
                 ; Write symlink identifier
                 ld (ix), fsSymLink
                 dec ix
@@ -1182,7 +1182,7 @@ _:      ld a, (hl)
         jr nz, -_
         ; sub IX from start of buffer to get entry length
         push ix \ pop hl
-        ld bc, kernelGarbage + 0x0FD
+        ld bc, kernel_garbage + 0x0FD
         ld a, c
         sub l
         ld c, a
@@ -1190,7 +1190,7 @@ _:      ld a, (hl)
         sbc h
         ld b, a
         ; write entry length to buffer-1
-        ld hl, kernelGarbage + 0x0FF
+        ld hl, kernel_garbage + 0x0FF
         ld (hl), c
         dec hl
         ld (hl), b

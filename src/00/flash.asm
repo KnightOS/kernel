@@ -66,12 +66,12 @@ writeFlashByte:
             and (hl) ; Remove any bits that cannot be written
             push hl
                 ld hl, .ram
-                ld de, flashFunctions
+                ld de, flash_functions
                 ld bc, .ram_end - .ram
                 ldir
             pop hl
             ld b, a
-            jp flashFunctions
+            jp flash_functions
 .return:
         pop af
         jp po, _
@@ -138,13 +138,13 @@ writeFlashBuffer:
             push de
             push bc
                 ld hl, .ram
-                ld de, flashFunctions
+                ld de, flash_functions
                 ld bc, .ram_end - .ram
                 ldir
             pop bc
             pop de
             pop hl
-            jp flashFunctions
+            jp flash_functions
 .return:
         pop af
         jp po, _
@@ -229,13 +229,13 @@ eraseFlashSector:
     push de
     push bc
         ld hl, .ram
-        ld de, flashFunctions
+        ld de, flash_functions
         ld bc, .ram_end - .ram
         ldir
     pop bc
     pop de
     pop hl
-    jp flashFunctions
+    jp flash_functions
 .return:
     pop af
     jp po, _
@@ -336,22 +336,22 @@ copySectorToSwap:
         push bc
         push de
             ld hl, .ram
-            ld de, flashFunctions
+            ld de, flash_functions
             ld bc, .ram_end - .ram
             ldir
         pop de
         pop bc
         pop hl
 #ifdef CPU15
-        ; We'll move flashFunctions into bank 3 so that we can put both
+        ; We'll move flash_functions into bank 3 so that we can put both
         ; pages involved into bank 1 and 2 for a while
         push af
             ld a, 1
             out (0x05), a
         pop af
-        jp flashFunctions + 0x4000
+        jp flash_functions + 0x4000
 #else
-        jp flashFunctions
+        jp flash_functions
 #endif
 .return:
 #ifdef CPU15
@@ -383,7 +383,7 @@ _:  pop af
     ex de, hl
     ld a, (de)
     and (hl)
-    ld (flashFunctions + 0x4000 + 0xFF), a
+    ld (flash_functions + 0x4000 + 0xFF), a
     ex af, af'
     ld a, 0xAA
     ld (0x0AAA), a
@@ -395,13 +395,13 @@ _:  pop af
     ld (hl), a
 
 .poll:
-    ld a, (flashFunctions + 0x4000 + 0xFF)
+    ld a, (flash_functions + 0x4000 + 0xFF)
     xor (hl)
     bit 7, a
     jr z, .continue
     bit 5, a
     jr z, .poll
-    ld a, (flashFunctions + 0x4000 + 0xFF)
+    ld a, (flash_functions + 0x4000 + 0xFF)
     xor (hl)
     bit 7, a
     jr z, .continue
@@ -442,7 +442,7 @@ _:  pop af
     ld bc, 0x4000
 .inner_loop:
     ld a, (hl) ; source sector
-    ld (flashFunctions + 0xFF), a
+    ld (flash_functions + 0xFF), a
     ex af, af'
     ld a, e ; swap sector
     setBankA
@@ -457,13 +457,13 @@ _:  pop af
     ex af, af'
     ld (hl), a
 .poll:
-    ld a, (flashFunctions + 0xFF)
+    ld a, (flash_functions + 0xFF)
     xor (hl)
     bit 7, a
     jr z, .continue
     bit 5, a
     jr z, .poll
-    ld a, (flashFunctions + 0xFF)
+    ld a, (flash_functions + 0xFF)
     bit 7, a
     jr z, .continue
     ; Error, skip this byte
@@ -526,11 +526,11 @@ copyFlashExcept:
         ld a, 1
         out (PORT_RAM_PAGING), a
         ; This routine can perform better on some models if we rearrange memory 
-        ld de, flashFunctions + 0x4000
+        ld de, flash_functions + 0x4000
         ld bc, .ram_end - .ram
         ldir
 #else
-        ld de, flashFunctions
+        ld de, flash_functions
         ld bc, .ram_end - .ram
         ldir
 #endif
@@ -538,12 +538,12 @@ copyFlashExcept:
         pop bc
         pop af
 #ifdef CPU15
-        jp flashFunctions + 0x4000
+        jp flash_functions + 0x4000
 .return:
         xor a
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
 #else
-        jp flashFunctions
+        jp flash_functions
 .return:
 #endif
     pop de
@@ -563,10 +563,10 @@ _:  pop af
     ld a, b
     setBankB ; Source
     ld a, h
-    ld (.skip_check_smc - .ram + flashFunctions + 0x4000 + 1), a
+    ld (.skip_check_smc - .ram + flash_functions + 0x4000 + 1), a
     ld a, l
-    ld (.skip_apply_smc - .ram + flashFunctions + 0x4000 + 1), a
-    ld (.skip_apply_smc_2 - .ram + flashFunctions + 0x4000 + 1), a
+    ld (.skip_apply_smc - .ram + flash_functions + 0x4000 + 1), a
+    ld (.skip_apply_smc_2 - .ram + flash_functions + 0x4000 + 1), a
     
 .preLoop:
     ld de, 0x8000
@@ -579,8 +579,8 @@ _:  pop af
     jr z, .skip
 .continue_loop:
     ld a, (de)
-    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
-    ld (_ + - .ram + flashFunctions + 0x4000 + 1), a
+    ld (.smc - .ram + flash_functions + 0x4000 + 1), a
+    ld (_ + - .ram + flash_functions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
@@ -630,14 +630,14 @@ _:
 #else ; Models that don't support placing RAM page 01 in bank 3 (slower)
 .ram:
     ; Called with destination in A, target in B
-    ld (.smc2 - .ram + flashFunctions + 1), a
+    ld (.smc2 - .ram + flash_functions + 1), a
     ld a, b
-    ld (.smc - .ram + flashFunctions + 1), a
+    ld (.smc - .ram + flash_functions + 1), a
     ld a, h
-    ld (.skip_check_smc - .ram + flashFunctions + 1), a
+    ld (.skip_check_smc - .ram + flash_functions + 1), a
     ld a, l
-    ld (.skip_apply_smc - .ram + flashFunctions + 1), a
-    ld (.skip_apply_smc_2 - .ram + flashFunctions + 1), a
+    ld (.skip_apply_smc - .ram + flash_functions + 1), a
+    ld (.skip_apply_smc_2 - .ram + flash_functions + 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000
@@ -722,23 +722,23 @@ copyFlashPage:
             ld a, 1
             out (PORT_RAM_PAGING), a
             ; This routine can perform better on some models if we rearrange memory 
-            ld de, flashFunctions + 0x4000
+            ld de, flash_functions + 0x4000
             ld bc, .ram_end - .ram
             ldir
 #else
-        ld de, flashFunctions
+        ld de, flash_functions
         ld bc, .ram_end - .ram
         ldir
 #endif
         pop bc
         pop af
 #ifdef CPU15
-        jp flashFunctions + 0x4000
+        jp flash_functions + 0x4000
 .return:
         xor a
         out (PORT_RAM_PAGING), a ; Restore correct memory mapping
 #else
-        jp flashFunctions
+        jp flash_functions
 .return:
 #endif
     pop de
@@ -764,8 +764,8 @@ _:  pop af
     ld bc, 0x4000
 .loop:
     ld a, (de)
-    ld (.smc - .ram + flashFunctions + 0x4000 + 1), a
-    ld (_ + - .ram + flashFunctions + 0x4000 + 1), a
+    ld (.smc - .ram + flash_functions + 0x4000 + 1), a
+    ld (_ + - .ram + flash_functions + 0x4000 + 1), a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
@@ -802,9 +802,9 @@ _:
 #else ; Models that don't support placing RAM page 01 in bank 3 (slower)
 .ram:
     ; Called with destination in A, target in B
-    ld (.smc2 - .ram + flashFunctions + 1), a
+    ld (.smc2 - .ram + flash_functions + 1), a
     ld a, b
-    ld (.smc - .ram + flashFunctions + 1), a
+    ld (.smc - .ram + flash_functions + 1), a
 .preLoop:
     ld hl, 0x4000
     ld bc, 0x4000

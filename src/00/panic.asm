@@ -2,7 +2,7 @@
 ; Set bit 7 of A if it may be possible to recover
 panic:
     di
-    ld sp, kernelGarbage + kernelGarbageSize
+    ld sp, kernel_garbage + kernel_garbage_size
     push af
     #ifdef COLOR
         ; Set GPIO config
@@ -102,9 +102,9 @@ _:  call getKey_skipCheck
     jr -_
 recover:
     ; Give the first thread in the thread table control and hope for the best
-    ld a, (threadTable)
-    ld (hwLockLCD), a
-    ld (hwLockKeypad), a
+    ld a, (thread_table)
+    ld (hw_lock_lcd), a
+    ld (hw_lock_keypad), a
     call resumeThread
     ; TODO: Clean up unclaimed memory
     jp contextSwitch_manual

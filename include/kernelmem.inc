@@ -1,53 +1,53 @@
 ; Describes kernel memory layout
 
-kernelVersion           .equ 0x64
+kernel_version           .equ 0x64
 
 ; Modify these values to automatically modify memory layout
-maxThreads              .equ 32
-maxLibraries            .equ 16
-maxSignals              .equ 16
-maxFileStreams          .equ 8
-kernelGarbageSize       .equ 0x200
-flashFunctionSize       .equ 0x100
-stateMemorySize         .equ 0x100
+max_threads              .equ 32
+max_libraries            .equ 16
+max_signals              .equ 16
+max_file_streams          .equ 8
+kernel_garbage_size       .equ 0x200
+flash_functions_size       .equ 0x100
+state_memory_size         .equ 0x100
 
-kernelMem .equ 0x8000
+kernel_mem .equ 0x8000
 
-threadTable             .equ kernelMem
-threadTableSize         .equ 8 * maxThreads             ; 8 bytes per entry
+thread_table             .equ kernel_mem
+thread_table_size         .equ 8 * max_threads             ; 8 bytes per entry
 
-libraryTable            .equ threadTable + threadTableSize
-libraryTableSize        .equ 4 * maxLibraries           ; 4 bytes per entry
+library_table            .equ thread_table + thread_table_size
+library_table_size        .equ 4 * max_libraries           ; 4 bytes per entry
 
-signalTable             .equ libraryTable + libraryTableSize
-signalTableSize         .equ 4 * maxSignals             ; 4 bytes per entry
+signal_table             .equ library_table + library_table_size
+signal_table_size         .equ 4 * max_signals             ; 4 bytes per entry
 
-fileHandleTable         .equ signalTable + signalTableSize
-fileHandleTableSize     .equ 16 * maxFileStreams         ; 16 bytes per entry
+file_handle_table         .equ signal_table + signal_table_size
+file_handle_table_size     .equ 16 * max_file_streams         ; 16 bytes per entry
 
-kernelTablesSize        .equ threadTableSize + libraryTableSize + signalTableSize + fileHandleTableSize
+kernel_tables_size        .equ thread_table_size + library_table_size + signal_table_size + file_handle_table_size
 
-stateMemory             .equ kernelMem + kernelTablesSize
+state_memory             .equ kernel_mem + kernel_tables_size
 
-currentThreadIndex      .equ stateMemory                ; 1 byte
-activeThreads           .equ currentThreadIndex + 1     ; 1 byte
-loadedLibraries         .equ activeThreads + 1          ; 1 byte
-activeSignals           .equ loadedLibraries + 1        ; 1 byte
-activeFileStreams       .equ activeSignals + 1          ; 1 byte
-lastThreadId            .equ activeFileStreams + 1      ; 1 byte
+current_thread_index      .equ state_memory                ; 1 byte
+active_threads           .equ current_thread_index + 1     ; 1 byte
+loaded_libraries         .equ active_threads + 1          ; 1 byte
+active_signals           .equ loaded_libraries + 1        ; 1 byte
+active_file_streams       .equ active_signals + 1          ; 1 byte
+last_thread_id            .equ active_file_streams + 1      ; 1 byte
 
-hwLockIO                .equ lastThreadId + 1           ; 1 byte
-hwLockLCD               .equ hwLockIO + 1               ; 1 byte
-hwLockKeypad            .equ hwLockLCD + 1              ; 1 byte
-hwLockUSB               .equ hwLockKeypad + 1           ; 1 byte
+hw_lock_io                .equ last_thread_id + 1           ; 1 byte
+hw_lock_lcd               .equ hw_lock_io + 1               ; 1 byte
+hw_lock_keypad            .equ hw_lock_lcd + 1              ; 1 byte
+hw_lock_usb               .equ hw_lock_keypad + 1           ; 1 byte
 
 ; Misc.
-currentContrast         .equ hwLockUSB + 1              ; 1 byte
-bcallHook               .equ currentContrast + 1        ; 2 bytes
+current_contrast         .equ hw_lock_usb + 1              ; 1 byte
+bcall_hook               .equ current_contrast + 1        ; 2 bytes
 
 ; Used for line drawing
 ; TODO: Phase this out
-clip_mask               .equ currentContrast + 2        ; 1 byte
+clip_mask               .equ current_contrast + 2        ; 1 byte
 
 color_mode              .equ clip_mask + 1              ; 1 byte
 
@@ -79,10 +79,10 @@ io_send_callback_thread .equ io_send_callback + 2       ; 1 bytes
 io_header_handlers      .equ io_send_callback_thread + 1; 2 bytes
 io_checksum             .equ io_header_handlers + 2     ; 2 bytes
 
-stateUsed               .equ io_header_handlers + 2 - stateMemory
+state_used               .equ io_header_handlers + 2 - state_memory
 
-flashFunctions          .equ stateMemory + stateMemorySize
-kernelGarbage           .equ flashFunctions + flashFunctionSize
+flash_functions          .equ state_memory + state_memory_size
+kernel_garbage           .equ flash_functions + flash_functions_size
 
-userMemory              .equ kernelGarbage + kernelGarbageSize
-userMemorySize          .equ 0xFFFF - userMemory        ; user memory extends to 0xFFFF
+heap              .equ kernel_garbage + kernel_garbage_size
+heap_size          .equ 0xFFFF - heap        ; heap extends to 0xFFFF

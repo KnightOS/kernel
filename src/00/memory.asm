@@ -4,10 +4,10 @@
 ;  This function will deallocate **all allocated memory**.
 formatMem:
     ld a, 0xFF
-    ld (userMemory), a
-    ld hl, (0x10000 - userMemory) - 5 ; Total RAM - Kernel RAM Size - Formatting Overhead + 1
-    ld (userMemory + 1), hl
-    ld hl, userMemory
+    ld (heap), a
+    ld hl, (0x10000 - heap) - 5 ; Total RAM - Kernel RAM Size - Formatting Overhead + 1
+    ld (heap + 1), hl
+    ld hl, heap
     ld (0xFFFE), hl
     ret
 
@@ -119,7 +119,7 @@ memSeekToStart:
     push bc
     push de
         push ix \ pop de
-        ld hl, userMemory
+        ld hl, heap
 .loop:
         inc hl
         ld c, (hl)
@@ -174,7 +174,7 @@ memcheck:
     push hl
     push bc
     push de
-        ld hl, userMemory
+        ld hl, heap
 .loop:
         push hl
             inc hl \ ld c, (hl) ; Size of this block into BC
@@ -222,8 +222,8 @@ _:  pop af
 ;;  BC: Total memory available
 ;;  DE: Largest allocatable sum
 memoryAvailable:
-#define total_mem kernelGarbage
-#define max_alloc kernelGarbage + 2
+#define total_mem kernel_garbage
+#define max_alloc kernel_garbage + 2
     push hl
     push af
     ld a, i
@@ -232,7 +232,7 @@ memoryAvailable:
         ld hl, 0
         ld (total_mem), hl
         ld (max_alloc), hl
-        ld hl, userMemory
+        ld hl, heap
 .loop:
             ld a, (hl) \ inc hl ; Owner ID to A
             ld c, (hl) \ inc hl
@@ -295,7 +295,7 @@ malloc:
     push de
     push bc
         ld d, b \ ld e, c ; Save desired size in DE
-        ld hl, userMemory
+        ld hl, heap
 .identify_loop: ; Identify a block to use
         ld a, (hl) \ inc hl
         ld c, (hl) \ inc hl
@@ -442,7 +442,7 @@ free:
 .check_previous_block:
     pop hl \ push hl ; IX into HL
         dec hl \ dec hl \ dec hl ; Move to header
-        ld bc, userMemory
+        ld bc, heap
         call cpHLBC
         ; If this is the first block, we can't merge backwards, so don't bother
         jr z, .cannot_merge_previous
@@ -592,8 +592,8 @@ _:  pop af
 _:  pop af
     jp free
 .resize_grow:
-#define prev_block_ptr kernelGarbage
-#define next_block_ptr kernelGarbage + 2
+#define prev_block_ptr kernel_garbage
+#define next_block_ptr kernel_garbage + 2
         ; First, we check to see if we can fit it by expanding into a free block
         ; to the left of this one, and potentially including the block to the right
         ; If so, we do just that. If not, we just malloc it elsewhere and copy it
