@@ -51,14 +51,14 @@ drawHexHL   .equ 0x0E01
 #include "concurrency.asm"
 
 .echo "Assigned kernel memory:"
-.echo "threadTable: 0x{0:X4}" threadTable
-.echo "libraryTable: 0x{0:X4}" libraryTable
-.echo "signalTable: 0x{0:X4}" signalTable
-.echo "fileHandleTable: 0x{0:X4}" fileHandleTable
-.echo "stateMemory: 0x{0:X4}" stateMemory
-.echo "flashFunctions: 0x{0:X4}" flashFunctions
-.echo "kernelGarbage: 0x{0:X4}" kernelGarbage
-.echo "userMemory: 0x{0:X4}" userMemory
-.echo "state in use: 0x{0:X4}" stateUsed
+.echo "thread_table: 0x{0:X4}" thread_table
+.echo "library_table: 0x{0:X4}" library_table
+.echo "signal_table: 0x{0:X4}" signal_table
+.echo "file_handle_table: 0x{0:X4}" file_handle_table
+.echo "state_memory: 0x{0:X4}" state_memory
+.echo "flash_functions: 0x{0:X4}" flash_functions
+.echo "kernel_garbage: 0x{0:X4}" kernel_garbage
+.echo "heap: 0x{0:X4}" heap
+.echo "state in use: 0x{0:X4}" state_used
 
 .echo "Bytes remaining on page 00: {0}" 0x4000-$ ; TODO: Fix this problem in sass

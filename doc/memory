@@ -1,10 +1,11 @@
-                             KnightOS Memory Layout
+                            Kernel memory structures
 
 Note that this describes the default settings, and that the actual layout of
 memory is subject to change depending on how the kernel is configured. Userspace
-programs mucking around in memory manually is very strongly frowned upon.
+programs mucking around in memory manually is _very strongly_ frowned upon. All
+kernel data structures are subject to change.
 
-                                 Overall Layout
+                                 Overall layout
 
     Address Length  Description
 
@@ -21,71 +22,74 @@ functions, including boot, filesystem access, context switching, etc.
 Volatile Flash access is generally only used with interrupts disabled to prevent
 other processes from ruining your day.
 
-                                   RAM Layout
+                                   RAM layout
 
 Right now, KnightOS only uses 0x8000 (32K) of RAM, even on devices that may have
 additional RAM available. Nothing of value is kept in RAM, and it may be safely
 wiped during a reboot (and in fact, the kernel does so).
 
-Note that RAM data structures are scheduled to change dramatically for kernel
-0.7.0.
+    Address Length  Description
+
+    0x8000  0x80    Miscellaneous kernel state
+    0x8080  0x80    Flash execution space
+    0x8100  0x100   Volatile kernel utility space (kernelGarbage)
+    0x8200  0x7D00  Heap
+
+Misc kernel state holds several statically allocated kernel variables. Flash
+execution space is reserved for the Flash driver to use to execute Flash
+operations, which must be run from RAM. Volatile kernel utility space is a fixed
+buffer used for various kernel operations where dynamic memory allocation cannot
+fail. Finally, the heap is where `malloc` allocates memory from.
+
+                               The process table
+
+The kernel supports preemptive multitasking, and to this end it keeps track of
+running processes and their resources. The process table is where this state is
+stored, and it is allocated in the heap and grows or shrinks and demands change.
+There are some variables in misc kernel state that keep track of the process
+table:
+
+    process_table       Pointer to process table in the heap
+    active_processes    Number of active processes
+    current_process     Index of the currently running process
+    last_pid            The last PID allocated by the kernel
+
+At boot, the kernel allocates a process table large enough to hold 8 processes.
+As more processes are started, the process table may be `realloc`d to hold
+more or less process state (though never less than 8). Each process state
+structure is designed like so:
 
     Address Length  Description
 
-    0x8000  0x100   Thread table
-    0x8100  0x40    Library table
-    0x8140  0x40    Signal table
-    0x8180  0x40    File handle table
-    0x8200  0x100   Misc kernel state
-    0x8300  0x100   Kernel flash functions
-    0x8400  0x200   Volatile kernel garbage
-    0x8600  0x7A00  Userspace memory
-
-Userspace memory is where `malloc` allocates memory. Volatile kernel garbage is
-used throughout the kernel whenever it just needs a little space to work, and is
-accessed with interrupts disabled. Kernel flash functions are where the Flash
-driver loads executable code to perform Flash manipulation from RAM. Misc kernel
-state is used for various things like the currently executing thread.
-
-                                Data Structures
-
-Each of the tables is a fixed-length array that holds several of the following
-data structures.
-
-                                    Threads
-
-    Address Length  Description
-
-    0x0000  0x01    Thread ID
+    0x0000  0x01    Process ID (pid)
     0x0001  0x02    Executable address
-    0x0003  0x02    Stack pointer
+    0x0003  0x02    Stack address (SP)
     0x0005  0x01    Flags (bitfield)
-                    1: May be suspended
-                    2: Is suspended
-                    3: Color enabled
-    0x0006  0x02    Reserved for future use
+                    0: May be suspended
+                    1: Is suspended
+                    2: Color enabled (84+CSE only)
+    0x0006  0x02    Pointer to file handle table
+    0x0008  0x02    Pointer to library handle table
+    0x000A  0x02    Pointer to signal table
+    0x000C  0x03    Reserved for future use
 
-                                   Libraries
+Each process has its own stack, file descriptor table, library handle table, and
+signal table. These are also allocated in the heap and expand or shrink to meet
+the process's needs. By default, each process is allocated a file descriptor
+table 4 entries long, a library handle table 2 entries long, and no signal
+table (the pointer will equal zero). Each table begins with a byte giving the
+number of entries present, then the table itself follows.
 
-    Address Length  Description
-
-    0x0000  0x01    Library ID
-    0x0001  0x02    Library address
-    0x0003  0x01    Dependent threads
-
-                                    Signals
-
-    Address Length  Description
-
-    0x0000  0x01    Target thread ID
-    0x0001  0x01    Message type
-    0x0002  0x02    Payload
-
-                                  File Handles
+                                  File handle
 
     Address Length  Description
 
-    0x0000  0x01    Flags/Owner
+    0x0000  0x01    Flags (bitfield)
+                    0: Writable if 1
+                    1: EoF if 1
+                    2: Flushed if 1
+                    3: Set if final block of the file*
+                    4-7: Reserved for future use
     0x0001  0x02    Buffer address
     0x0003  0x01    Stream pointer
     0x0004  0x02    Section ID
@@ -93,16 +97,9 @@ data structures.
     0x0007  0x01    File entry page
     0x0008  0x02    File entry address
     0x000A  0x03    File working size
-    0x000D  0x01    Writable stream flags
-    0x000E  0x02    Reserved for future use
+    0x000D  0x03    Reserved for future use
 
-Flags/Owner is the thread ID of the file handle's owner. It takes the format of
-FTExxxxx, where xxxxx is the thread ID. F is set to indicate that the stream is
-pointing at the final block of the file. T is set if the thread is writable. E
-is set if the file handle is set to EOF.
-
-Writable stream flags are set to xxxxxxF, where F is set if the stream has been
-flushed, and x is reserved for future use.
+All kernel data structures are subject to change, but this one especially so.
 
 The buffer address refers to the address of the 256-byte stream buffer, which
 contains the contents of the current DAT block the stream points to. The stream
@@ -114,3 +111,23 @@ in the KFS docs.
 
 The length of the final block is used to determine when EOF has been reached on
 the final block.
+
+                                 Library handle
+
+    Address Length  Description
+
+    0x0000  0x02    Library ID
+    0x0002  0x02    Library address
+
+When loading a library, the kernel looks at libraries loaded by other processes
+for one with the same library ID, and copies the entry into this process if
+found. When a process is killed, the kernel looks to see if this library is in
+use by any other processes, and unloads it if not.
+
+                                 Signal handler
+
+    Address Length  Description
+
+    0x0000  0x02    Signal handler
+    0x0002  0x01    Signal number
+    0x0003  0x01    Reserved for future use

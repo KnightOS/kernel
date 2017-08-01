@@ -72,9 +72,9 @@ mutexInit:
 condInit:
     push af
     push bc
-        ; Up to maxThreads-1 may wait.  (All threads waiting would never awaken.)
+        ; Up to max_threads-1 may wait.  (All threads waiting would never awaken.)
         ; The extra byte is the counter.
-        ld bc, maxThreads
+        ld bc, max_threads
         ld a, 1
         call calloc
         jr nz, .fail

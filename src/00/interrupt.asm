@@ -96,13 +96,13 @@ intHandleTimer1:
     inc hl
     ld (kernel_current_time), hl
 doContextSwitch:
-    ld a, (currentThreadIndex)
+    ld a, (current_thread_index)
     cp -1
     jr z, contextSwitch_manual
     add a, a
     add a, a
     add a, a
-    ld hl, threadTable + 3
+    ld hl, thread_table + 3
     add a, l
     ld l, a
     ex de, hl
@@ -115,29 +115,29 @@ doContextSwitch:
     ld (hl), d
 
 contextSwitch_manual:
-    ld a, (activeThreads)
+    ld a, (active_threads)
     or a \ jr z, noThreads ; Error out when there are no active threads
     ld c, a \ inc c
 contextSwitch_search:
     dec c
     xor a
     cp c
-    jr z, noActiveThreads
-    ld a, (currentThreadIndex)
-    inc a \ ld (currentThreadIndex), a
+    jr z, noactive_threads
+    ld a, (current_thread_index)
+    inc a \ ld (current_thread_index), a
     ld b, a
-    ld a, (activeThreads)
+    ld a, (active_threads)
     dec a \ cp b
     jr nc, _
     xor a
     ld b, a
-    ld (currentThreadIndex), a
+    ld (current_thread_index), a
 _:  ld a, b
     add a, a
     add a, a
     add a, a
 
-    ld hl, threadTable + 5
+    ld hl, thread_table + 5
     add a, l
     ld l, a
     ld a, (hl)
@@ -158,14 +158,14 @@ noThreads:
     jr sysInterruptDone
     ld a, panic_no_threads
     jp panic
-noActiveThreads:
+noactive_threads:
     ld a, -1
-    ld (currentThreadIndex), a
+    ld (current_thread_index), a
     ld hl, idlethread_stack
-    ld de, userMemory - (idlethread_stack_end - idlethread_stack)
+    ld de, heap - (idlethread_stack_end - idlethread_stack)
     ld bc, idlethread_stack_end - idlethread_stack
     ldir
-    ld sp, userMemory - (idlethread_stack_end - idlethread_stack)
+    ld sp, heap - (idlethread_stack_end - idlethread_stack)
     jr sysInterruptDone
 intHandleTimer2:
     in a, (PORT_INT_MASK)
@@ -239,7 +239,7 @@ handleOnMODE:
     jr sysInterruptDone
 
 handleOnK:
-    ld a, (hwLockLCD)
+    ld a, (hw_lock_lcd)
     call killThread
     jp contextSwitch_manual
 

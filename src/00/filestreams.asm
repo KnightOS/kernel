@@ -1,16 +1,16 @@
 initFilesystem:
     ; Set all file handles to unused
-    ld hl, fileHandleTable
+    ld hl, file_handle_table
     ld (hl), 0xFF
-    ld de, fileHandleTable + 1
-    ld bc, 8 * maxFileStreams
+    ld de, file_handle_table + 1
+    ld bc, 8 * max_file_streams
     ldir
     ret
 
 ; If findNode turned up a symlink, this will follow it and
 ; give the findNode return value for the final destination.
 followSymLink:
-#define newName kernelGarbage + 2 ; findNode uses kernelGarbage
+#define newName kernel_garbage + 2 ; findNode uses kernel_garbage
     push de
         dec hl ; ID
         dec hl \ dec hl ; Entry len
@@ -82,7 +82,7 @@ openFileRead:
                 jp nz, .fileNotFound
 .validNode:
             pop de
-            ld iy, fileHandleTable
+            ld iy, file_handle_table
             ld bc, FILE_HANDLE_SIZE
             ld d, 0
 .findEntryLoop:
@@ -91,11 +91,11 @@ openFileRead:
             jr z, .entryFound
             add iy, bc
             inc d
-            ld a, maxFileStreams - 1
+            ld a, max_file_streams - 1
             cp d
             jr nc, .findEntryLoop
             ; Too many active streams
-            ; We could check (activeFileStreams) instead, but since we have to iterate through the table
+            ; We could check (active_file_streams) instead, but since we have to iterate through the table
             ; anyway, we may as well do it here and save some space.
         pop bc
         pop iy
@@ -234,7 +234,7 @@ openFileWrite:
     di
         push iy
         push bc
-            ld iy, fileHandleTable
+            ld iy, file_handle_table
             ld bc, FILE_HANDLE_SIZE
             ld l, 0
 .findEntryLoop:
@@ -243,11 +243,11 @@ openFileWrite:
             jr z, .entryFound
             add iy, bc
             inc l
-            ld a, maxFileStreams - 1
+            ld a, max_file_streams - 1
             cp l
             jr nc, .findEntryLoop
             ; Too many active streams
-            ; We could check (activeFileStreams) instead, but since we have to iterate through the table
+            ; We could check (active_file_streams) instead, but since we have to iterate through the table
             ; anyway, we may as well do it here and save some space.
         pop bc
         pop iy
@@ -519,10 +519,10 @@ getStreamEntry:
     push hl
     push bc
         ld a, d
-        cp maxFileStreams
+        cp max_file_streams
         jr nc, .notFound
         or a \ rla \ rla \ rla \ rla ; A *= 16 (length of file handle)
-        ld ix, fileHandleTable
+        ld ix, file_handle_table
         add ixl \ ld ixl, a
         ld a, (ix)
         cp 0xFF
@@ -563,7 +563,7 @@ closeStream:
             ld h, (ix + FILE_BUFFER + 1)
             push hl \ pop ix
             call free
-            ld hl, activeFileStreams
+            ld hl, active_file_streams
             dec (hl)
         pop hl
     pop af
@@ -591,11 +591,11 @@ _:  pop af
             ; Find the parent directory and extract the file name alone
             call strlen
             inc bc
-            ld de, kernelGarbage + 0x100
+            ld de, kernel_garbage + 0x100
             push bc
                  ldir
             pop bc
-            ld hl, kernelGarbage + 0x100
+            ld hl, kernel_garbage + 0x100
             add hl, bc
             ld a, '/'
             cpdr
@@ -603,7 +603,7 @@ _:  pop af
             xor a
             ld (hl), a
             push hl
-                ld de, kernelGarbage + 0x100
+                ld de, kernel_garbage + 0x100
                 call findNode ; TODO: Check that this is a directory node
                 jp nz, .wtf
                 setBankA
@@ -660,7 +660,7 @@ _:              pop hl
                 ld h, (ix + FILE_BUFFER + 1)
                 push hl \ pop ix
                 call free
-                ld hl, activeFileStreams
+                ld hl, active_file_streams
                 dec (hl)
             pop hl
         pop iy
@@ -694,7 +694,7 @@ _:  pop af
                 add hl, bc
 
                 ld bc, 0
-                ld de, kernelGarbage + 0x100
+                ld de, kernel_garbage + 0x100
 _:              ld a, (hl)
                 ld (de), a
                 dec hl
@@ -729,7 +729,7 @@ _:              pop hl
                 push hl \ pop iy
 
                 ex de, hl
-                ld hl, kernelGarbage + 0x100 ; File name
+                ld hl, kernel_garbage + 0x100 ; File name
 
                 ld a, (ix + FILE_WORKING_SIZE + 2)
                 ld c, (ix + FILE_WORKING_SIZE)
@@ -868,7 +868,7 @@ _flush_withStream:
                 ld c, (ix + FILE_PREV_SECTION)
                 ld b, (ix + FILE_PREV_SECTION + 1)
                 res 7, b
-                ld (kernelGarbage), bc
+                ld (kernel_garbage), bc
                 ld bc, 0xFFFF
                 ld l, (ix + FILE_SECTION_ID)
                 ld h, (ix + FILE_SECTION_ID + 1)
@@ -888,11 +888,11 @@ _flush_withStream:
                     ld b, (hl)
                 pop af
                 setBankA
-_:              ld (kernelGarbage + 2), bc
+_:              ld (kernel_garbage + 2), bc
                 ld bc, 4
-                ld hl, kernelGarbage
+                ld hl, kernel_garbage
                 call writeFlashBuffer
-                ld bc, (kernelGarbage + 2) ; Grab next section ID again
+                ld bc, (kernel_garbage + 2) ; Grab next section ID again
                 ld hl, 0xFFFF
                 call cpHLBC
             pop hl \ push hl
@@ -966,10 +966,10 @@ flush_updatePreviousSection:
         jr nz, .mustErase
         ; Woo we can do it without an erasure
         ex de, hl
-        ld (kernelGarbage), hl
+        ld (kernel_garbage), hl
         dec de
         ld bc, 2
-        ld hl, kernelGarbage
+        ld hl, kernel_garbage
         call writeFlashBuffer
     pop de
     ret
@@ -1006,10 +1006,10 @@ flush_updateNextSection:
         jr nz, .mustErase
         ; Woo we can do it without an erasure
         ex de, hl
-        ld (kernelGarbage), hl
+        ld (kernel_garbage), hl
         dec de
         ld bc, 2
-        ld hl, kernelGarbage
+        ld hl, kernel_garbage
         call writeFlashBuffer
     pop de
     ret
@@ -1052,18 +1052,18 @@ _:          or e
             setBankA
             ld a, d
             ld hl, 0x4000
-            ld de, kernelGarbage
+            ld de, kernel_garbage
             ld bc, 0x200
-            ldir ; Move the header into kernelGarbage to edit
+            ldir ; Move the header into kernel_garbage to edit
             setBankA
         pop hl
         pop de
         ex de, hl
-        ld h, kernelGarbage >> 8 ; TODO: What if kernelGarbage isn't aligned?
+        ld h, kernel_garbage >> 8 ; TODO: What if kernel_garbage isn't aligned?
         ld (hl), e
         inc hl
         ld (hl), d
-        ld hl, kernelGarbage
+        ld hl, kernel_garbage
         ld de, 0x4000
         ld bc, 0x200
         call writeFlashBuffer

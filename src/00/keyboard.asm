@@ -168,7 +168,7 @@ getKey_skipCheck:
     djnz .loop
 
     xor a
-    ld (kernelGarbage), a
+    ld (kernel_garbage), a
     jr .end
 .incslide:
     inc e \ inc e \ inc e \ inc e \ inc e \ inc e \ inc e
@@ -184,10 +184,10 @@ getKey_skipCheck:
     ld a, (hl)
 
     ld d, a
-    ld a,(kernelGarbage)
+    ld a,(kernel_garbage)
     cp d \ jr z, .end
     ld a, d
-    ld (kernelGarbage), a
+    ld (kernel_garbage), a
 
 .end:
     pop hl

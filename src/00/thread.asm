@@ -1,10 +1,10 @@
 initMultitasking:
     ld a, threadRangeMask ; When the first thread is allocated, this will wrap to 0
-    ld (lastThreadId), a
-    ld hl, threadTable
+    ld (last_thread_id), a
+    ld hl, thread_table
     ld (hl), 0
-    ld de, threadTable + 1
-    ld bc, threadTableSize
+    ld de, thread_table + 1
+    ld bc, thread_table_size
     ldir
     ret
 
@@ -12,7 +12,7 @@ initMultitasking:
 getNewThreadID:
     push hl ; Don't care about the data getThreadEntry provides
         push bc
-            ld a, (lastThreadId)
+            ld a, (last_thread_id)
 _:          inc a
             and threadRangeMask
             ld b, a ; Don't want the error getThreadEntry provides
@@ -29,7 +29,7 @@ _:          inc a
 ;;  A: Thread ID
 getCurrentThreadID:
     push hl
-        ld a, (currentThreadIndex)
+        ld a, (current_thread_index)
         add a, a
         add a, a
         add a, a
@@ -48,7 +48,7 @@ setCurrentThread:
     push bc
         ld c, a
         ld b, 0
-        ld hl, threadTable
+        ld hl, thread_table
 .loop:
         ld a, c
         cp (hl)
@@ -59,7 +59,7 @@ setCurrentThread:
         jr .loop
 .done:
         ld a, b
-        ld (currentThreadIndex), a
+        ld (current_thread_index), a
     pop bc
     pop hl
     ret
@@ -93,8 +93,8 @@ checkThread:
 ;;  re-enabling interrupts, and [[resumeThread]] when you're ready to start it.
 startThread:
     push af
-        ld a, (activeThreads)
-        cp maxThreads
+        ld a, (active_threads)
+        cp max_threads
         jr c, _
         jr z, _
         ld a, errTooManyThreads
@@ -102,16 +102,16 @@ startThread:
     ret
 _:      di
         ex de, hl
-        ld a, (currentThreadIndex)
+        ld a, (current_thread_index)
         push af
-            ld a, (activeThreads)
-            ld (currentThreadIndex), a ; Set the current thread to the new one so that allocated memory is owned appropraitely
+            ld a, (active_threads)
+            ld (current_thread_index), a ; Set the current thread to the new one so that allocated memory is owned appropraitely
             add a, a \ add a, a \ add a, a
-            ld hl, threadTable
+            ld hl, thread_table
             add a, l
             ld l, a
             call getNewThreadID
-            ld (lastThreadId), a
+            ld (last_thread_id), a
             ; A is now a valid thread id, and hl points to the next-to-last entry
             ; DE is address of code, B is stack size / 2
             ld (hl), a \ inc hl ; *hl++ = a
@@ -144,14 +144,14 @@ _:      di
                 pop ix
             pop hl
         pop af
-        ld (currentThreadIndex), a
+        ld (current_thread_index), a
         ld (hl), c \ inc hl \ ld (hl), b \ inc hl ; Stack address
     pop af \ ld (hl), a \ inc hl ; Flags
     ld a, l
     sub 6
     ld l, a
-    ld a, (activeThreads)
-    inc a \ ld (activeThreads), a
+    ld a, (active_threads)
+    inc a \ ld (active_threads), a
     ld a, (hl)
     cp a
     ret
@@ -160,7 +160,7 @@ startThread_mem: ; Out of memory
                 pop af
             pop af
         pop af
-        ld (currentThreadIndex), a
+        ld (current_thread_index), a
     pop af
     ld a, errOutOfMem
     or 1
@@ -177,29 +177,29 @@ startThread_mem: ; Out of memory
 killCurrentThread:
     di
     ; The stack is going to be deallocated, so let's move it
-    ld sp, userMemory ; end of kernelGarbage
-    ld a, (currentThreadIndex)
+    ld sp, heap ; end of kernel_garbage
+    ld a, (current_thread_index)
     add a, a
     add a, a
     add a, a
-    ld hl, threadTable
+    ld hl, thread_table
     add a, l
     ld l, a
     ld a, (hl)
     ; HL points to old thread in table
     push af
         push hl
-            ld a, (currentThreadIndex)
+            ld a, (current_thread_index)
             inc a
             add a, a
             add a, a
             add a, a
-            ld hl, threadTable
+            ld hl, thread_table
             add a, l
             ld l, a
             push hl
                 push hl \ pop bc
-                ld hl, threadTable + threadTableSize
+                ld hl, thread_table + thread_table_size
                 or a
                 sbc hl, bc
                 push hl \ pop bc
@@ -216,7 +216,7 @@ _:      call readSignalAsThread
     pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
 killCurrentThread_Deallocate:
-    ld ix, userMemory
+    ld ix, heap
 killCurrentThread_DeallocationLoop:
     cp (ix)
     inc ix
@@ -236,10 +236,10 @@ _:  inc ix \ inc ix
 
 killCurrentThread_DeallocationDone:
 
-    ld hl, activeThreads
+    ld hl, active_threads
     dec (hl)
     xor a
-    ld (currentThreadIndex), a
+    ld (current_thread_index), a
     jp contextSwitch_manual
 
 ;; killThread [Threading]
@@ -262,8 +262,8 @@ killThread:
     push de
     push ix
     di
-    ld hl, threadTable
-    ld a, (activeThreads)
+    ld hl, thread_table
+    ld a, (active_threads)
     ld b, a
     ld d, 0
 killThread_SearchLoop:
@@ -296,12 +296,12 @@ _:  ; HL points to old thread in table
         add a, a
         add a, a
         add a, a
-        ld hl, threadTable
+        ld hl, thread_table
         add a, l
         ld l, a
         push hl
             push hl \ pop bc
-            ld hl, threadTable + threadTableSize
+            ld hl, thread_table + thread_table_size
             or a
             sbc hl, bc
             push hl \ pop bc
@@ -316,7 +316,7 @@ _:      call readSignalAsThread
         jr z, -_
     pop bc \ pop hl
     ; Deallocate all memory belonging to the thread
-    ld ix, userMemory
+    ld ix, heap
 killThread_DeallocationLoop:
     cp (ix)
     inc ix
@@ -334,15 +334,15 @@ _:  inc ix \ inc ix
     jr killThread_DeallocationLoop
 
 killThread_DeallocationDone:
-    ld hl, activeThreads
+    ld hl, active_threads
     dec (hl)
     ld b, (hl)
-    ld a, (currentThreadIndex)
+    ld a, (current_thread_index)
     dec b
     cp a
     jr nz, _
     dec a
-    ld (currentThreadIndex), a
+    ld (current_thread_index), a
 _:  pop ix
     pop de
     pop hl
@@ -516,8 +516,8 @@ getEntryPoint:
 getThreadEntry:
     push bc
         ld c, a
-        ld b, maxThreads
-        ld hl, threadTable
+        ld b, max_threads
+        ld hl, thread_table
 _:      ld a, (hl)
         cp c
         jr nz, _
@@ -897,7 +897,7 @@ getNextThreadID:
     push hl
         ld d, 0
         ld e, a
-        ld hl, threadTable
+        ld hl, thread_table
         add hl, de
         ld a, (hl)
     pop hl

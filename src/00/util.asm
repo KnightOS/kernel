@@ -420,7 +420,7 @@ _:
 ;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 1.
 getKernelMajorVersion:
     push de \ push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         ld b, 10
         call strtoi
     pop bc \ pop de
@@ -435,7 +435,7 @@ getKernelMajorVersion:
 ;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 6.
 getKernelMinorVersion:
     push de \ push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         ld b, '.'
         call strchr
         jr nz, .error
@@ -455,7 +455,7 @@ getKernelMinorVersion:
 ;;  Kernel versions are MAJOR.MINOR.PATCH. For kernel 1.6.2, this returns 2.
 getKernelPatchNumber:
     push de \ push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         ld b, '.'
         call strchr
         jr nz, .error
@@ -479,7 +479,7 @@ getKernelPatchNumber:
 ;;  on a development kernel between releases.
 getKernelCommitsSinceTag:
     push de \ push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         ld b, '.'
         call strchr
         jr nz, .error
@@ -510,7 +510,7 @@ getKernelCommitsSinceTag:
 ;;  on a development kernel between releases.
 getKernelShortHash:
     push de \ push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         ld b, '.'
         call strchr
         jr nz, .error
@@ -557,7 +557,7 @@ getKernelShortHash:
 ;;  compiled.
 isKernelDirty:
     push bc
-        ld hl, kernelVersion
+        ld hl, kernel_version
         call strlen
         add hl, bc
         dec hl

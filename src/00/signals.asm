@@ -24,11 +24,11 @@ createSignal:
         ld a, d
         push af
             ex de, hl
-            ld a, (activeSignals)
-            cp maxSignals
+            ld a, (active_signals)
+            cp max_signals
             jr nc, createSignal_tooMany
             add a, a \ add a, a
-            ld hl, signalTable
+            ld hl, signal_table
             add a, l
             ld l, a
             jr nc, $+3 \ inc h
@@ -36,7 +36,7 @@ createSignal:
         pop af
         ld (hl), a \ inc hl \ ld (hl), b \ inc hl
         ld (hl), e \ inc hl \ ld (hl), d
-        ld hl, activeSignals
+        ld hl, active_signals
         inc (hl)
     pop af
     jp po, _
@@ -88,12 +88,12 @@ readSignalAsThread:
     push de
         ld de, 4
         ld l, a
-        ld a, (activeSignals)
+        ld a, (active_signals)
         or a
         jr z, readSignal_none
         ld b, a
         ld a, l
-        ld hl, signalTable
+        ld hl, signal_table
 _:      cp (hl)
         jr z, readSignal_found
         add hl, de
@@ -124,9 +124,9 @@ readSignal_found:
         dec hl \ dec hl \ dec hl
         ld d, h \ ld e, l
         ld bc, 4 \ add hl, bc
-        ld a, (activeSignals)
+        ld a, (active_signals)
         dec a ; Note: this will copy more than needed, but it isn't a problem
-        ld (activeSignals), a
+        ld (active_signals), a
         jr z, _
         add a, a \ add a, a
         ld c, a \ ld b, 0

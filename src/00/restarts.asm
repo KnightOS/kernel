@@ -32,8 +32,8 @@ _:
     dec hl
 
     push hl
-        ld hl, threadTable + 1
-        ld a, (currentThreadIndex)
+        ld hl, thread_table + 1
+        ld a, (current_thread_index)
         add a, a
         add a, a
         add a, a
@@ -80,8 +80,8 @@ lcall:
         ld c, a
         inc hl
         ex de, hl
-        ld hl, libraryTable
-        ld a, (loadedLibraries)
+        ld hl, library_table
+        ld a, (loaded_libraries)
         ld b, a
 lmacro_SearchLoop:
         ld a, (hl)
@@ -195,11 +195,11 @@ pcall:
                         ret
 .returnPoint:
     ; Stack state : ret address, original AF, interrupt state, page
-                        ; Put AF at (kernelGarbage) for later use
-                        ld (kernelGarbage + 2), sp
-                        ld sp, kernelGarbage + 2
+                        ; Put AF at (kernel_garbage) for later use
+                        ld (kernel_garbage + 2), sp
+                        ld sp, kernel_garbage + 2
                         push af
-                        ld sp, (kernelGarbage + 2)
+                        ld sp, (kernel_garbage + 2)
 #ifdef FLASH4MB
                 xor a
                 out (PORT_MEMA_HIGH), A
@@ -210,26 +210,26 @@ pcall:
         jp po, _
     pop af
     ; Fetch AF from backup
-    ld (kernelGarbage + 2), sp
-    ld sp, kernelGarbage
+    ld (kernel_garbage + 2), sp
+    ld sp, kernel_garbage
     pop af
-    ld sp, (kernelGarbage + 2)
+    ld sp, (kernel_garbage + 2)
     ei
     ret
 _:  ; Same thing without enabling interrupts
     pop af
     ; Fetch AF from backup
-    ld (kernelGarbage + 2), sp
-    ld sp, kernelGarbage
+    ld (kernel_garbage + 2), sp
+    ld sp, kernel_garbage
     pop af
-    ld sp, (kernelGarbage + 2)
+    ld sp, (kernel_garbage + 2)
     ret
 
 ; rst 0x28
 bcall:
     push hl
     push af
-        ld hl, (bcallHook)
+        ld hl, (bcall_hook)
         xor a
         cp h
         jr nz, _

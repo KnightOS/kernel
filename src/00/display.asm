@@ -32,7 +32,7 @@ initDisplay:
         #endif
     #endif
 
-    ld (currentContrast), a
+    ld (current_contrast), a
     call lcdDelay
     out (PORT_LCD_CMD), a ; Contrast
     ret

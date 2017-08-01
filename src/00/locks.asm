@@ -3,7 +3,7 @@
 getLCDLock:
     push af
         call getCurrentThreadId
-        ld (hwLockLCD), a
+        ld (hw_lock_lcd), a
         call checkLegacyLcdMode
         jr nz, _
         call setLegacyLcdMode
@@ -17,7 +17,7 @@ _:  pop af
 getIOLock:
     push af
         call getCurrentThreadId
-        ld (hwLockIO), a
+        ld (hw_lock_io), a
     pop af
     ret
 
@@ -26,7 +26,7 @@ getIOLock:
 getKeypadLock:
     push af
         call getCurrentThreadId
-        ld (hwLockKeypad), a
+        ld (hw_lock_keypad), a
 
         ; Flush keys
         call flushKeys
@@ -40,7 +40,7 @@ _:      call getScanCode
 getUSBLock:
     push af
         call getCurrentThreadId
-        ld (hwLockUSB), a
+        ld (hw_lock_usb), a
     pop af
     ret
 
@@ -50,7 +50,7 @@ hasLCDLock:
     push hl
     push af
         call getCurrentThreadId
-        ld hl, hwLockLCD
+        ld hl, hw_lock_lcd
         cp (hl)
     pop hl
     ld a, h
@@ -63,7 +63,7 @@ hasIOLock:
     push hl
     push af
         call getCurrentThreadId
-        ld hl, hwLockIO
+        ld hl, hw_lock_io
         cp (hl)
     pop hl
     ld a, h
@@ -76,7 +76,7 @@ hasKeypadLock:
     push hl
     push af
         call getCurrentThreadId
-        ld hl, hwLockKeypad
+        ld hl, hw_lock_keypad
         cp (hl)
     pop hl
     ld a, h
@@ -90,7 +90,7 @@ hasUSBLock:
     push hl
     push af
         call getCurrentThreadId
-        ld hl, hwLockUsb
+        ld hl, hw_lock_usb
         cp (hl)
     pop hl
     ld a, h
