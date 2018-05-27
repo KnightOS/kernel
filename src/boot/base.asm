@@ -4,13 +4,13 @@
     .fill 0x0F - $
     .db "Emulated", 0
 _:
+    in a, (PORT_FLASHRAMSIZE)
+    
 #ifdef TI84p
-    in a, (PORT_FLASHRAMSIZE)
     res BIT_FLASHRAMSIZE_FLASHCHIP, a
-    out (PORT_FLASHRAMSIZE), a
 #else
-    in a, (PORT_FLASHRAMSIZE)
     set BIT_FLASHRAMSIZE_FLASHCHIP, a
-    out (PORT_FLASHRAMSIZE), a
 #endif
+    
+    out (PORT_FLASHRAMSIZE), a
     jp 0x4000
