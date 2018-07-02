@@ -637,6 +637,7 @@ _:      ld hl, (prev_block_ptr)
             push bc
                 ld b, d \ ld c, e
                 call malloc
+                jp nz, .out_of_memory ;if malloc fails
             pop bc
             push ix \ pop de
             ldir
@@ -684,5 +685,19 @@ _:      ld hl, (prev_block_ptr)
     ld c, h \ ld b, l
     inc bc \ inc bc \ inc bc \ inc bc \ inc bc ; Factor in removed headers
     ret
+.out_of_memory:
+        pop bc
+        pop ix
+    pop bc
+    pop de
+    pop hl
+    pop af
+    jp po, _
+    ei
+_:  pop af
+    or 1
+    ld a, errOutOfMem
+    ret
+
 #undefine prev_block_ptr
 #undefine next_block_ptr
