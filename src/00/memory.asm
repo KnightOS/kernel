@@ -696,7 +696,7 @@ _:      ld hl, (prev_block_ptr)
     ei
 _:  pop af
     or 1
-		ld a, errOutOfMem
+    ld a, errOutOfMem
     ret
 
 #undefine prev_block_ptr
