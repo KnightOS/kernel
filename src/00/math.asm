@@ -165,11 +165,10 @@ mul16By16:
             ld a, e
             adc a, b
             ld e, a
-        pop bc
-    ld a,b
+            jr nc, $ + 3
+            inc d
+        pop af
     pop bc
-    ret nc
-    inc d
     ret
 ;; mul32By8 [Maths]
 ;;  Performs an unsigned multiplication of DEHL and A.
