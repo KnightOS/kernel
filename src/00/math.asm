@@ -128,6 +128,8 @@ mul16By8:
 ;; Outputs:
 ;;  DEHL: Product of DE and BC.
 mul16By16:
+    push bc
+    push af
     ld hl, 0
     ld a, b
     ld b, h
@@ -163,6 +165,9 @@ mul16By16:
     ld a, e
     adc a, b
     ld e, a
+    pop bc
+    ld a,b
+    pop bc
     ret nc
     inc d
     ret
