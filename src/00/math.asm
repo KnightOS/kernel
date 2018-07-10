@@ -127,42 +127,49 @@ mul16By8:
 ;;  BC: Multiplicand
 ;; Outputs:
 ;;  DEHL: Product of DE and BC.
+;;Min: 518cc
+;;Max: 669cc
+;;Avg: 589.53125cc
+;;125 bytes
 mul16By16:
-    ld hl, 0
-
-    sla e
-    rl d
-    jr nc, $ + 4
-    ld h, b
-    ld l, c
-
-.macro mul16By16Iter
-    add hl, hl
-    rl e
-    rl d
-    jr nc, $ + 6
-    add hl, bc
-    jr nc, $ + 3
-    inc de
-.endmacro
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-.undefine mul16By16Iter
+    ld hl,0
+    ld a,b
+    ld b,h
+    or a
+                rla \ jr nc,$+5 \ ld h,d \ ld l,e
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,b
+    ld b,a
+    push hl
+    ld hl,0
+    ld a,c
+    ld c,h
+    or a
+                rla \ jr nc,$+5 \ ld h,d \ ld l,e
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    add hl,hl \ rla \ jr nc,$+4 \ add hl,de \ adc a,c
+    ld d,b
+    pop bc
+    ld e,a
+    ld a,c
+    add a,h
+    ld h,a
+    ld a,e
+    adc a,b
+    ld e,a
+    ret nc
+    inc d
     ret
-
 ;; mul32By8 [Maths]
 ;;  Performs an unsigned multiplication of DEHL and A.
 ;; Outputs:
@@ -309,21 +316,16 @@ _:  push hl \ pop ix
 
 ;; add16To32 [Maths]
 ;;  Performs `ACIX = ACIX + DE`
+;;Min: 26cc
+;;Max: 43cc
+;;Avg: 30.515625cc
+;;7 bytes
 add16to32:
-    push hl
-        push de
-            push ix \ pop hl
-            push de
-                ld d, a
-                ld e, c
-            pop bc
-            add hl, bc
-            jr nc, _
-            inc de
-_:          push hl \ pop ix
-            ld a, d \ ld c, e
-        pop de
-    pop hl
+    add ix,de
+    ret nc
+    inc c
+    ret nc
+    inc a
     ret
 
 ;; divHLByC [Maths]
