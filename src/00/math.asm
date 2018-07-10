@@ -295,22 +295,21 @@ div8By8:
 ;;  Performs `ACIX = ACIX - DE`
 sub16from32:
     push hl
-    push de
     push bc
-        push ix \ pop hl
-        push de
-            ld d, a
-            ld e, c
-        pop bc
-
-        or a
+        ld h, a
+        ld l, c
+        xor a
+        ld b, a
+        ld c, a
+        push ix
+            ex (sp), hl
+            sbc hl, de
+            ex (sp), hl
+        pop ix
         sbc hl, bc
-        jr nc, _
-        dec de
-_:  push hl \ pop ix
-    ld a, d \ ld c, e
+        ld a, h
     pop bc
-    pop de
+    ld c, l
     pop hl
     ret
 
@@ -319,8 +318,10 @@ _:  push hl \ pop ix
 add16to32:
     add ix, de
     ret nc
+    or a
     inc c
-    adc a,0
+    ret z
+    add a, 1
     ret
 
 ;; divHLByC [Maths]
