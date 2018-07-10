@@ -127,10 +127,6 @@ mul16By8:
 ;;  BC: Multiplicand
 ;; Outputs:
 ;;  DEHL: Product of DE and BC.
-;;Min: 518cc
-;;Max: 669cc
-;;Avg: 589.53125cc
-;;125 bytes
 mul16By16:
     ld hl,0
     ld a,b
@@ -316,10 +312,6 @@ _:  push hl \ pop ix
 
 ;; add16To32 [Maths]
 ;;  Performs `ACIX = ACIX + DE`
-;;Min: 26cc
-;;Max: 43cc
-;;Avg: 30.515625cc
-;;7 bytes
 add16to32:
     add ix,de
     ret nc
