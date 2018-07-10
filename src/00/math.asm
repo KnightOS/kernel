@@ -320,8 +320,7 @@ add16to32:
     add ix, de
     ret nc
     inc c
-    ret nc
-    inc a
+    adc a,0
     ret
 
 ;; divHLByC [Maths]
