@@ -12,8 +12,7 @@ strlen:
         ld c, a
         cpir
         ; bc = -bc
-        xor a \ sub c \ ld c, a \ sbc a, a \ sub b \ ld b, a
-        dec bc
+        ld a,c \ cpl \ ld c, a \ ld a,b \ cpl \ ld b, a
     pop hl
     pop af
     ret
