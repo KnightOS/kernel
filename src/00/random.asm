@@ -9,10 +9,10 @@ initRandom:
         ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
         ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
         ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
+        ld a, r \ or (hl) \ ld l, a  \ ld (de), a \ inc de  ;we use two ors to ensure this part of the seed is non-zero.
         ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
         ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
-        ld a, r \ add a, (hl) \ ld l, a  \ ld (de), a \ inc de
-        ld a, r \ add a, (hl) \ ld (de), a
+        ld a, r \ or (hl) \ ld (de), a
     pop af
     pop de
     pop hl
