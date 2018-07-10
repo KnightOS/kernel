@@ -5,7 +5,7 @@
 cpHLDE:
     or a
     sbc hl, de
-    add hl,de
+    add hl, de
     ret
 ;; cpHLBC [Maths]
 ;;  Compares HL to BC.
@@ -14,7 +14,7 @@ cpHLDE:
 cpHLBC:
     or a
     sbc hl, bc
-    add hl,bc
+    add hl, bc
     ret
 ;; cpBCDE [Maths]
 ;;  Compares DE to BC.
@@ -128,41 +128,49 @@ mul16By8:
 ;; Outputs:
 ;;  DEHL: Product of DE and BC.
 mul16By16:
-    ld hl, 0
-
-    sla e
-    rl d
-    jr nc, $ + 4
-    ld h, b
-    ld l, c
-
-.macro mul16By16Iter
-    add hl, hl
-    rl e
-    rl d
-    jr nc, $ + 6
-    add hl, bc
-    jr nc, $ + 3
-    inc de
-.endmacro
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-    mul16By16Iter
-.undefine mul16By16Iter
+    push bc
+        push af
+            ld hl, 0
+            ld a, b
+            ld b, h
+            or a
+                        rla \ jr nc, $+5 \ ld h, d \ ld l, e
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            ld b, a
+            push hl
+            ld hl, 0
+            ld a, c
+            ld c, h
+            or a
+                        rla \ jr nc, $+5 \ ld h, d \ ld l, e
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            ld d, b
+            pop bc
+            ld e, a
+            ld a, c
+            add a, h
+            ld h, a
+            ld a, e
+            adc a, b
+            ld e, a
+        pop bc
+    ld a,b
+    pop bc
+    ret nc
+    inc d
     ret
-
 ;; mul32By8 [Maths]
 ;;  Performs an unsigned multiplication of DEHL and A.
 ;; Outputs:
@@ -211,16 +219,16 @@ div32By16:
     add ix, ix
     rl c
     rla
-    adc hl,hl
+    adc hl, hl
     jr  c, .overflow
-    sbc hl,de
+    sbc hl, de
     jr  nc, .setBit
-    add hl,de
+    add hl, de
     djnz .loop
     ret
 .overflow:
     or a
-    sbc hl,de
+    sbc hl, de
 .setBit:
     inc ixl
     djnz .loop
@@ -310,20 +318,11 @@ _:  push hl \ pop ix
 ;; add16To32 [Maths]
 ;;  Performs `ACIX = ACIX + DE`
 add16to32:
-    push hl
-        push de
-            push ix \ pop hl
-            push de
-                ld d, a
-                ld e, c
-            pop bc
-            add hl, bc
-            jr nc, _
-            inc de
-_:          push hl \ pop ix
-            ld a, d \ ld c, e
-        pop de
-    pop hl
+    add ix, de
+    ret nc
+    inc c
+    ret nc
+    inc a
     ret
 
 ;; divHLByC [Maths]
