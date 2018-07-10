@@ -129,43 +129,43 @@ mul16By8:
 ;;  DEHL: Product of DE and BC.
 mul16By16:
     push bc
-    push af
-    ld hl, 0
-    ld a, b
-    ld b, h
-    or a
-                rla \ jr nc, $+5 \ ld h, d \ ld l, e
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
-    ld b, a
-    push hl
-    ld hl, 0
-    ld a, c
-    ld c, h
-    or a
-                rla \ jr nc, $+5 \ ld h, d \ ld l, e
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
-    ld d, b
-    pop bc
-    ld e, a
-    ld a, c
-    add a, h
-    ld h, a
-    ld a, e
-    adc a, b
-    ld e, a
-    pop bc
+        push af
+            ld hl, 0
+            ld a, b
+            ld b, h
+            or a
+                        rla \ jr nc, $+5 \ ld h, d \ ld l, e
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, b
+            ld b, a
+            push hl
+            ld hl, 0
+            ld a, c
+            ld c, h
+            or a
+                        rla \ jr nc, $+5 \ ld h, d \ ld l, e
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            add hl, hl \ rla \ jr nc, $+4 \ add hl, de \ adc a, c
+            ld d, b
+            pop bc
+            ld e, a
+            ld a, c
+            add a, h
+            ld h, a
+            ld a, e
+            adc a, b
+            ld e, a
+        pop bc
     ld a,b
     pop bc
     ret nc
