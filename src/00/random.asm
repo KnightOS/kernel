@@ -24,6 +24,7 @@ initRandom:
 ;;  A: Random number (0-255)
 ;; Notes:
 ;;  This is not cryptographically random.
+getRandom:
     push hl
     push de
     push bc
