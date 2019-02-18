@@ -1410,7 +1410,7 @@ _:      pop af
             ld a, (ix + FILE_FINAL_LENGTH)
             cp c
             jr nc, .nope
-            set 5, (ix + FILE_STREAM) ; set eof
+            set 5, (ix + FILE_FLAGS) ; set eof
 .nope:
         pop bc
         pop af
