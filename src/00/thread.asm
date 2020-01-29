@@ -375,12 +375,12 @@ launchProgram:
     push de
     push ix
         call openFileRead
-        jr nz, .error
+        jp nz, .error
 
         call getStreamInfo
         ; TODO: If E > 0, then the file is too large. Error out before we ask malloc about it.
         call malloc
-        jr nz, .error_pop2
+        jp nz, .error_pop2
         call getNewThreadId
         call reassignMemory
 
@@ -401,8 +401,31 @@ launchProgram:
         cp (ix + 3)
         jr nz, .magic_error
 
-        ; TODO: Check minimum required kernel version, if present
+        ; Check minimum required kernel version, if present
+        ld b, KEXC_KERNEL_VER
+        push ix \ call _getThreadHeader \ pop ix
+        jr nz, .no_minimum_ver
+        ex hl, de
+        
+        call getKernelMajorVersion
+        jr nz, .unknown_ver
+        ; If running minimum ver is less than required, abort load
+        ; TODO on major ver: decide what to do if major ver is greater
+        ld a, e
+        cp l
+        jr c, .kernel_too_low
 
+        call getKernelMinorVersion
+        jr nz, .unknown_ver
+        ld a, d
+        cp l
+        jr c, .kernel_too_low
+        ; Running version meets requirements
+
+; Running version is unknown
+.unknown_ver:
+; no minimum version is specified by the executable
+.no_minimum_ver:
         ; Grab header info
         ld b, KEXC_ENTRY_POINT
         push ix \ call _getThreadHeader \ pop ix
@@ -436,6 +459,9 @@ _:  ld a, b
     pop bc
     cp a
     ret
+.kernel_too_low:
+    ld a, errKernelMismatch
+    jr .error
 .no_entry_point:
     ld a, errNoEntryPoint
     jr .error
