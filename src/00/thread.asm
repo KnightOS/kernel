@@ -354,6 +354,7 @@ _:  pop af
     cp a
     ret
 
+.echo "lp: 0x{0:X4}" launchProgram
 ;; launchProgram [Threading]
 ;;  Loads the specified file into memory as a program and starts a
 ;;  new thread for it. The file must be a valid KEXC executable.
@@ -426,12 +427,18 @@ launchProgram:
 .unknown_ver:
 ; no minimum version is specified by the executable
 .no_minimum_ver:
+; Check for a relocation table
+        ld b, KEXC_RELOCATION_TABLE
+        push ix \ call _getThreadHeader \ pop ix
+        call z, .relocate
+
         ; Grab header info
         ld b, KEXC_ENTRY_POINT
         push ix \ call _getThreadHeader \ pop ix
         jr nz, .no_entry_point
         push hl
-            ld b, KEXC_STACK_SIZE
+            ; b still has KEXC_ENTRY_POINT, and KEXC_STACK_SIZE is 1 higher
+            inc b
             push ix \ call _getThreadHeader \ pop ix
             ld c, l ; TODO: Error out if H is nonzero?
             jr z, _
@@ -459,14 +466,14 @@ _:  ld a, b
     pop bc
     cp a
     ret
-.kernel_too_low:
-    ld a, errKernelMismatch
+.magic_error:
+    ld a, errNoMagic
     jr .error
 .no_entry_point:
     ld a, errNoEntryPoint
     jr .error
-.magic_error:
-    ld a, errNoMagic
+.kernel_too_low:
+    ld a, errKernelMismatch
     jr .error
 .error_pop2:
     inc sp \ inc sp
@@ -484,6 +491,42 @@ _:  or 1
     ld a, b
     pop bc
     ret
+; thrashes de, bc, and hl
+.relocate:
+; ix = executable address
+; hl = program-relative relocation table address
+    push ix \ pop de
+    add hl, de
+; hl = absolute address of relocation table
+.relocation_loop:
+    ld e, (hl)
+    inc hl
+    ld d, (hl)
+    ; de = first entry in relocation table
+    dec hl
+    ; hl: preserved
+    ld bc, 0
+    call cpBCDE
+    ret z
+    ; de contains the program-relative address of a program-relative pointer to relocate
+    ; need to execute, in effect, `add (ix + de), ix`
+    push ix
+        add ix, de
+        push ix \ pop de
+    pop ix
+    ; de = absolute address of pointer to relocate
+   
+    ; add (de), ix
+    push ix \ pop bc
+    ld a, (de)
+    add a, c
+    ld (de), a
+    inc de
+    ld a, (de)
+    add a, b
+    ld (de), a
+    inc hl \ inc hl
+    jr .relocation_loop
 
 ;; exitThread [Threading]
 ;;  Immediately terminates the running thread.

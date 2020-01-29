@@ -35,15 +35,16 @@ good idea.
 
 The following headers are defined in kernel.inc:
 
-    Name                Description
+    Name                  Description
 
-    KEXC_HEADER_END     The end of the header list. Value may be omitted.
-    KEXC_ENTRY_POINT    Pointer to executable entry point.
-    KEXC_STACK_SIZE     Bytes of stack required, divided by two.
-    KEXC_KERNEL_VER     Minimum kernel version supported. Major, minor.
-    KEXC_THREAD_FLAGS   Thread flags. Only the upper 8 bits are considered.
-    KEXC_NAME           Pointer to program name.
-    KEXC_DESCRIPTION    Pointer to program description.
+    KEXC_HEADER_END       The end of the header list. Value may be omitted.
+    KEXC_ENTRY_POINT      Pointer to executable entry point.
+    KEXC_STACK_SIZE       Bytes of stack required, divided by two.
+    KEXC_KERNEL_VER       Minimum kernel version supported. Major, minor.
+    KEXC_THREAD_FLAGS     Thread flags. Only the upper 8 bits are considered.
+    KEXC_NAME             Pointer to program name.
+    KEXC_DESCRIPTION      Pointer to program description.
+    KEXC_RELOCATION_TABLE Pointer to the relocation table.
 
 Header keys are numbered from 0x00-0xFF, inclusive. The 0x00-0x7F range is
 reserved for kernel use, and 0x80-0xFF is available for arbitrary use.
