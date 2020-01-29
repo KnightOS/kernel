@@ -38,6 +38,7 @@ panic_init_not_found    .equ 0
 panic_no_threads        .equ 1
 panic_no_active_threads .equ 2
 panic_library_not_found .equ 3
+panic_failed_init       .equ 4
 
 ; KEXC headers
 ; 0x00-0x7F reserved for kernel use

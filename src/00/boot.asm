@@ -120,9 +120,14 @@ reboot:
     ld a, panic_init_not_found
     jp nz, panic
     call launchProgram
+    jr nz, init_failed
     ld h, 0
     call setInitialA
     jp contextSwitch_manual
+
+init_failed:
+    ld a, panic_failed_init
+    jp panic
 
 init:
     .db "/bin/init", 0
