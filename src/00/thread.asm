@@ -354,7 +354,6 @@ _:  pop af
     cp a
     ret
 
-.echo "lp: 0x{0:X4}" launchProgram
 ;; launchProgram [Threading]
 ;;  Loads the specified file into memory as a program and starts a
 ;;  new thread for it. The file must be a valid KEXC executable.
