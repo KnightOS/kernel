@@ -53,3 +53,9 @@ reserved for kernel use, and 0x80-0xFF is available for arbitrary use.
 
 When used to describe an executable program, the only required header is
 KEXC_ENTRY_POINT (and of course KEXC_HEADER_END).
+
+                               Relocation Table
+
+The relocation table consists of any number of program-relative addresses
+terminated by a null word. Those addresses should themselves contain
+program-relative pointers to relocate.
