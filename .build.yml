@@ -2,16 +2,24 @@ image: archlinux
 packages:
   - mono
   - make
-  - scas
   - mktiupgrade
   - genkfs
   - mkrom
   - patchrom
 sources:
   - https://github.com/KnightOS/kernel
+  - https://github.com/KnightOS/scas
 environment:
   project: kernel
 tasks:
+  - scas: |
+      cd scas
+      gco fix_kernel_assembly
+      mkdir build
+      cd build
+      cmake ..
+      make
+      make install
   - ti73: |
       cd ${project}
       make TI73
