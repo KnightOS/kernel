@@ -1,10 +1,12 @@
 # Makefile for KnightOS kernel
-AS=sass
-ASFLAGS=--encoding "Windows-1252"
+AS=scas
+#ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
 TAG:=$(shell git describe --abbrev=0)
 OUTDIR=bin/
+
+KERNEL_VERSION = -DKERNEL_VERSION=$(shell git describe --dirty=+)
 
 # Platforms:
 # Variables (all in hex):
@@ -65,7 +67,7 @@ TI84pCSE: BOOT := 3FC000
 TI84pCSE: LENGTH := 0x400000
 TI84pCSE: kernel $(OUTDIR)
 
-DEFINES=--define $(PLATFORM)
+DEFINES=--define $(PLATFORM) $(KERNEL_VERSION)
 BINDIR=$(OUTDIR)$(PLATFORM)/
 INCLUDE=include/;$(BINDIR)
 
