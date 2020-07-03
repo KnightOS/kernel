@@ -27,6 +27,8 @@ initDisplay:
     #else
         #ifdef TI73
             ld a, 0x3B + LCD_CMD_SETCONTRAST
+        #elif TI83p
+            ld a, 0x3F + LCD_CMD_SETCONTRAST
         #else
             ld a, 0x34 + LCD_CMD_SETCONTRAST
         #endif
