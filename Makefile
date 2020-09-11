@@ -4,10 +4,10 @@ ASFLAGS=-vvvv
 #ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
-TAG:=$(shell git describe --abbrev=0)
+TAG:=$(shell git describe --abbrev=0 --dirty=+)
 OUTDIR=bin/
 
-KERNEL_VERSION = -DKERNEL_VERSION=$(shell git describe --dirty=+)
+KERNEL_VERSION = -DKERNEL_VERSION=$(TAG)
 
 # Platforms:
 # Variables (all in hex):
