@@ -44,7 +44,7 @@ sha1Init:
 .defaultMemblock:
 
 ; Holds the completed hash.
-sha1_hash .equ $ - .defaultMemblock
+.equ sha1_hash, $ - .defaultMemblock
     .db 0x67,0x45,0x23,0x01
     .db 0xEF,0xCD,0xAB,0x89
     .db 0x98,0xBA,0xDC,0xFE
