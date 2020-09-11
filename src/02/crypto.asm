@@ -107,13 +107,13 @@ sha1Pad_noPush:
     ; append the bit '1' to the message
     ; append 0 <= k < 512 bits '0', so that the resulting message length (in bits)
     ;    is congruent to 448 = -64 (mod 512)
-    ld a, $80
+    ld a, 0x80
 .zero:
     call sha1AddByte_noLength
     ld a, (ix + sha1_block_front_ptr)
     add a, 56
     cp (ix + sha1_block_ptr)
-    ld a, $00
+    ld a, 0x00
     jr nz, .zero
     ; append length of message (before padding), in bits, as 64-bit big-endian integer
     push ix \ pop hl
@@ -223,10 +223,10 @@ sha1ProcessBlock:
         dec hl
         ld (ix + sha1_block_ptr), l
         ld (ix + sha1_block_ptr + 1), h
-        ld hl, sha1Operation_mux \ call sha1Do20Rounds \ .db $5A,$82,$79,$99
-        ld hl, sha1Operation_xor \ call sha1Do20Rounds \ .db $6E,$D9,$EB,$A1
-        ld hl, sha1Operation_maj \ call sha1Do20Rounds \ .db $8F,$1B,$BC,$DC
-        ld hl, sha1Operation_xor \ call sha1Do20Rounds \ .db $CA,$62,$C1,$D6
+        ld hl, sha1Operation_mux \ call sha1Do20Rounds \ .db 0x5A,0x82,0x79,0x99
+        ld hl, sha1Operation_xor \ call sha1Do20Rounds \ .db 0x6E,0xD9,0xEB,0xA1
+        ld hl, sha1Operation_maj \ call sha1Do20Rounds \ .db 0x8F,0x1B,0xBC,0xDC
+        ld hl, sha1Operation_xor \ call sha1Do20Rounds \ .db 0xCA,0x62,0xC1,0xD6
 
         ;    Add this chunk's hash to result so far
         ;    h0 += a
