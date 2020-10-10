@@ -45,5 +45,5 @@ rlcall:
 .db 0xFF, 0xA5, 0xFF
 .fill 0x64-$
 #.exec git describe --dirty=+ ; Version string
-.asciiz BS
+.db "BS"
 .db 0
