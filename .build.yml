@@ -1,6 +1,5 @@
 image: archlinux
 packages:
-  - mono
   - make
   - mktiupgrade
   - genkfs
@@ -14,12 +13,11 @@ environment:
 tasks:
   - scas: |
       cd scas
-      gco fix_kernel_assembly
       mkdir build
       cd build
       cmake ..
       make
-      make install
+      sudo make install
   - ti73: |
       cd ${project}
       make TI73
