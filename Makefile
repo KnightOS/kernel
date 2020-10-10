@@ -114,16 +114,16 @@ baserom:
 
 $(OUTDIR)$(PLATFORM)/%.bin: src/%/*.asm include/constants.asm src/%/jumptable.config
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/$*/" --symbols $(BINDIR)$*.sym --listing $(BINDIR)$*.list src/$*/base.asm $(BINDIR)$*.bin
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/$*/" --symbols $(BINDIR)$*.sym --listing $(BINDIR)$*.list src/$*/base.asm -o $(BINDIR)$*.bin
 	patchrom src/$*/jumptable.config $(BINDIR)kernel.rom $* < $(BINDIR)$*.sym > $(BINDIR)$*.inc
 
 $(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm include/constants.asm $(OUTDIR)$(PLATFORM)/00.bin
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm $(BINDIR)privileged.bin
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm -o $(BINDIR)privileged.bin
 
 $(OUTDIR)$(PLATFORM)/boot.bin: src/boot/*.asm include/constants.asm
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm $(BINDIR)boot.bin
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm -o $(BINDIR)boot.bin
 
 clean:
 	rm -rf $(OUTDIR)
