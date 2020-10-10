@@ -13,6 +13,9 @@ environment:
   project: kernel
 artifacts:
   - kernel/bin/TI84p/kernel.8xu
+  - kernel/bin/TI84p/00.bin
+  - kernel/bin/TI84p/01.bin
+  - kernel/bin/TI84p/02.bin
 tasks:
   - ti84p: |
       cd ${project}
