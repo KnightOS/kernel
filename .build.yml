@@ -11,27 +11,10 @@ sources:
   - https://github.com/KnightOS/kernel
 environment:
   project: kernel
+artifacts:
+  - kernel/bin/TI84p/kernel.8xu
 tasks:
-  - ti73: |
-      cd ${project}
-      make TI73
-  - ti83p: |
-      cd ${project}
-      make clean
-      make TI83p
-  - ti83pse: |
-      cd ${project}
-      make clean
-      make TI83pSE
   - ti84p: |
       cd ${project}
       make clean
       make TI84p
-  - ti84pse: |
-      cd ${project}
-      make clean
-      make TI84pSE
-  - ti84pcse: |
-      cd ${project}
-      make clean
-      make TI84pCSE
