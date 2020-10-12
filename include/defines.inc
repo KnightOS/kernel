@@ -50,6 +50,7 @@ KEXC_KERNEL_VER         .equ 0x03
 KEXC_THREAD_FLAGS       .equ 0x04
 KEXC_NAME               .equ 0x05
 KEXC_DESCRIPTION        .equ 0x06
+KEXC_RELOCATION_TABLE   .equ 0x07
 
 ; Thread flags
 THREAD_NON_SUSPENDABLE  .equ 2

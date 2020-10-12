@@ -90,7 +90,7 @@ hasUSBLock:
     push hl
     push af
         call getCurrentThreadId
-        ld hl, hwLockUsb
+        ld hl, hwLockUSB
         cp (hl)
     pop hl
     ld a, h

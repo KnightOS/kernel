@@ -47,7 +47,7 @@ getRandom:
         add hl, hl \ rl c \ rl b
         ld (random_seed+6), bc
         sbc a, a
-        and %11000101
+        and 0b11000101
         xor l
         ld l, a
         ld (random_seed+4), hl

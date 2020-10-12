@@ -1,10 +1,13 @@
 # Makefile for KnightOS kernel
-AS=sass
-ASFLAGS=--encoding "Windows-1252"
+AS=scas
+ASFLAGS=-v
+#ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
-TAG:=$(shell git describe --abbrev=0)
+TAG:=$(shell git describe --abbrev=0 --dirty=+)
 OUTDIR=bin/
+
+KERNEL_VERSION = -DKERNEL_VERSION=$(TAG)
 
 # Platforms:
 # Variables (all in hex):
@@ -65,7 +68,7 @@ TI84pCSE: BOOT := 3FC000
 TI84pCSE: LENGTH := 0x400000
 TI84pCSE: kernel $(OUTDIR)
 
-DEFINES=--define $(PLATFORM)
+DEFINES=--define $(PLATFORM) $(KERNEL_VERSION)
 BINDIR=$(OUTDIR)$(PLATFORM)/
 INCLUDE=include/;$(BINDIR)
 
@@ -109,28 +112,18 @@ baserom:
 	mkdir -p $(BINDIR)
 	mkrom $(BINDIR)kernel.rom $(LENGTH) /dev/null:0x00
 
-$(OUTDIR)$(PLATFORM)/00.bin: src/00/*.asm include/constants.asm src/00/jumptable.config
+$(OUTDIR)$(PLATFORM)/%.bin: src/%/*.asm include/constants.asm src/%/jumptable.config
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/00/" --symbols $(BINDIR)00.sym --listing $(BINDIR)00.list src/00/base.asm $(BINDIR)00.bin
-	patchrom src/00/jumptable.config $(BINDIR)kernel.rom 00 < $(BINDIR)00.sym > $(BINDIR)00.inc
-
-$(OUTDIR)$(PLATFORM)/01.bin: $(OUTDIR)$(PLATFORM)/00.bin src/01/*.asm include/constants.asm src/01/jumptable.config
-	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/01/" --symbols $(BINDIR)01.sym --listing $(BINDIR)01.list src/01/base.asm $(BINDIR)01.bin
-	patchrom src/01/jumptable.config $(BINDIR)kernel.rom 01 < $(BINDIR)01.sym > $(BINDIR)01.inc
-
-$(OUTDIR)$(PLATFORM)/02.bin: $(OUTDIR)$(PLATFORM)/00.bin src/02/*.asm include/constants.asm src/02/jumptable.config
-	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/02/" --symbols $(BINDIR)02.sym --listing $(BINDIR)02.list src/02/base.asm $(BINDIR)02.bin
-	patchrom src/02/jumptable.config $(BINDIR)kernel.rom 02 < $(BINDIR)02.sym > $(BINDIR)02.inc
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/$*/" --symbols $(BINDIR)$*.sym --listing $(BINDIR)$*.list src/$*/base.asm -o $(BINDIR)$*.bin
+	patchrom src/$*/jumptable.config $(BINDIR)kernel.rom $* < $(BINDIR)$*.sym > $(BINDIR)$*.inc
 
 $(OUTDIR)$(PLATFORM)/privileged.bin: src/privileged/*.asm include/constants.asm $(OUTDIR)$(PLATFORM)/00.bin
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm $(BINDIR)privileged.bin
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/privileged/" --listing $(BINDIR)priviledged.list src/privileged/base.asm -o $(BINDIR)privileged.bin
 
 $(OUTDIR)$(PLATFORM)/boot.bin: src/boot/*.asm include/constants.asm
 	@mkdir -p $(BINDIR)
-	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm $(BINDIR)boot.bin
+	$(AS) $(ASFLAGS) $(DEFINES) --include "$(INCLUDE);src/boot/" --listing $(BINDIR)boot.list src/boot/base.asm -o $(BINDIR)boot.bin
 
 clean:
 	rm -rf $(OUTDIR)
