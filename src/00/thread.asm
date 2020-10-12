@@ -421,7 +421,10 @@ launchProgram:
         cp l
         jr c, .kernel_too_low
         ; Running version meets requirements
-
+        
+.magic_error:
+    ld a, errNoMagic
+    jr .error
 ; Running version is unknown
 .unknown_ver:
 ; no minimum version is specified by the executable
@@ -465,9 +468,6 @@ _:  ld a, b
     pop bc
     cp a
     ret
-.magic_error:
-    ld a, errNoMagic
-    jr .error
 .no_entry_point:
     ld a, errNoEntryPoint
     jr .error
