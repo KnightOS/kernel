@@ -390,7 +390,7 @@ launchProgram:
         ; Check magic number
         ld a, 'K'
         cp (ix)
-        jr nz, .magic_error
+        jp nz, .magic_error
         ld a, 'E'
         cp (ix + 1)
         jr nz, .magic_error
