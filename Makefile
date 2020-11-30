@@ -1,7 +1,6 @@
 # Makefile for KnightOS kernel
 AS=scas
 ASFLAGS=-v
-#ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
 TAG:=$(shell git describe --abbrev=0 --dirty=+)
