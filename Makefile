@@ -3,7 +3,7 @@ AS=sass
 ASFLAGS=--encoding "Windows-1252"
 .DEFAULT_GOAL=TI84pSE
 PLATFORM:=TI84pSE
-TAG:=$(shell git describe --abbrev=0)
+TAG:=$(shell ./get_version.sh)
 OUTDIR=bin/
 
 # Platforms:

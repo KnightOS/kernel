@@ -44,5 +44,6 @@ rlcall:
 ; 0x0056
 .db 0xFF, 0xA5, 0xFF
 .fill 0x64-$
-.exec git describe --dirty=+ ; Version string
+.exec ./get_version.sh ; get version string using script
 .db 0
+
